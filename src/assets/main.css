@@ -1,0 +1,27 @@
+@import './base.css';
+* {
+	box-sizing: border-box;
+	padding:0;
+	margin:0;
+}
+body {
+	background: silver;
+	display: flex;
+}
+#app {
+	display: flex;
+	flex-direction: column;
+}
+
+a,
+.green {
+	text-decoration: none;
+	color: hsla(160, 100%, 37%, 1);
+	transition: 0.4s;
+}
+
+@media (hover: hover) {
+	a:hover {
+		background-color: hsla(160, 100%, 37%, 0.2);
+	}
+}
