@@ -12,6 +12,77 @@ class DocumentHandler {
 		throw new Error("page: not implemented");
 	}
 }
+class PageCache {
+	#map = new Map();
+	retain(pageNumber, page) {
+		const width = page.view[2];
+		const height = page.view[3];
+		const aspectRatio = width / height;
+		const entry = {
+			page,
+			pageNumber,
+			rotation: page.rotate,
+			aspectRatio,
+			width,
+			height
+		};
+		this.#map.set(pageNumber, entry);
+	}
+	evict(pageNumber) {
+		this.#map.delete(pageNumber);
+	}
+	has(pageNumber) {
+		return this.#map.has(pageNumber);
+	}
+	viewport(pageNumber, mode, width, height, rotation) {
+		if(!this.#map.has(pageNumber)) throw new Error(`viewport: page {pageNumber} not in cache`);
+		const entry = this.#map.get(pageNumber);
+		const pageRotation = entry.rotation + rotation;
+		switch(mode) {
+			case WIDTH:
+				const pageWidth = (pageRotation / 90) % 2 ? entry.height : entry.width;
+				const scalew = width / pageWidth;
+				const viewportw = entry.page.getViewport({ scale: scalew, rotation });
+				return viewportw;
+			case HEIGHT:
+				const pageHeight = (pageRotation / 90) % 2 ? entry.width : entry.height;
+				const scaleh = height / pageHeight;
+				const viewporth = entry.page.getViewport({ scale: scaleh, rotation });
+				return viewporth;
+		}
+		throw new Error(`viewport: ${mode}: unknown mode`);
+	}
+	async render(pageNumber, viewport, canvas, div1, div2) {
+		if(!this.#map.has(pageNumber)) throw new Error(`render: page {pageNumber} not in cache`);
+		const entry = this.#map.get(pageNumber);
+		await entry.page.render({
+			canvasContext: canvas.getContext('2d'),
+			viewport,
+		}).promise
+		if(div1) {
+			await pdf.renderTextLayer({
+				container: div1,
+				textContent: await entry.page.getTextContent(),
+				viewport,
+			}).promise
+		}
+		if(div2) {
+			const options = {
+				annotations: await entry.page.getAnnotations(),
+				div: div2,
+				//linkService: this.linkService,
+				page: entry.page,
+				renderInteractiveForms: false,
+				viewport: viewport/*.clone({
+					dontFlip: true,
+				})*/,
+				//imageResourcesPath: this.imageResourcesPath,
+			};
+			const anno = new pdf.AnnotationLayer(options);
+			anno.render(options);
+		}
+	}
+}
 class DocumentHandler_pdfjs extends DocumentHandler {
 	#document
 	#emit
@@ -46,9 +117,10 @@ class DocumentHandler_pdfjs extends DocumentHandler {
  * This MUST NOT get Proxied it uses "#" properties.
  */
 class PageContext {
+	#cache
 	#id
 	#state = COLD
-	page
+	#sizeMode = WIDTH
 	viewport
 	#index
 	#pageNumber
@@ -61,7 +133,9 @@ class PageContext {
 	#didRender = false
 	renderText = true
 	renderAnno = true
-	constructor(id, index, pageNumber, pageTitle) {
+	constructor(cache, sm, id, index, pageNumber, pageTitle) {
+		this.#cache = cache;
+		this.#sizeMode = sm;
 		this.#id = id;
 		this.#index = index;
 		this.#pageNumber = pageNumber;
@@ -102,68 +176,39 @@ class PageContext {
 		this.#gridRow = row;
 		this.#gridColumn = col;
 	}
-	layout(page) {
-		this.warm();
-		this.page = page;
+	#configure(viewport, container, canvas) {
+		container.style.setProperty("--scale-factor", viewport.scale);
+		container.style.setProperty("--viewport-width", viewport.width);
+		container.style.setProperty("--viewport-height", viewport.height);
+		canvas.width = viewport.width;
+		canvas.height = viewport.height;
 	}
 	placeholder(container, canvas) {
-		console.log("placholder [index](row,col)(state,rotation)", this.#didRender, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
+		console.log("placeholder didrender[index](row,col)(state,rotation)", this.#didRender, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
 		if(this.state !== WARM) return;
-		if(!this.page) throw new Error("placeholder: layout was not called");
 		if(!container) return;
 		if(!canvas) return;
-		const [actualWidth, actualHeight] = getPageDimensions(
-			WIDTH,
-			(this.#rotation / 90) % 2
-				? this.page.view[2] / this.page.view[3]
-				: this.page.view[3] / this.page.view[2],
-				container.clientWidth,
-				container.clientHeight
-		);
-		console.log("placeholder actual(w,h)", actualWidth, actualHeight);
-		const viewport = makeViewport(this.page, actualWidth, this.#rotation || 0);
-		container.style.setProperty("--scale-factor", viewport.scale);
-		canvas.width = viewport.width;
-		canvas.height = viewport.height;
+		console.log("placeholder client(w,h)", container.clientWidth, container.clientHeight);
+		const viewport = this.#cache.viewport(this.#pageNumber, this.#sizeMode, container.clientWidth, container.clientHeight, this.#rotation || 0);
+		this.#configure(viewport, container, canvas);
 	}
 	async render(container, canvas, div1, div2) {
-		console.log("render [index](row,col)(state,rotation)", this.#didRender, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
+		console.log("render didrender,mode[index](row,col)(state,rotation)", this.#didRender, this.#sizeMode, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
 		if(this.#didRender) return;
 		if(this.state !== HOT) return;
-		if(!this.page) throw new Error("render: hot was not called");
 		if(!container) return;
 		if(!canvas) return;
-		const [actualWidth, actualHeight] = getPageDimensions(
-			WIDTH,
-			(this.#rotation / 90) % 2
-				? this.page.view[2] / this.page.view[3]
-				: this.page.view[3] / this.page.view[2],
-				container.clientWidth,
-				container.clientHeight
-		);
-		console.log("render actual(w,h)", actualWidth, actualHeight);
-		const viewport = makeViewport(this.page, actualWidth, this.#rotation);
-		container.style.setProperty("--scale-factor", viewport.scale);
-		canvas.width = viewport.width;
-		canvas.height = viewport.height;
+		console.log("render client(w,h)", container.clientWidth, container.clientHeight);
+		const viewport = this.#cache.viewport(this.#pageNumber, this.#sizeMode, container.clientWidth, container.clientHeight, this.#rotation || 0);
+		this.#configure(viewport, container, canvas);
 		// MUST set this before we async anything
 		this.#didRender = true;
-		await this.page.render({
-			canvasContext: canvas.getContext('2d'),
-			viewport,
-		}).promise
-		if(this.renderText === true && div1) {
-			await this.#textLayer(this.page, viewport, div1);
-		}
-		if(this.renderAnno === true && (div1 || div2)) {
-			await this.#annoLayer(this.page, viewport, div1 || div2);
-		}
+		await this.#cache.render(this.#pageNumber, viewport, canvas, div1, div2);
 	}
-	hot(pdfPage, rotation) {
+	hot(rotation) {
 		console.log("hot", this.#didRender, this.#index);
 		if(this.#didRender) return;
-		this.page = pdfPage;
-		this.#rotation = rotation + this.page.rotate;
+		this.#rotation = rotation;
 		this.#state = HOT;
 		this.#didRender = false;
 	}
@@ -172,32 +217,11 @@ class PageContext {
 		this.#state = COLD;
 		this.#didRender = false;
 	}
-	warm() {
-		this.page = null;
+	warm(rotation) {
+		console.log("warm", this.#didRender, this.#index);
+		this.#rotation = rotation;
 		this.#state = WARM;
 		this.#didRender = false;
-	}
-	async #textLayer(page, viewport, container) {
-		await pdf.renderTextLayer({
-			container,
-			textContent: await page.getTextContent(),
-			viewport,
-		}).promise
-	}
-	async #annoLayer(page, viewport, container) {
-		const options = {
-			annotations: await page.getAnnotations(),
-			div: container,
-			linkService: this.linkService,
-			page,
-			renderInteractiveForms: false,
-			viewport: viewport/*.clone({
-				dontFlip: true,
-			})*/,
-			imageResourcesPath: this.imageResourcesPath,
-		};
-		const anno = new pdf.AnnotationLayer(options);
-		anno.render(options);
 	}
 }
 const makeViewport = (page, width, rotation) => {
@@ -206,7 +230,23 @@ const makeViewport = (page, width, rotation) => {
 	const viewport = page.getViewport({ scale, rotation });
 	return viewport;
 }
+const makeViewportByHeight = (page, height, rotation) => {
+	const pageHeight = (rotation / 90) % 2 ? page.view[2] : page.view[3];
+	const scale = height / pageHeight;
+	const viewport = page.getViewport({ scale, rotation });
+	return viewport;
+}
+/**
+ * Calculate the rectangle that fits inside given client bounds.
+ * Maintains aspect ratio.
+ * @param {WIDTH|HEIGHT} mode size mode.
+ * @param {*} ratio aspect ratio w/h.
+ * @param {*} clientWidth client width.
+ * @param {*} clientHeight client height.
+ * @returns [width,height]
+ */
 const getPageDimensions = (mode, ratio, clientWidth, clientHeight) => {
+	console.log(`getPageDimensions(${mode},${ratio},${clientWidth},${clientHeight})`);
 	if (mode === HEIGHT) {
 		return ratio <= 1 ? [clientHeight*ratio, clientHeight] : [clientHeight*ratio, clientHeight];
 	} else {
@@ -215,14 +255,16 @@ const getPageDimensions = (mode, ratio, clientWidth, clientHeight) => {
 }
 /**
  * Populate the given array with "empty" pages in COLD zone.
+ * @param {PageCache} cache the page cache.
+ * @param {Number} sizeMode the size mode.
  * @param {String} id element id.
  * @param {Number} numPages number of pages to generate.
  * @param {Array} list output array.
  */
-const materializePages = (id, numPages, list) => {
+const materializePages = (cache, sizeMode, id, numPages, list) => {
 	for(let ix = 0; ix < numPages; ix++) {
 		const page = ix + 1;
-		list.push(new PageContext(`${id}-page-${page}`, ix, page, page.toString()));
+		list.push(new PageContext(cache, sizeMode, `${id}-page-${page}`, ix, page, page.toString()));
 	}
 }
 /**
@@ -251,13 +293,11 @@ const pageZone = (pageIndex, currentPageIndex, pageCount, hotzone, warmzone) => 
  */
 class RenderState {
 	#currentPage
-	#pageCount
 	#hotzone
 	#warmzone
 	#pages
-	constructor(pages, pageCount, currentPage, hotzone, warmzone) {
+	constructor(pages, currentPage, hotzone, warmzone) {
 		this.#pages = pages;
-		this.#pageCount = pageCount;
 		this.#currentPage = currentPage;
 		this.#hotzone = hotzone;
 		this.#warmzone = warmzone;
@@ -268,53 +308,43 @@ class RenderState {
 	 * @returns the zone COLD,WARM,HOT,undefined.
 	 */
 	zone(page) {
-		return pageZone(page.index, this.#currentPage, this.#pageCount, this.#hotzone, this.#warmzone);
+		return pageZone(page.index, this.#currentPage, this.#pages.length, this.#hotzone, this.#warmzone);
 	}
 	/**
 	 * Scan the list of pages and output a list of their current zones.
 	 * @returns Array[{zone:Number,page:PageContext}] list of results.
 	 */
 	scan() {
-		const list = [];
+		/*const list = [];
 		for(let ix = 0; ix < this.#pages.length; ix++) {
 			const page = this.#pages[ix];
 			const zone = this.zone(page);
 			list.push({zone, page});
-		}
+		}*/
+		const list = this.#pages.map(px => { return { zone: this.zone(px), page: px }; });
 		return list;
 	}
 	/**
 	 * Take the list of scan results and select tiles (to put into DOM).
-	 * @param {Array[]} scan list returned from scan().
-	 * @param {*} count number of tiles; undefined for all pages.
+	 * @param {Array[{zone,page}]} scan list returned from scan().
+	 * @param {Number|undefined} count number of tiles; undefined for all pages.
 	 * @returns Selected number of tiles; MAY be fewer depending on boundaries.
 	 */
 	tiles(scan, count) {
 		const list = [];
-		let end = count ? count : this.#pageCount;
+		let end = count ? count : this.#pages.length;
 		for(let ix = 0; ix < end; ix++) {
-			if(ix < 0) continue;
-			if(ix >= this.#pageCount) continue;
+			if(this.#currentPage + ix >= scan.length) break;
 			if(scan.zone === COLD) continue;
 			list.push(scan[this.#currentPage + ix]);
 		}
 		return list;
-	}
-	/**
-	 * Traverse the list and pass "transitioning" items to the callback.
-	 * @param {Array} tiles list returned from tiles()
-	 * @param {Function} callback receives items transitioning.
-	 */
-	transition(tiles, callback) {
-		tiles.forEach(tx => {
-			if(tx.zone !== tx.page.state) callback(tx);
-		});
 	}
 }
 
 export {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
-	PageContext, RenderState, DocumentHandler_pdfjs,
+	PageContext, PageCache, RenderState, DocumentHandler_pdfjs,
 	getPageDimensions, materializePages, pageZone, makeViewport,
 }

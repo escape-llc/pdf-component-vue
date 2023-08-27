@@ -1,9 +1,10 @@
 <script>
 import PdfComponent from '../components/PdfComponent.vue'
 import PdfPage from '../components/PdfPage.vue'
+import { WIDTH, HEIGHT } from '../components/PageContext';
 
 export default {
-	name: "Demo1View",
+	name: "Demo3View",
 	components: {PdfComponent, PdfPage},
 	methods: {
 		handleLoaded(doc) {
@@ -20,38 +21,61 @@ export default {
 			console.error("handle.render-error", ev);
 			this.errorMessage = ev.message;
 		},
+		handlePageClick(ev) {
+			console.log("handle.pageClick", ev);
+			if(ev.pageNumber === this.selectedPage) {
+				this.selectedPage = undefined;
+			}
+			else {
+				this.selectedPage = ev.pageNumber;
+			}
+		},
+		pageContainer(page) {
+			const css = ["page-container"];
+			if(page.pageNumber === this.selectedPage) {
+				css.push("page-selected");
+			}
+			return css.join(" ");
+		}
 	},
 	data() {
 		return {
 			url: "/tracemonkey.pdf",
 			errorMessage: null,
+			currentPage: 1,
+			sizeMode: HEIGHT,
+			selectedPage: null,
 		};
 	}
 }
 </script>
 <template>
-	<h1>Basic Scrolling Demo</h1>
+	<h1>Page Management Demo</h1>
 	<div v-if="errorMessage">{{errorMessage}}</div>
 	<PdfComponent
 		id="my-pdf"
 		:textLayer="true"
 		:annotationLayer="true"
+		:sizeMode="sizeMode"
+		:tileDimensions="[4,4]"
 		containerClass="document-container"
 		@loaded="handleLoaded"
 		@loading-failed="handleError"
 		@page-rendered="handlePageRendered"
 		@rendering-failed="handleRenderingFailed"
-		style="width:80vw" :source="url">
+		:source="url">
 		<template #pre-page="slotProps">
-			<div style="margin-left:.2rem;width:5rem">Page {{slotProps.pageNumber}}</div>
+			<div :style="{'grid-row': slotProps.gridRow,'grid-column': slotProps.gridColumn}">Page {{slotProps.pageNumber}}</div>
 		</template>
 		<template #page="slotProps">
 			<PdfPage :page="slotProps"
-				containerClass="page-container"
-				canvasClass="page-stack"
-				annotationLayerClass="page-stack"
-				textLayerClass="page-stack"
-			/>
+					:containerClass="pageContainer(slotProps)"
+					canvasClass="page-stack"
+					annotationLayerClass="page-stack"
+					textLayerClass="page-stack"
+					@page-click="handlePageClick"
+				>
+			</PdfPage>
 		</template>
 	</PdfComponent>
 </template>
@@ -60,30 +84,27 @@ export default {
 /* use a containing element to provide the scrolling */
 .document-container {
 	display: grid;
-	grid-template-columns: 100% 1fr;
-	grid-template-rows: auto 1fr;
+	grid-template-columns: repeat(4,1fr);
+	grid-template-rows: repeat(4,1fr);
 	row-gap: .5rem;
-	width: 100%;
-	height: auto;
+	column-gap: .5rem;
+	height: 80vh;
+	width: 80vw;
 	margin: auto;
 	box-sizing: border-box;
 }
-/* each page takes up one grid */
-.page-N {
-	grid-area: N / 1 / N / 1;
-	box-sizing: border-box;
-	background: transparent;
-}
-/* use grid to stack the layers */
 .page-container {
 	display: grid;
-	grid-template-columns: 100% 1fr;
-	grid-template-rows: 100% 1fr;
+	grid-template-columns: 100%;
+	grid-template-rows: 100%;
 	background: transparent;
 	margin: auto;
 	box-sizing: border-box;
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
-	width:100%;
+	height: 100%;
+}
+.page-selected {
+	border: 2px solid magenta;
 }
 </style>

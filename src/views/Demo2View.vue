@@ -45,7 +45,10 @@ export default {
 		@loading-failed="handleError"
 		@page-rendered="handlePageRendered"
 		@rendering-failed="handleRenderingFailed"
-		style="width:80vw" :source="url">
+		:source="url">
+		<template #pre-page="slotProps">
+			<div :style="{'grid-row': slotProps.gridRow,'grid-column': slotProps.gridColumn}">Page {{slotProps.pageNumber}}</div>
+		</template>
 		<template #page="slotProps">
 			<PdfPage :page="slotProps"
 				containerClass="page-container"
@@ -71,8 +74,8 @@ export default {
 	grid-template-rows: repeat(2,1fr);
 	row-gap: .5rem;
 	column-gap: .5rem;
-	background: yellow;
 	height: auto;
+	width:80vw;
 	margin: auto;
 	box-sizing: border-box;
 }

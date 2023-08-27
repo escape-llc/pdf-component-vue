@@ -1,9 +1,8 @@
 <template>
 	<div
-		ref="pageContainer"
+		ref="container"
 		:id="id || page?.id"
 		:class="containerClass"
-		style="width:100%"
 		:style="{'grid-row': page?.gridRow, 'grid-column': page?.gridColumn}"
 		@click="handlePageClick"
 	>
@@ -14,7 +13,8 @@
 		<template v-if="page && page.annotationLayer">
 			<div ref="annotationLayer" class="annotationLayer" style="position:relative" :class="annotationLayerClass" />
 		</template>
-		<slot name="page-overlay" v-bind="page"></slot>
+		<slot name="page-overlay" v-bind="page">
+		</slot>
 	</div>
 </template>
 <script>
@@ -33,11 +33,12 @@ export default {
 		textLayerClass: String,
 		annotationLayerClass: String,
 	},
+	emits: ["page-click"],
 	async mounted() {
 		await this.render();
 	},
 	created() {
-		this.$watch(()=>[this.page], async (oldPage, newPage) => {
+		this.$watch(() => this.page, async (newPage, oldPage) => {
 			console.log("watch.page (oldPage,newPage)", oldPage, newPage);
 			await this.$nextTick();
 			await this.render();
@@ -51,17 +52,25 @@ export default {
 	},
 	methods: {
 		handlePageClick(ev) {
-			console.log("handle.pageClick", ev, this.page);
+			if(!this.page) return;
+			this.$emit("page-click", {
+				id: this.page.id,
+				index: this.page.index,
+				pageNumber: this.page.pageNumber,
+				gridRow: this.page.gridRow,
+				gridColumn: this.page.gridColumn,
+				originalEvent: ev
+			});
 		},
 		async render() {
 			if(!this.page) return;
 			try {
-				console.log("PdfPage", this.page);
+				console.log("render", this.page);
 				if(this.page.state === WARM) {
-					this.page.placeholder(this.$refs.pageContainer, this.$refs.canvas);
+					this.page.placeholder(this.$refs.container, this.$refs.canvas);
 				}
 				if(this.page.state === HOT) {
-					await this.page.render(this.$refs.pageContainer, this.$refs.canvas, this.$refs.textLayer, this.$refs.annotationLayer);
+					await this.page.render(this.$refs.container, this.$refs.canvas, this.$refs.textLayer, this.$refs.annotationLayer);
 				}
 			}
 			catch(ex) {

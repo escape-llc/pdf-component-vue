@@ -1,6 +1,6 @@
 <template>
 	<div :id="id" :class="containerClass">
-		<template v-for="page in pages" :key="page.pageNumber">
+		<template v-for="page in pages" :key="page.index">
 			<slot name="pre-page" v-bind="page"></slot>
 			<slot name="page" v-bind="page"></slot>
 			<slot name="post-page" v-bind="page"></slot>
@@ -10,8 +10,10 @@
 <script>
 import * as pdf from 'pdfjs-dist/build/pdf.js'
 import { PDFLinkService } from 'pdfjs-dist/web/pdf_viewer.js'
-import { COLD, WARM, HOT,
-	PageContext, RenderState, DocumentHandler_pdfjs, materializePages,
+import {
+	COLD, WARM, HOT,
+	WIDTH, HEIGHT,
+	PageContext, PageCache, RenderState, DocumentHandler_pdfjs, materializePages,
 } from "./PageContext.js"
 
 import '../pdf-component-vue.css'
@@ -29,10 +31,14 @@ export default {
 	emits: [
 		"progress", "password-requested", "loaded", "loading-failed",
 		"page-rendered", "rendered", "rendering-failed",
-		'internal-link-clicked'
+		"internal-link-clicked"
 	],
 	props: {
 		id: String,
+		sizeMode: {
+			type: Number,
+			default: WIDTH,
+		},
 		source: {
 			type: [Object, String, URL, Uint8Array],
 			required: false,
@@ -114,6 +120,8 @@ export default {
 		this.document = null;
 		this.pageContexts = [];
 		this.handler = new DocumentHandler_pdfjs(this.$emit);
+		this.cache = null;
+		// end
 		this.$watch(
 			() => [
 				this.source,
@@ -133,7 +141,7 @@ export default {
 	mounted() {
 		this.load(this.source)
 		.then(_ => { return this.renderPages(); })
-		.then(_ => { console.log("it's all done"); });
+		.then(_ => { });
 	},
 	beforeDestroy() {
 		this.document?.destroy()
@@ -159,19 +167,24 @@ export default {
 			}
 			try {
 				this.document = await this.handler.load(source);
+				this.cache = new PageCache();
 				this.pageCount = this.document.numPages;
-				// load 1st page to get some info for placeholder tiles
-				materializePages(this.id, this.pageCount, this.pageContexts);
+				materializePages(this.cache, this.sizeMode, this.id, this.pageCount, this.pageContexts);
+				// load start page to get some info for placeholder tiles
 				// we got it so it's HOT now
-				const page1 = await this.handler.page(1);
-				console.log("rotation,page1", this.rotation, page1);
+				const startPage = 1;
+				const page = await this.handler.page(startPage);
+				const rotation = this.rotation || 0;
 				// size remaining pages
 				for(let ix = 0; ix < this.pageContexts.length; ix++) {
-					if(ix === 0) {
-						this.pageContexts[ix].hot(page1, this.rotation || 0);
+					const pc = this.pageContexts[ix];
+					if(pc.state === COLD) continue;
+					this.cache.retain(pc.pageNumber, page);
+					if(pc.pageNumber === startPage) {
+						pc.hot(rotation);
 					}
 					else {
-						this.pageContexts[ix].layout(page1);
+						pc.warm(rotation);
 					}
 				}
 				// initial load of pages so we get something in the DOM
@@ -191,13 +204,12 @@ export default {
 		 * @param {Array} tiles list of tiles.
 		 */
 		sequenceTiles(tiles) {
-			if(this.tileDimensions) {
-				// TODO support both row and column major layouts
-				let ix = 0;
-				for(let row = 0; row < this.tileDimensions[0]; row++) {
-					for(let column = 0; column < this.tileDimensions[1]; column++) {
-						tiles[ix++].page.grid(row + 1, column + 1);
-					}
+			if(!this.tileDimensions) return;
+			// TODO support both row and column major layouts
+			let ix = 0;
+			for(let row = 0; ix < tiles.length && row < this.tileDimensions[0]; row++) {
+				for(let column = 0; ix < tiles.length && column < this.tileDimensions[1]; column++) {
+					tiles[ix++].page.grid(row + 1, column + 1);
 				}
 			}
 		},
@@ -206,10 +218,7 @@ export default {
 		 * @param {Array} tiles list of (sequenced) tiles.
 		 */
 		updatePages(tiles) {
-			const pages = [];
-			tiles.forEach(tx => {
-				pages.push(tx.page.wrapper());
-			});
+			const pages = tiles.map(tx => tx.page.wrapper());
 			console.log("updatePages (pages)", pages);
 			this.pages = pages;
 			return pages;
@@ -218,7 +227,7 @@ export default {
 		 * Run the tile sequencing and return the list of tiles to render.
 		 */
 		getTiles() {
-			const state = new RenderState(this.pageContexts, this.pageCount, this.page - 1 || 0, this.hotZone, this.warmZone);
+			const state = new RenderState(this.pageContexts, this.page - 1 || 0, this.hotZone, this.warmZone);
 			const output = state.scan();
 			const tc = this.tileDimensions ? this.tileDimensions[0] * this.tileDimensions[1] : undefined;
 			const tiles = state.tiles(output, tc);
@@ -234,15 +243,27 @@ export default {
 			if (!this.document) {
 				return;
 			}
+			const rotation = this.rotation || 0;
 			const tiles = this.getTiles();
 			// start loading HOT pages
-			await Promise.all(tiles.filter(tx => tx.zone === HOT).map(async tx => {
-				if(tx.page.state !== HOT) {
-					console.log("HOT", tx);
-					const page = await this.handler.page(tx.page.pageNumber);
-					tx.page.hot(page, this.rotation);
-				}
+			await Promise.all(tiles.filter(tx => tx.zone === HOT && tx.page.state !== HOT).map(async tx => {
+				const page = await this.handler.page(tx.page.pageNumber);
+				this.cache.retain(tx.page.pageNumber, page);
+				tx.page.hot(rotation);
 			}));
+			// deal with remaining state changes
+			tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.zone).forEach(tx => {
+				console.log("transition new,old", tx.zone, tx.page.zone);
+				switch(tx.zone) {
+					case WARM:
+						tx.page.warm(rotation);
+						break;
+					case COLD:
+						this.cache.evict(tx.page.pageNumber);
+						tx.page.cold();
+						break;
+				}
+			});
 			// final swap-a-roo
 			this.updatePages(tiles);
 		},
