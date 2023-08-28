@@ -56,6 +56,7 @@ export default {
 			this.$emit("page-click", {
 				id: this.page.id,
 				index: this.page.index,
+				state: this.page.state,
 				pageNumber: this.page.pageNumber,
 				gridRow: this.page.gridRow,
 				gridColumn: this.page.gridColumn,

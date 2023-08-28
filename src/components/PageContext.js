@@ -128,8 +128,6 @@ class PageContext {
 	#gridRow
 	#gridColumn
 	#rotation
-	#placeholderWidth
-	#placeholderHeight
 	#didRender = false
 	renderText = true
 	renderAnno = true
@@ -184,26 +182,30 @@ class PageContext {
 		canvas.height = viewport.height;
 	}
 	placeholder(container, canvas) {
-		console.log("placeholder didrender[index](row,col)(state,rotation)", this.#didRender, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
+		//console.log("placeholder didrender[index](row,col)(state,rotation)", this.#didRender, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
 		if(this.state !== WARM) return;
 		if(!container) return;
 		if(!canvas) return;
-		console.log("placeholder client(w,h)", container.clientWidth, container.clientHeight);
+		//console.log("placeholder client(w,h)", container.clientWidth, container.clientHeight);
 		const viewport = this.#cache.viewport(this.#pageNumber, this.#sizeMode, container.clientWidth, container.clientHeight, this.#rotation || 0);
 		this.#configure(viewport, container, canvas);
 	}
 	async render(container, canvas, div1, div2) {
-		console.log("render didrender,mode[index](row,col)(state,rotation)", this.#didRender, this.#sizeMode, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
+		//console.log("render didrender,mode[index](row,col)(state,rotation)", this.#didRender, this.#sizeMode, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
 		if(this.#didRender) return;
 		if(this.state !== HOT) return;
 		if(!container) return;
 		if(!canvas) return;
-		console.log("render client(w,h)", container.clientWidth, container.clientHeight);
+		//console.log("render client(w,h)", container.clientWidth, container.clientHeight);
 		const viewport = this.#cache.viewport(this.#pageNumber, this.#sizeMode, container.clientWidth, container.clientHeight, this.#rotation || 0);
 		this.#configure(viewport, container, canvas);
 		// MUST set this before we async anything
 		this.#didRender = true;
-		await this.#cache.render(this.#pageNumber, viewport, canvas, div1, div2);
+		await this.#cache.render(
+			this.#pageNumber, viewport, canvas,
+			this.renderText ? div1 : null,
+			this.renderAnno ? div2 : null
+		);
 	}
 	hot(rotation) {
 		console.log("hot", this.#didRender, this.#index);
@@ -222,35 +224,6 @@ class PageContext {
 		this.#rotation = rotation;
 		this.#state = WARM;
 		this.#didRender = false;
-	}
-}
-const makeViewport = (page, width, rotation) => {
-	const pageWidth = (rotation / 90) % 2 ? page.view[3] : page.view[2];
-	const scale = width / pageWidth;
-	const viewport = page.getViewport({ scale, rotation });
-	return viewport;
-}
-const makeViewportByHeight = (page, height, rotation) => {
-	const pageHeight = (rotation / 90) % 2 ? page.view[2] : page.view[3];
-	const scale = height / pageHeight;
-	const viewport = page.getViewport({ scale, rotation });
-	return viewport;
-}
-/**
- * Calculate the rectangle that fits inside given client bounds.
- * Maintains aspect ratio.
- * @param {WIDTH|HEIGHT} mode size mode.
- * @param {*} ratio aspect ratio w/h.
- * @param {*} clientWidth client width.
- * @param {*} clientHeight client height.
- * @returns [width,height]
- */
-const getPageDimensions = (mode, ratio, clientWidth, clientHeight) => {
-	console.log(`getPageDimensions(${mode},${ratio},${clientWidth},${clientHeight})`);
-	if (mode === HEIGHT) {
-		return ratio <= 1 ? [clientHeight*ratio, clientHeight] : [clientHeight*ratio, clientHeight];
-	} else {
-		return ratio <= 1 ? [clientWidth, clientWidth*ratio] : [clientWidth, clientWidth/ratio];
 	}
 }
 /**
@@ -346,5 +319,5 @@ export {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
 	PageContext, PageCache, RenderState, DocumentHandler_pdfjs,
-	getPageDimensions, materializePages, pageZone, makeViewport,
+	materializePages, pageZone
 }

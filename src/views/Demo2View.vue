@@ -39,7 +39,6 @@ export default {
 		:annotationLayer="true"
 		:tileCount="6"
 		:tileDimensions="[2,3]"
-		:page="currentPage"
 		containerClass="document-container"
 		@loaded="handleLoaded"
 		@loading-failed="handleError"
