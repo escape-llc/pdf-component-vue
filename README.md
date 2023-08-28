@@ -34,7 +34,6 @@ Uses a current build of PDFJS.
   * This includes the `page` itself!
 * Have  "smart" page management OOTB.
 * Support real-time scrolling via `IntersectionObserver`.
-* Leverage the component nature and slots.
 * Have "smart" page sizing based on containing element.
 
 # Slots
