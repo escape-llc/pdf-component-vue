@@ -8,9 +8,10 @@ import { RouterLink, RouterView } from 'vue-router'
 			<RouterLink to="/demo1">Scrolling</RouterLink>
 			<RouterLink to="/demo2">Tiles 6-up</RouterLink>
 			<RouterLink to="/demo3">Page Management</RouterLink>
+			<RouterLink to="/demo4">Load Your Own PDF</RouterLink>
 		</nav>
 	</header>
-	<div style="margin:auto;padding:2rem;width:100%">
+	<div>
 		<RouterView />
 	</div>
 </template>

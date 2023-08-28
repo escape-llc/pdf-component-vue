@@ -58,6 +58,7 @@ export default {
 		:annotationLayer="true"
 		:sizeMode="sizeMode"
 		:tileDimensions="[4,4]"
+		:hotZone="3"
 		containerClass="document-container"
 		@loaded="handleLoaded"
 		@loading-failed="handleError"

@@ -124,3 +124,7 @@ say 100.
 
 What this means is that for the 1000 page document, only 100 "pages" are represented in the DOM at any point (Hot + Warm), providing enough
 elements for scrolling to work.
+
+# Thanks
+
+* Author of `vue-pdf-embed` for inspiration https://github.com/hrynko/vue-pdf-embed/blob/master/src/vue-pdf-embed.vue

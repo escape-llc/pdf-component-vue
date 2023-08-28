@@ -14,6 +14,10 @@ class DocumentHandler {
 }
 class PageCache {
 	#map = new Map();
+	#linkService
+	constructor(linkService) {
+		this.#linkService = linkService;
+	}
 	retain(pageNumber, page) {
 		const width = page.view[2];
 		const height = page.view[3];
@@ -53,7 +57,7 @@ class PageCache {
 		throw new Error(`viewport: ${mode}: unknown mode`);
 	}
 	async render(pageNumber, viewport, canvas, div1, div2) {
-		if(!this.#map.has(pageNumber)) throw new Error(`render: page {pageNumber} not in cache`);
+		if(!this.#map.has(pageNumber)) throw new Error(`render: page ${pageNumber} not in cache`);
 		const entry = this.#map.get(pageNumber);
 		await entry.page.render({
 			canvasContext: canvas.getContext('2d'),
@@ -70,7 +74,7 @@ class PageCache {
 			const options = {
 				annotations: await entry.page.getAnnotations(),
 				div: div2,
-				//linkService: this.linkService,
+				linkService: this.#linkService,
 				page: entry.page,
 				renderInteractiveForms: false,
 				viewport: viewport/*.clone({
@@ -176,8 +180,8 @@ class PageContext {
 	}
 	#configure(viewport, container, canvas) {
 		container.style.setProperty("--scale-factor", viewport.scale);
-		container.style.setProperty("--viewport-width", viewport.width);
-		container.style.setProperty("--viewport-height", viewport.height);
+		container.style.setProperty("--viewport-width", Math.floor(viewport.width));
+		container.style.setProperty("--viewport-height", Math.floor(viewport.height));
 		canvas.width = viewport.width;
 		canvas.height = viewport.height;
 	}

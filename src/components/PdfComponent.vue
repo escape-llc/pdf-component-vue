@@ -59,6 +59,7 @@ export default {
 			validator(value) {
 				if(value === null || value === undefined) return true;
 				if(value <= 0) throw new Error("hotZone: must be greater than zero");
+				return true;
 			}
 		},
 		warmZone: {
@@ -66,6 +67,7 @@ export default {
 			validator(value) {
 				if(value === null || value === undefined) return true;
 				if(value <= 0) throw new Error("hotZone: must be greater than zero");
+				return true;
 			}
 		},
 		/**
@@ -144,10 +146,12 @@ export default {
 		.then(_ => { });
 	},
 	beforeDestroy() {
+		this.handler = null;
 		this.document?.destroy()
 		this.document = null;
 	},
 	beforeUnmount() {
+		this.handler = null;
 		this.document?.destroy()
 		this.document = null;
 	},
@@ -167,7 +171,7 @@ export default {
 			}
 			try {
 				this.document = await this.handler.load(source);
-				this.cache = new PageCache();
+				this.cache = new PageCache(this.linkService);
 				this.pageCount = this.document.numPages;
 				materializePages(this.cache, this.sizeMode, this.id, this.pageCount, this.pageContexts);
 				// load start page to get some info for placeholder tiles
@@ -178,7 +182,6 @@ export default {
 				// size remaining pages
 				for(let ix = 0; ix < this.pageContexts.length; ix++) {
 					const pc = this.pageContexts[ix];
-					if(pc.state === COLD) continue;
 					this.cache.retain(pc.pageNumber, page);
 					if(pc.pageNumber === startPage) {
 						pc.hot(rotation);
@@ -252,8 +255,8 @@ export default {
 				tx.page.hot(rotation);
 			}));
 			// deal with remaining state changes
-			tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.zone).forEach(tx => {
-				console.log("transition new,old", tx.zone, tx.page.zone);
+			tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.state).forEach(tx => {
+				console.log("transition new,old", tx.zone, tx.page.state);
 				switch(tx.zone) {
 					case WARM:
 						tx.page.warm(rotation);
