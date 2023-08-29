@@ -34,11 +34,18 @@ export default {
 	},
 	emits: ["page-click"],
 	async mounted() {
+		console.log("mounted", this.page);
 		await this.render();
 	},
 	created() {
 		this.$watch(() => this.page, async (newPage, oldPage) => {
-			console.log("watch.page (oldPage,newPage)", oldPage, newPage);
+			//console.log("watch.page (oldPage,newPage)", oldPage, newPage);
+			if(oldPage.state !== newPage.state) {
+				console.warn(`page ${newPage.pageNumber} state-change ${oldPage.state}->${newPage.state}`);
+				if(oldPage.state === HOT && newPage.state === WARM) {
+					console.warn("page turning WARM (textElementCount)", newPage.pageNumber, this.$refs.textLayer.childElementCount);
+				}
+			}
 			await this.$nextTick();
 			await this.render();
 		});
@@ -65,7 +72,7 @@ export default {
 		async render() {
 			if(!this.page) return;
 			try {
-				console.log("render", this.page);
+				//console.log("render", this.page);
 				if(this.page.state === WARM) {
 					this.page.placeholder(this.$refs.container, this.$refs.canvas);
 				}

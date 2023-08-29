@@ -12,81 +12,9 @@ class DocumentHandler {
 		throw new Error("page: not implemented");
 	}
 }
-class PageCache {
-	#map = new Map();
-	#linkService
-	constructor(linkService) {
-		this.#linkService = linkService;
-	}
-	retain(pageNumber, page) {
-		const width = page.view[2];
-		const height = page.view[3];
-		const aspectRatio = width / height;
-		const entry = {
-			page,
-			pageNumber,
-			rotation: page.rotate,
-			aspectRatio,
-			width,
-			height
-		};
-		this.#map.set(pageNumber, entry);
-	}
-	evict(pageNumber) {
-		this.#map.delete(pageNumber);
-	}
-	has(pageNumber) {
-		return this.#map.has(pageNumber);
-	}
-	viewport(pageNumber, mode, width, height, rotation) {
-		if(!this.#map.has(pageNumber)) throw new Error(`viewport: page {pageNumber} not in cache`);
-		const entry = this.#map.get(pageNumber);
-		const pageRotation = entry.rotation + rotation;
-		switch(mode) {
-			case WIDTH:
-				const pageWidth = (pageRotation / 90) % 2 ? entry.height : entry.width;
-				const scalew = width / pageWidth;
-				const viewportw = entry.page.getViewport({ scale: scalew, rotation });
-				return viewportw;
-			case HEIGHT:
-				const pageHeight = (pageRotation / 90) % 2 ? entry.width : entry.height;
-				const scaleh = height / pageHeight;
-				const viewporth = entry.page.getViewport({ scale: scaleh, rotation });
-				return viewporth;
-		}
-		throw new Error(`viewport: ${mode}: unknown mode`);
-	}
-	async render(pageNumber, viewport, canvas, div1, div2) {
-		if(!this.#map.has(pageNumber)) throw new Error(`render: page ${pageNumber} not in cache`);
-		const entry = this.#map.get(pageNumber);
-		await entry.page.render({
-			canvasContext: canvas.getContext('2d'),
-			viewport,
-		}).promise
-		if(div1) {
-			await pdf.renderTextLayer({
-				container: div1,
-				textContent: await entry.page.getTextContent(),
-				viewport,
-			}).promise
-		}
-		if(div2) {
-			const options = {
-				annotations: await entry.page.getAnnotations(),
-				div: div2,
-				linkService: this.#linkService,
-				page: entry.page,
-				renderInteractiveForms: false,
-				viewport: viewport/*.clone({
-					dontFlip: true,
-				})*/,
-				//imageResourcesPath: this.imageResourcesPath,
-			};
-			const anno = new pdf.AnnotationLayer(options);
-			anno.render(options);
-		}
-	}
-}
+/**
+ * DocumentHandler bound to the PDFJS document/page objects.
+ */
 class DocumentHandler_pdfjs extends DocumentHandler {
 	#document
 	#emit
@@ -118,6 +46,7 @@ class DocumentHandler_pdfjs extends DocumentHandler {
 	}
 }
 /**
+ * This class represents the current state of the page to child components (via wrapper).
  * This MUST NOT get Proxied it uses "#" properties.
  */
 class PageContext {
@@ -133,8 +62,17 @@ class PageContext {
 	#gridColumn
 	#rotation
 	#didRender = false
-	renderText = true
-	renderAnno = true
+	#renderText = true
+	#renderAnno = true
+	/**
+	 * Ctor.
+	 * @param {PageCache} cache required to render pages.
+	 * @param {Number} sm size mode WIDTH,HEIGHT.
+	 * @param {String} id page container ID.
+	 * @param {Number} index 0-relative index.
+	 * @param {Number} pageNumber 1-relative page number.
+	 * @param {String} pageTitle string version of page number, e.g. "iii".
+	 */
 	constructor(cache, sm, id, index, pageNumber, pageTitle) {
 		this.#cache = cache;
 		this.#sizeMode = sm;
@@ -155,8 +93,8 @@ class PageContext {
 			pageNumber: this.pageNumber,
 			gridRow: this.row,
 			gridColumn: this.column,
-			textLayer: this.renderText,
-			annotationLayer: this.renderAnno,
+			textLayer: this.#renderText,
+			annotationLayer: this.#renderAnno,
 			pageTitle: this.pageTitle,
 			render: async (container, canvas, div1, div2) => {
 				await this.render(container, canvas, div1, div2);
@@ -177,6 +115,10 @@ class PageContext {
 	grid(row, col) {
 		this.#gridRow = row;
 		this.#gridColumn = col;
+	}
+	layers(text, anno) {
+		this.#renderText = text;
+		this.#renderAnno = anno;
 	}
 	#configure(viewport, container, canvas) {
 		container.style.setProperty("--scale-factor", viewport.scale);
@@ -207,10 +149,15 @@ class PageContext {
 		this.#didRender = true;
 		await this.#cache.render(
 			this.#pageNumber, viewport, canvas,
-			this.renderText ? div1 : null,
-			this.renderAnno ? div2 : null
+			this.#renderText ? div1 : null,
+			this.#renderAnno ? div2 : null
 		);
 	}
+	/**
+	 * Switch to the HOT state.
+	 * @param {Number} rotation document-level rotation.
+	 * @returns 
+	 */
 	hot(rotation) {
 		console.log("hot", this.#didRender, this.#index);
 		if(this.#didRender) return;
@@ -218,11 +165,20 @@ class PageContext {
 		this.#state = HOT;
 		this.#didRender = false;
 	}
+	/**
+	 * Switch to the COLD state.
+	 */
 	cold() {
+		console.log("cold", this.#didRender, this.#index);
 		this.page = null;
 		this.#state = COLD;
 		this.#didRender = false;
 	}
+	/**
+	 * Switch to the WARM state.
+	 * @param {Number} rotation document-level rotation.
+	 * @returns 
+	 */
 	warm(rotation) {
 		console.log("warm", this.#didRender, this.#index);
 		this.#rotation = rotation;
@@ -322,6 +278,6 @@ class RenderState {
 export {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
-	PageContext, PageCache, RenderState, DocumentHandler_pdfjs,
+	PageContext, RenderState, DocumentHandler_pdfjs,
 	materializePages, pageZone
 }

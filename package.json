@@ -11,7 +11,7 @@
 	},
 	"dependencies": {
 		"vue": "^3.3.4",
-		"pdfjs-dist": "^3.9.179",
+		"pdfjs-dist": "^3.10.111",
 		"vue-router": "^4.2.4"
 	},
 	"devDependencies": {

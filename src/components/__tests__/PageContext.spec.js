@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 
-import { mount } from '@vue/test-utils'
 import * as pc from '../PageContext.js'
+import { PageCache } from '../PageCache.js';
 
 describe("pageZone", () => {
 	it("cp=1 hot=4", () => {
@@ -92,7 +92,7 @@ describe('PageContext', () => {
 	});
 	it("materialize pages", () => {
 		const list = [];
-		pc.materializePages(new pc.PageCache(), pc.WIDTH, "pdf", 5, list);
+		pc.materializePages(new PageCache(), pc.WIDTH, "pdf", 5, list);
 		expect(list.length).toBe(5);
 		function verify(lx, ix) {
 			expect(lx.id).toBe(`pdf-page-${lx.pageNumber}`);
@@ -115,7 +115,7 @@ describe("RenderState", () => {
 		const warm = undefined;
 		const current = 0;
 		const list = [];
-		pc.materializePages(new pc.PageCache(), pc.WIDTH, "pdf", pagecount, list);
+		pc.materializePages(new PageCache(), pc.WIDTH, "pdf", pagecount, list);
 		const state = new pc.RenderState(list, current, hot, warm);
 		const output = state.scan();
 		expect(output.length).toBe(pagecount);
@@ -136,7 +136,7 @@ describe("RenderState", () => {
 		const current = 0;
 		const tilect = undefined;
 		const list = [];
-		pc.materializePages(new pc.PageCache(), pc.WIDTH, "pdf", pagecount, list);
+		pc.materializePages(new PageCache(), pc.WIDTH, "pdf", pagecount, list);
 		const state = new pc.RenderState(list, current, hot, warm);
 		const output = state.scan();
 		expect(output.length).toBe(pagecount);
@@ -159,7 +159,7 @@ describe("RenderState", () => {
 		const current = 0;
 		const tilect = 4;
 		const list = [];
-		pc.materializePages(new pc.PageCache(), pc.WIDTH, "pdf", pagecount, list);
+		pc.materializePages(new PageCache(), pc.WIDTH, "pdf", pagecount, list);
 		expect(list.length).toBe(pagecount);
 		const state = new pc.RenderState(list, current, hot, warm);
 		const output = state.scan();

@@ -8,17 +8,20 @@
 	</div>
 </template>
 <script>
-import * as pdf from 'pdfjs-dist/build/pdf.js'
-import { PDFLinkService } from 'pdfjs-dist/web/pdf_viewer.js'
+import * as pdf from 'pdfjs-dist/build/pdf.js';
+import { PDFLinkService } from 'pdfjs-dist/web/pdf_viewer.js';
 import {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
-	PageContext, PageCache, RenderState, DocumentHandler_pdfjs, materializePages,
-} from "./PageContext.js"
+	RenderState, DocumentHandler_pdfjs, materializePages,
+} from "./PageContext.js";
+import { PageCache } from './PageCache.js';
+import * as tile from "./Tiles.js";
 
-import '../pdf-component-vue.css'
+import '../pdf-component-vue.css';
 
-pdf.GlobalWorkerOptions.workerSrc = "./pdf.worker.js";
+pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
+//pdf.GlobalWorkerOptions.workerSrc = "./pdf.worker.js";
 
 //if (import.meta.env.ENV === 'production') {
 //	pdf.GlobalWorkerOptions.workerSrc = "./pdf.worker.js";
@@ -80,9 +83,9 @@ export default {
 			default: 0,
 			validator(value) {
 				if (value % 90 !== 0) {
-					throw new Error('Rotation must be 0 or a multiple of 90.')
+					throw new Error('Rotation must be 0 or a multiple of 90.');
 				}
-				return true
+				return true;
 			},
 		},
 		/**
@@ -103,18 +106,17 @@ export default {
 	},
 	computed: {
 		linkService() {
-			if (!this.document || this.disableAnnotationLayer) {
-				return null
+			if (!this.document || !this.annotationLayer) {
+				return null;
 			}
-
-			const service = new PDFLinkService()
-			service.setDocument(this.document)
+			const service = new PDFLinkService();
+			service.setDocument(this.document);
 			service.setViewer({
 				scrollPageIntoView: ({ pageNumber }) => {
-					this.$emit('internal-link-clicked', pageNumber)
+					this.$emit('internal-link-clicked', pageNumber);
 				},
-			})
-			return service
+			});
+			return service;
 		},
 	},
 	created() {
@@ -127,8 +129,8 @@ export default {
 		this.$watch(
 			() => [
 				this.source,
-				this.disableAnnotationLayer,
-				this.disableTextLayer,
+				this.annotationLayer,
+				this.textLayer,
 				//this.page,
 				this.rotation,
 			],
@@ -174,14 +176,14 @@ export default {
 				this.cache = new PageCache(this.linkService);
 				this.pageCount = this.document.numPages;
 				materializePages(this.cache, this.sizeMode, this.id, this.pageCount, this.pageContexts);
+				// TODO initialize zones
 				// load start page to get some info for placeholder tiles
 				// we got it so it's HOT now
 				const startPage = 1;
 				const page = await this.handler.page(startPage);
 				const rotation = this.rotation || 0;
-				// size remaining pages
-				for(let ix = 0; ix < this.pageContexts.length; ix++) {
-					const pc = this.pageContexts[ix];
+				// size pages
+				this.pageContexts.forEach(pc => {
 					this.cache.retain(pc.pageNumber, page);
 					if(pc.pageNumber === startPage) {
 						pc.hot(rotation);
@@ -189,7 +191,7 @@ export default {
 					else {
 						pc.warm(rotation);
 					}
-				}
+				});
 				// initial load of pages so we get something in the DOM
 				const tiles = this.getTiles();
 				this.updatePages(tiles);
@@ -209,12 +211,20 @@ export default {
 		sequenceTiles(tiles) {
 			if(!this.tileDimensions) return;
 			// TODO support both row and column major layouts
+			const sequence = tile.rowMajor(tile.finite(this.tileDimensions[0]), () => tile.finite(this.tileDimensions[1]));
 			let ix = 0;
+			while(ix < tiles.length) {
+				const grid = sequence.next();
+				if(grid.done) break;
+				tiles[ix++].page.grid(grid.value.row + 1, grid.value.column + 1);
+			}
+			/*
 			for(let row = 0; ix < tiles.length && row < this.tileDimensions[0]; row++) {
 				for(let column = 0; ix < tiles.length && column < this.tileDimensions[1]; column++) {
 					tiles[ix++].page.grid(row + 1, column + 1);
 				}
 			}
+			*/
 		},
 		/**
 		 * Take the tiles obtain wrappers and update the reactive state.
