@@ -1,8 +1,7 @@
 <script>
-import PdfComponent from '../components/PdfComponent.vue'
-import PdfPage from '../components/PdfPage.vue'
-import { WIDTH, HEIGHT } from '../components/PageContext';
-import { ROW, TileConfiguration } from '../components';
+import { PdfComponent, PdfPage } from "../components"
+import { HEIGHT } from '../components';
+import { ROW, TileConfiguration, PageManagement_Default } from '../components';
 
 export default {
 	name: "Demo3View",
@@ -10,6 +9,7 @@ export default {
 	methods: {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
+			this.selectedPage = 1;
 		},
 		handleError(ev) {
 			console.error("handle.load-error", ev);
@@ -39,6 +39,9 @@ export default {
 			return css.join(" ");
 		}
 	},
+	computed: {
+		pages() { return new PageManagement_Default(this.selectedPage - 1, 3, undefined); }
+	},
 	data() {
 		return {
 			url: "/tracemonkey.pdf",
@@ -60,7 +63,7 @@ export default {
 		:annotationLayer="true"
 		:sizeMode="sizeMode"
 		:tileConfiguration="tiles"
-		:hotZone="3"
+		:pageManagement="pages"
 		containerClass="document-container"
 		@loaded="handleLoaded"
 		@loading-failed="handleError"

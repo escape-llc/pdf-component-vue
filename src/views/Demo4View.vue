@@ -1,6 +1,5 @@
 <script>
-import PdfComponent from '../components/PdfComponent.vue'
-import PdfPage from '../components/PdfPage.vue'
+import { PdfComponent, PdfPage } from "../components"
 
 export default {
 	name: "Demo4View",

@@ -1,7 +1,6 @@
 <script>
-import PdfComponent from '../components/PdfComponent.vue'
-import PdfPage from '../components/PdfPage.vue'
-import { ROW, TileConfiguration } from '../components';
+import { PdfComponent, PdfPage } from "../components"
+import { ROW, TileConfiguration } from "../components"
 
 export default {
 	name: "Demo2View",

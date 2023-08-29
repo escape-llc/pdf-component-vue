@@ -3,6 +3,7 @@ import {
 	WIDTH, HEIGHT,
 } from "./PageContext";
 import { ROW, COLUMN, TileConfiguration } from "./Tiles";
+import { PageManagement, PageManagement_Default } from "./PageManagement";
 import PdfComponent from "./PdfComponent.vue";
 import PdfPage from "./PdfPage.vue";
 
@@ -13,5 +14,6 @@ export {
 	PdfPage,
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
-	ROW, COLUMN, TileConfiguration
+	ROW, COLUMN, TileConfiguration,
+	PageManagement, PageManagement_Default
 }

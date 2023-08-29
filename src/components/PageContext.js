@@ -101,6 +101,15 @@ class PageContext {
 			},
 			placeholder: (container, canvas) => {
 				this.placeholder(container, canvas);
+			},
+			matches(other) {
+				if(this.id !== other.id) return false;
+				if(this.state !== other.state) return false;
+				if(this.gridRow !== other.gridRow) return false;
+				if(this.gridColumn !== other.gridColumn) return false;
+				if(this.textLayer !== other.textLayer) return false;
+				if(this.annotationLayer !== other.annotationLayer) return false;
+				return true;
 			}
 		};
 	}
@@ -160,7 +169,6 @@ class PageContext {
 	 */
 	hot(rotation) {
 		console.log("hot", this.#didRender, this.#index);
-		if(this.#didRender) return;
 		this.#rotation = rotation;
 		this.#state = HOT;
 		this.#didRender = false;
@@ -170,7 +178,6 @@ class PageContext {
 	 */
 	cold() {
 		console.log("cold", this.#didRender, this.#index);
-		this.page = null;
 		this.#state = COLD;
 		this.#didRender = false;
 	}
@@ -248,12 +255,6 @@ class RenderState {
 	 * @returns Array[{zone:Number,page:PageContext}] list of results.
 	 */
 	scan() {
-		/*const list = [];
-		for(let ix = 0; ix < this.#pages.length; ix++) {
-			const page = this.#pages[ix];
-			const zone = this.zone(page);
-			list.push({zone, page});
-		}*/
 		const list = this.#pages.map(px => { return { zone: this.zone(px), page: px }; });
 		return list;
 	}

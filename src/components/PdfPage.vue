@@ -40,14 +40,25 @@ export default {
 	created() {
 		this.$watch(() => this.page, async (newPage, oldPage) => {
 			//console.log("watch.page (oldPage,newPage)", oldPage, newPage);
-			if(oldPage.state !== newPage.state) {
-				console.warn(`page ${newPage.pageNumber} state-change ${oldPage.state}->${newPage.state}`);
-				if(oldPage.state === HOT && newPage.state === WARM) {
-					console.warn("page turning WARM (textElementCount)", newPage.pageNumber, this.$refs.textLayer.childElementCount);
+			let update = true;
+			const match = newPage.matches(oldPage);
+			if(!match) {
+				if(oldPage.state !== newPage.state) {
+					console.warn(`page ${newPage.pageNumber} state-change ${oldPage.state}->${newPage.state}`);
+					if(oldPage.state === HOT && newPage.state === WARM) {
+						//console.warn("page turning WARM (textElementCount)", newPage.pageNumber, this.$refs.textLayer.childElementCount);
+						this.$refs.textLayer.replaceChildren();
+						this.$refs.annotationLayer.replaceChildren();
+					}
 				}
 			}
-			await this.$nextTick();
-			await this.render();
+			else {
+				update = false;
+			}
+			if(update) {
+				await this.$nextTick();
+				await this.render();
+			}
 		});
 	},
 	data() {

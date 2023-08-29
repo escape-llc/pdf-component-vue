@@ -1,6 +1,5 @@
 <script>
-import PdfComponent from '../components/PdfComponent.vue'
-import PdfPage from '../components/PdfPage.vue'
+import { PdfComponent, PdfPage } from "../components"
 
 export default {
 	name: "Demo1View",
@@ -66,6 +65,7 @@ export default {
 	width: 100%;
 	height: auto;
 	margin: auto;
+	margin-bottom: 2rem;
 	box-sizing: border-box;
 }
 /* each page takes up one grid */

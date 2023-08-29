@@ -13,10 +13,11 @@ import { PDFLinkService } from 'pdfjs-dist/web/pdf_viewer.js';
 import {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
-	RenderState, DocumentHandler_pdfjs, materializePages,
+	DocumentHandler_pdfjs, materializePages,
 } from "./PageContext.js";
 import { PageCache } from './PageCache.js';
 import * as tile from "./Tiles.js";
+import * as page from "./PageManagement";
 
 import '../pdf-component-vue.css';
 
@@ -32,8 +33,9 @@ pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", im
 export default {
 	name: "PdfComponent",
 	emits: [
-		"progress", "password-requested", "loaded", "loading-failed",
-		"page-rendered", "rendered", "rendering-failed",
+		"progress", "password-requested",
+		"loaded", "loading-failed",
+		"rendered", "rendering-failed",
 		"internal-link-clicked"
 	],
 	props: {
@@ -47,22 +49,7 @@ export default {
 			required: false,
 		},
 		tileConfiguration: tile.TileConfiguration,
-		hotZone: {
-			type: Number,
-			validator(value) {
-				if (value === null || value === undefined) return true;
-				if (value <= 0) throw new Error("hotZone: must be greater than zero");
-				return true;
-			}
-		},
-		warmZone: {
-			type: Number,
-			validator(value) {
-				if (value === null || value === undefined) return true;
-				if (value <= 0) throw new Error("hotZone: must be greater than zero");
-				return true;
-			}
-		},
+		pageManagement: page.PageManagement,
 		/**
 		 * Desired ratio of canvas size to document size.
 		 * @values Number
@@ -89,7 +76,6 @@ export default {
 	},
 	data() {
 		return {
-			pageNums: [],
 			pages: [],
 			pageCount: null,
 		}
@@ -121,7 +107,6 @@ export default {
 				this.source,
 				this.annotationLayer,
 				this.textLayer,
-				//this.page,
 				this.rotation,
 			],
 			async ([newSource], [oldSource]) => {
@@ -130,7 +115,13 @@ export default {
 				}
 				await this.renderPages();
 			}
-		)
+		);
+		this.$watch(
+			() => this.pageManagement, async (nv, ov) => {
+				console.log("pageManagement", ov, nv);
+				await this.renderPages();
+			}
+		);
 	},
 	mounted() {
 		this.load(this.source)
@@ -191,7 +182,8 @@ export default {
 			} catch (e) {
 				this.document = null;
 				this.pageCount = null;
-				this.pageNums = [];
+				this.pages = [];
+				this.pageContexts = [];
 				this.$emit("loading-failed", e);
 			}
 		},
@@ -224,10 +216,11 @@ export default {
 		 * Run the tile sequencing and return the list of tiles to render.
 		 */
 		getTiles() {
-			const state = new RenderState(this.pageContexts, this.page - 1 || 0, this.hotZone, this.warmZone);
-			const output = state.scan();
-			const tc = this.tileConfiguration ? this.tileConfiguration.total : undefined;
-			const tiles = state.tiles(output, tc);
+			const pageIndex = 0;
+			const pm = this.pageManagement ? this.pageManagement : new page.PageManagement_Default(pageIndex, undefined, undefined);
+			const output = pm.execute(this.pageContexts);
+			const tc = this.tileConfiguration && !isNaN(this.tileConfiguration.total) ? this.tileConfiguration.total : undefined;
+			const tiles = page.tiles(output, pageIndex, tc, this.pageContexts.length);
 			this.sequenceTiles(tiles);
 			console.log("getTiles (output,tiles)", output, tiles);
 			return tiles;
