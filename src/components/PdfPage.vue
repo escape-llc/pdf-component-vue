@@ -34,8 +34,12 @@ export default {
 	},
 	emits: ["page-click", "rendered", "rendering-failed"],
 	async mounted() {
-		console.log("mounted", this.page);
+		//console.log("mounted", this.page);
 		await this.render();
+	},
+	unmounted() {
+		//console.log("unmounted", this.page);
+		this.page.unmounted();
 	},
 	created() {
 		this.$watch(() => this.page, async (newPage, oldPage) => {
@@ -45,7 +49,7 @@ export default {
 			if(!match) {
 				if(oldPage.state !== newPage.state) {
 					console.warn(`page ${newPage.pageNumber} state-change ${oldPage.state}->${newPage.state}`);
-					if(oldPage.state === HOT && newPage.state === WARM) {
+					if(oldPage.state === HOT && newPage.state !== HOT) {
 						//console.warn("page turning WARM (textElementCount)", newPage.pageNumber, this.$refs.textLayer.childElementCount);
 						this.$refs.textLayer.replaceChildren();
 						this.$refs.annotationLayer.replaceChildren();

@@ -1,5 +1,5 @@
 <script>
-import { PdfComponent, PdfPage } from "../components"
+import { PageManagement_Scroll, PdfComponent, PdfPage } from "../components"
 import { ROW, TileConfiguration } from "../components"
 
 export default {
@@ -20,6 +20,15 @@ export default {
 			console.error("handle.render-error", ev);
 			this.errorMessage = ev.message;
 		},
+		handlePreviousGroup(ev) {
+			this.currentPage = Math.max(1, this.currentPage - this.tiles.total);
+		},
+		handleNextGroup(ev) {
+			this.currentPage = this.currentPage + this.tiles.total;
+		},
+	},
+	computed: {
+		pages() { return new PageManagement_Scroll(this.currentPage - 1, this.tiles.total, undefined); }
 	},
 	data() {
 		return {
@@ -32,13 +41,15 @@ export default {
 }
 </script>
 <template>
-	<h1>Basic Tiles Demo</h1>
+	<h1>Tile Navigation Demo<button class="button" style="margin-left:1rem" @click="handlePreviousGroup">&lt;</button><button class="button" @click="handleNextGroup">&gt;</button></h1>
 	<div v-if="errorMessage">{{errorMessage}}</div>
+	<div>This demo uses Page Management to navigate through tiles, in this case 6 tiles.</div>
 	<PdfComponent
 		id="my-pdf"
 		:textLayer="true"
 		:annotationLayer="true"
 		:tileConfiguration="tiles"
+		:pageManagement="pages"
 		containerClass="document-container"
 		@loaded="handleLoaded"
 		@loading-failed="handleError"
@@ -87,5 +98,10 @@ export default {
 	box-sizing: border-box;
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
+}
+.button {
+	display: inline;
+	padding: .25rem;
+	vertical-align: middle;
 }
 </style>

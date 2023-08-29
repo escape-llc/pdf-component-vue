@@ -118,7 +118,7 @@ export default {
 		);
 		this.$watch(
 			() => this.pageManagement, async (nv, ov) => {
-				console.log("pageManagement", ov, nv);
+				//console.log("pageManagement", ov, nv);
 				await this.renderPages();
 			}
 		);
@@ -216,11 +216,10 @@ export default {
 		 * Run the tile sequencing and return the list of tiles to render.
 		 */
 		getTiles() {
-			const pageIndex = 0;
-			const pm = this.pageManagement ? this.pageManagement : new page.PageManagement_Default(pageIndex, undefined, undefined);
+			const pm = this.pageManagement ? this.pageManagement : new page.PageManagement_UpdateCache(0, undefined, undefined);
 			const output = pm.execute(this.pageContexts);
 			const tc = this.tileConfiguration && !isNaN(this.tileConfiguration.total) ? this.tileConfiguration.total : undefined;
-			const tiles = page.tiles(output, pageIndex, tc, this.pageContexts.length);
+			const tiles = page.tiles(output, pm.tileStart, tc);
 			this.sequenceTiles(tiles);
 			console.log("getTiles (output,tiles)", output, tiles);
 			return tiles;

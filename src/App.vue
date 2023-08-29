@@ -6,7 +6,7 @@ import { RouterLink, RouterView } from 'vue-router'
 		<nav>
 			<RouterLink to="/">Home</RouterLink>
 			<RouterLink to="/demo1">Scrolling</RouterLink>
-			<RouterLink to="/demo2">Tiles 6-up</RouterLink>
+			<RouterLink to="/demo2">Navigation</RouterLink>
 			<RouterLink to="/demo3">Page Management</RouterLink>
 			<RouterLink to="/demo4">Load Your Own PDF</RouterLink>
 		</nav>

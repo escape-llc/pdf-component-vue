@@ -1,7 +1,7 @@
 <script>
 import { PdfComponent, PdfPage } from "../components"
 import { HEIGHT } from '../components';
-import { ROW, TileConfiguration, PageManagement_Default } from '../components';
+import { ROW, TileConfiguration, PageManagement_UpdateCache } from '../components';
 
 export default {
 	name: "Demo3View",
@@ -40,7 +40,7 @@ export default {
 		}
 	},
 	computed: {
-		pages() { return new PageManagement_Default(this.selectedPage - 1, 3, undefined); }
+		pages() { return new PageManagement_UpdateCache(this.selectedPage - 1, 3, undefined); }
 	},
 	data() {
 		return {
@@ -57,6 +57,9 @@ export default {
 <template>
 	<h1>Page Management Demo</h1>
 	<div v-if="errorMessage">{{errorMessage}}</div>
+	<div>This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered.</div>
+	<div>The remaining pages are Warm and render as "placeholders".</div>
+	<div>Click on a page frame to change the "currentPage".  In a normal case, the unrendered tiles should not be visible to the user.</div>
 	<PdfComponent
 		id="my-pdf"
 		:textLayer="true"

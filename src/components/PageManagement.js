@@ -3,8 +3,9 @@ class PageManagement {
 	execute(pageContexts) {
 		return undefined;
 	}
+	get tileStart() { return 0; }
 }
-class PageManagement_Default extends PageManagement {
+class PageManagement_UpdateCache extends PageManagement {
 	pageIndex
 	hotZone
 	warmZone
@@ -22,9 +23,22 @@ class PageManagement_Default extends PageManagement {
 		return list;
 	}
 }
-const tiles = (scan, pageIndex, tileCount, pageCount) => {
+class PageManagement_Scroll extends PageManagement_UpdateCache {
+	constructor(pageIndex, hotZone, warmZone) {
+		super(pageIndex, hotZone, warmZone);
+	}
+	get tileStart() { return this.pageIndex; }
+}
+/**
+ * Take the smaller of tileCount and scan.length, starting at pageIndex.
+ * @param {Array} scan list of scan results.
+ * @param {Number} pageIndex starting index.
+ * @param {Number|undefined} tileCount tile count.  if undefined use scan.length.
+ * @returns 
+ */
+const tiles = (scan, pageIndex, tileCount) => {
 	const list = [];
-	let end = tileCount ? tileCount : pageCount;
+	let end = tileCount ? tileCount : scan.length;
 	for(let ix = 0; ix < end; ix++) {
 		if(pageIndex + ix >= scan.length) break;
 		if(scan.zone === COLD) continue;
@@ -33,4 +47,4 @@ const tiles = (scan, pageIndex, tileCount, pageCount) => {
 	return list;
 }
 
-export { PageManagement, PageManagement_Default, tiles }
+export { PageManagement, PageManagement_UpdateCache, PageManagement_Scroll, tiles }

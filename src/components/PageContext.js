@@ -102,6 +102,9 @@ class PageContext {
 			placeholder: (container, canvas) => {
 				this.placeholder(container, canvas);
 			},
+			unmounted: () => {
+				this.#didRender = false;
+			},
 			matches(other) {
 				if(this.id !== other.id) return false;
 				if(this.state !== other.state) return false;
