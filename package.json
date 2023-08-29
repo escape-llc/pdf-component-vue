@@ -9,9 +9,23 @@
 		"preview": "vite preview",
 		"test:unit": "vitest"
 	},
+	"files":[
+		"dist"
+	],
+	"exports": {
+		".": {
+			"import": "./dist/pdf-component-vue.es.js",
+			"require": "./dist/pdf-component-vue.umd.js"
+		},
+		"./dist/style.css": "./dist/style.css"
+	},
+	"main": "./dist/pdf-component-vue.umd.js",
+	"module": "./dist/pdf-component-vue.es.js",
 	"dependencies": {
+		"pdfjs-dist": "^3.10.111"
+	},
+	"peerDependencies": {
 		"vue": "^3.3.4",
-		"pdfjs-dist": "^3.10.111",
 		"vue-router": "^4.2.4"
 	},
 	"devDependencies": {

@@ -75,4 +75,38 @@ function* columnMajor(rowsfunc, columns) {
 		maj = major.next();
 	}
 }
-export { finite, infinite, grid, rowMajor, columnMajor }
+const ROW = "row", COLUMN = "column";
+class TileConfiguration {
+	direction
+	rows
+	columns
+	/**
+	 * Return the total cells or NaN if one of the dimensions is "auto".
+	 */
+	get total() { return this.rows*this.columns; }
+	constructor(direction, rows, columns) {
+		this.direction = direction;
+		this.rows = rows;
+		this.columns = columns;
+		if(isNaN(this.rows) && isNaN(this.columns)) throw new Error("TileConfiguration: both rows and columns are NaN");
+		switch(this.direction) {
+			case ROW:
+				if(isNaN(this.columns)) throw new Error("TileConfiguration.ROW: columns is NaN; must be a number");
+				break;
+			case COLUMN:
+				if(isNaN(this.rows)) throw new Error("TileConfiguration.COLUMN: rows is NaN; must be a number");
+				break;
+			default:
+				throw new Error(`TileConfiguration: '${this.direction}' unrecognized direction`);
+		}
+	}
+	sequence() {
+		switch(this.direction) {
+			case ROW:
+				return rowMajor(isNaN(this.rows) ? infinite() : finite(this.rows), () => finite(this.columns));
+			case COLUMN:
+				return columnMajor(() => finite(this.rows), isNaN(this.columns) ? infinite() : finite(this.columns));
+		}
+	}
+}
+export { finite, infinite, grid, rowMajor, columnMajor, ROW, COLUMN, TileConfiguration }

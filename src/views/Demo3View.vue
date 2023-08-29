@@ -2,6 +2,7 @@
 import PdfComponent from '../components/PdfComponent.vue'
 import PdfPage from '../components/PdfPage.vue'
 import { WIDTH, HEIGHT } from '../components/PageContext';
+import { ROW, TileConfiguration } from '../components';
 
 export default {
 	name: "Demo3View",
@@ -41,6 +42,7 @@ export default {
 	data() {
 		return {
 			url: "/tracemonkey.pdf",
+			tiles: new TileConfiguration(ROW, 4, 4),
 			errorMessage: null,
 			currentPage: 1,
 			sizeMode: HEIGHT,
@@ -57,7 +59,7 @@ export default {
 		:textLayer="true"
 		:annotationLayer="true"
 		:sizeMode="sizeMode"
-		:tileDimensions="[4,4]"
+		:tileConfiguration="tiles"
 		:hotZone="3"
 		containerClass="document-container"
 		@loaded="handleLoaded"

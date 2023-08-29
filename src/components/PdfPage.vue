@@ -32,7 +32,7 @@ export default {
 		textLayerClass: String,
 		annotationLayerClass: String,
 	},
-	emits: ["page-click"],
+	emits: ["page-click", "rendered", "rendering-failed"],
 	async mounted() {
 		console.log("mounted", this.page);
 		await this.render();
@@ -79,8 +79,10 @@ export default {
 				if(this.page.state === HOT) {
 					await this.page.render(this.$refs.container, this.$refs.canvas, this.$refs.textLayer, this.$refs.annotationLayer);
 				}
+				this.$emit("rendered", this.page);
 			}
 			catch(ex) {
+				this.$emit("rendering-failed", { page: this.page, error: ex });
 				console.error("page.render", ex);
 			}
 		},

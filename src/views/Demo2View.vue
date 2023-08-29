@@ -1,6 +1,7 @@
 <script>
 import PdfComponent from '../components/PdfComponent.vue'
 import PdfPage from '../components/PdfPage.vue'
+import { ROW, TileConfiguration } from '../components';
 
 export default {
 	name: "Demo2View",
@@ -26,6 +27,7 @@ export default {
 			url: "/tracemonkey.pdf",
 			errorMessage: null,
 			currentPage: 1,
+			tiles: new TileConfiguration(ROW, 2, 3),
 		};
 	}
 }
@@ -37,8 +39,7 @@ export default {
 		id="my-pdf"
 		:textLayer="true"
 		:annotationLayer="true"
-		:tileCount="6"
-		:tileDimensions="[2,3]"
+		:tileConfiguration="tiles"
 		containerClass="document-container"
 		@loaded="handleLoaded"
 		@loading-failed="handleError"

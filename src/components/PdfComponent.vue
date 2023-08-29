@@ -46,30 +46,20 @@ export default {
 			type: [Object, String, URL, Uint8Array],
 			required: false,
 		},
-		tileDimensions: {
-			type: Array,
-			validator(value) {
-				if(value === null || value === undefined) return true;
-				if(Array.isArray(value)) {
-					if(value.length !== 2) throw new Error("tileDimensions: array must have 2 elements [rows,columns]");
-					return true;
-				}
-				throw new Error("tileDimensions: must be array of dimension 2");
-			}
-		},
+		tileConfiguration: tile.TileConfiguration,
 		hotZone: {
 			type: Number,
 			validator(value) {
-				if(value === null || value === undefined) return true;
-				if(value <= 0) throw new Error("hotZone: must be greater than zero");
+				if (value === null || value === undefined) return true;
+				if (value <= 0) throw new Error("hotZone: must be greater than zero");
 				return true;
 			}
 		},
 		warmZone: {
 			type: Number,
 			validator(value) {
-				if(value === null || value === undefined) return true;
-				if(value <= 0) throw new Error("hotZone: must be greater than zero");
+				if (value === null || value === undefined) return true;
+				if (value <= 0) throw new Error("hotZone: must be greater than zero");
 				return true;
 			}
 		},
@@ -113,7 +103,7 @@ export default {
 			service.setDocument(this.document);
 			service.setViewer({
 				scrollPageIntoView: ({ pageNumber }) => {
-					this.$emit('internal-link-clicked', pageNumber);
+					this.$emit("internal-link-clicked", pageNumber);
 				},
 			});
 			return service;
@@ -144,8 +134,8 @@ export default {
 	},
 	mounted() {
 		this.load(this.source)
-		.then(_ => { return this.renderPages(); })
-		.then(_ => { });
+			.then(_ => { return this.renderPages(); })
+			.then(_ => { });
 	},
 	beforeDestroy() {
 		this.handler = null;
@@ -184,8 +174,9 @@ export default {
 				const rotation = this.rotation || 0;
 				// size pages
 				this.pageContexts.forEach(pc => {
+					pc.layers(this.textLayer, this.annotationLayer);
 					this.cache.retain(pc.pageNumber, page);
-					if(pc.pageNumber === startPage) {
+					if (pc.pageNumber === startPage) {
 						pc.hot(rotation);
 					}
 					else {
@@ -195,12 +186,13 @@ export default {
 				// initial load of pages so we get something in the DOM
 				const tiles = this.getTiles();
 				this.updatePages(tiles);
-				this.$emit('loaded', this.document);
+				this.$emit("loaded", this.document);
+				// on $nextTick all the pages are mounted
 			} catch (e) {
 				this.document = null;
 				this.pageCount = null;
 				this.pageNums = [];
-				this.$emit('loading-failed', e);
+				this.$emit("loading-failed", e);
 			}
 		},
 		/**
@@ -209,22 +201,14 @@ export default {
 		 * @param {Array} tiles list of tiles.
 		 */
 		sequenceTiles(tiles) {
-			if(!this.tileDimensions) return;
-			// TODO support both row and column major layouts
-			const sequence = tile.rowMajor(tile.finite(this.tileDimensions[0]), () => tile.finite(this.tileDimensions[1]));
+			if (!this.tileConfiguration) return;
+			const sequence = this.tileConfiguration.sequence();
 			let ix = 0;
-			while(ix < tiles.length) {
+			while (ix < tiles.length) {
 				const grid = sequence.next();
-				if(grid.done) break;
+				if (grid.done) break;
 				tiles[ix++].page.grid(grid.value.row + 1, grid.value.column + 1);
 			}
-			/*
-			for(let row = 0; ix < tiles.length && row < this.tileDimensions[0]; row++) {
-				for(let column = 0; ix < tiles.length && column < this.tileDimensions[1]; column++) {
-					tiles[ix++].page.grid(row + 1, column + 1);
-				}
-			}
-			*/
 		},
 		/**
 		 * Take the tiles obtain wrappers and update the reactive state.
@@ -242,7 +226,7 @@ export default {
 		getTiles() {
 			const state = new RenderState(this.pageContexts, this.page - 1 || 0, this.hotZone, this.warmZone);
 			const output = state.scan();
-			const tc = this.tileDimensions ? this.tileDimensions[0] * this.tileDimensions[1] : undefined;
+			const tc = this.tileConfiguration ? this.tileConfiguration.total : undefined;
 			const tiles = state.tiles(output, tc);
 			this.sequenceTiles(tiles);
 			console.log("getTiles (output,tiles)", output, tiles);
@@ -256,32 +240,37 @@ export default {
 			if (!this.document) {
 				return;
 			}
-			const rotation = this.rotation || 0;
-			const tiles = this.getTiles();
-			// start loading HOT pages
-			await Promise.all(tiles.filter(tx => tx.zone === HOT && tx.page.state !== HOT).map(async tx => {
-				const page = await this.handler.page(tx.page.pageNumber);
-				this.cache.retain(tx.page.pageNumber, page);
-				tx.page.hot(rotation);
-			}));
-			// deal with remaining state changes
-			tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.state).forEach(tx => {
-				console.log("transition new,old", tx.zone, tx.page.state);
-				switch(tx.zone) {
-					case WARM:
-						tx.page.warm(rotation);
-						break;
-					case COLD:
-						this.cache.evict(tx.page.pageNumber);
-						tx.page.cold();
-						break;
-				}
-			});
-			// final swap-a-roo
-			this.updatePages(tiles);
+			try {
+				const rotation = this.rotation || 0;
+				const tiles = this.getTiles();
+				// start loading HOT pages
+				await Promise.all(tiles.filter(tx => tx.zone === HOT && tx.page.state !== HOT).map(async tx => {
+					const page = await this.handler.page(tx.page.pageNumber);
+					this.cache.retain(tx.page.pageNumber, page);
+					tx.page.hot(rotation);
+				}));
+				// deal with remaining state changes
+				tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.state).forEach(tx => {
+					console.log("transition new,old", tx.zone, tx.page.state);
+					switch (tx.zone) {
+						case WARM:
+							tx.page.warm(rotation);
+							break;
+						case COLD:
+							this.cache.evict(tx.page.pageNumber);
+							tx.page.cold();
+							break;
+					}
+				});
+				// final swap-a-roo
+				this.updatePages(tiles);
+				this.$emit("rendered", Array.from(tiles));
+			}
+			catch (e) {
+				this.$emit("rendering-failed", e);
+			}
 		},
 	},
 }
 </script>
-<style scoped>
-</style>
+<style scoped></style>
