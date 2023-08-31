@@ -40,9 +40,16 @@ Uses a current build of PDFJS.
 
 Slots provide you places to inject content, including the `page` itself!
 
-Since the page is a slot, we are obliged to provide the `PdfPage` component for your benefit.  This encapsulates all the interaction
-with `pdfjs` to render the graphic, text, and annotation layers of the document.  It also "bakes in" the required CSS (via `style`) to make
-the layers render correctly.
+Since the page is a slot, we are obliged to provide the `PdfPage` component for your benefit.
+
+* Interaction between DOM elements and `pdfjs`
+  * Graphic, text, and annotation layers.
+* Mounting and unmounting while live.
+  * DOM elements require bookkeeping while mounted and the zone changes.
+* Re-render on size changes.
+  * Each rendering is fixed to the container's current size.
+* "Bake in" the required CSS (via `style`) to make the layers render correctly.
+  * The 3 layers must be "stacked" correctly for visual presentation.
 
 Why is the `page` a slot?  This is something no one else is doing in their components, but there is an important
 benefit:  You can directly attach your component to the props and emits of the `page` without relying on whatever
@@ -51,23 +58,20 @@ passthrough the top-level component offers.
 What can you do with this?
 
 * Attach handlers to receive page clicks directly, e.g. track "selected" page(s).
-* Alter the CSS styling of pages (`containerClass`), e.g. "highlighting" a clicked page (see demo 3).
+* Alter the CSS styling of (specific) pages (`containerClass`), e.g. "highlighting" a clicked page (see demo 3).
 * Not render the pages at all with `PdfPage` and substitute your own content instead.
 
 # Scrolling
 
-In the Continuous mode, it is important to host the component directly inside the element that provides scrolling,
-e.g. a `div` with `overflow` management so it has scroll bar(s).  This element is used with an `IntersectionObserver`
-to determine what tiles are visible.
+In the Continuous mode, it is important to host the component directly inside the element that provides scrolling, e.g. a `div` with `overflow` management so it has scroll bar(s).  This element is used with an `IntersectionObserver` to determine what tiles are visible.
 
-The most common case is vertically stacked tiles with size-to-width; the container's width is used as the rendering width, and the height is calulated from that using the page's aspect ratio.  The height should be `auto` in this case.
+The most common case is row-major-auto 1-column grid in `WIDTH` size mode (see below); the document container's width is used as the rendering width, and the height is calulated from that using the page's aspect ratio.  The height should be `auto` in this case.  The parent element of the document container will scroll (subject to CSS) vertically.
 
 # Auto-sizing
 
-Some components require you to set (one of the) dimensions to render properly, and this is not convenient.
+Some components require you to set (one of the) dimensions (usually in pixels not CSS units) to render properly, and this is not convenient.
 
-Rather than telling the component what size to use, the component uses the DOM elements to compute the size desired.  This allows you
-to set the size of the grid cells via CSS.
+Rather than telling the component what size to use, the component uses the DOM elements to compute the size desired.  This allows you to set the size of the grid cells via CSS.
 
 Sizing has two modes:
 
@@ -76,19 +80,29 @@ Sizing has two modes:
 
 In all cases, aspect ratio is preserved.
 
+## Resizing
+
+Because the `canvas` layer is literally a drawing of the page, it requires redrawing once the size of the page container element changes, for layout (conform to new size) resources (down size) and legibility (up size).  This is tracked and handled internally (via `ResizeObserver`).
+
 # Grid System
 
-Since the `grid` concept is really "baked in" there is some configuration required to use it.  In return, you get convenient
-`slotProps` for binding to the `grid-row` and `grid-column` CSS properties in your grid layout.
+Since the `grid` concept is "baked in" there is some configuration required to use it.  In return, you get convenient `slotProps` for binding to the `grid-row` and `grid-column` CSS properties in your grid layout.  This is necessary to properly position slot content in the same cell as the page's DOM elements.
 
-The document container element should use `display:grid` and specify row and column templates, and other `grid` properties as needed.  For
-a fixed grid, specify the `height` so grid track heights are defined and not `auto`.  See the demos for examples.
+The document container element should use `display:grid` and specify row and column templates, and other `grid` properties as needed.  For a finite grid, specify the overall `height` so grid track heights are defined and not `auto`.  See the demos for examples.
 
-Once the final set of `tiles` is calculated, the grid numbering is applied.  The `tileDimensions` elements are used for the row (0) and column (1) counts.
+Once the final set of `tiles` is calculated, the grid numbering is applied.  The `tileConfiguration` is used to calculate the row and column coordinates for each tile.
 
-By default (`tileCount` is `undefined`) you may overflow any fixed row count, e.g. your grid is smaller than the `pageCount`.  Use the `tileCount` to control how many tiles to use.  When `tileCount` is `undefined` the `pageCount` is used instead.
+If no `tileConfiguration` is given, the default is applied: the tile sequence is `grid-row`, and `grid-column` is not used (it is `undefined` and produces no CSS).
 
-> Currently only row-major numbering is supported.
+The `TileConfiguration` class provides the following features:
+
+* Ordering row and column major.
+* Fixed count in major and minor dimensions; build "finite" grids of fixed size.
+* Variable count in major dimension; allow for "auto" grids.
+
+When the grid has `auto` for the major dimension, you may use any number of pages, because it is set up to number all tiles.
+
+When the grid is finite, that number of tiles (maximum) is always generated.
 
 ## Display Modes
 
@@ -97,24 +111,45 @@ Using the grid system, you have options for layout:
 * Continuous - one continuous row/column of pages.  The number of tiles "visible" depends on the height of the stack currently presenting.  Use `WIDTH` mode (default) and a one-column grid (see below).
 * Tileset (n-up) - display a number of tiles in a grid pattern.  Use `HEIGHT` mode and explicit grid rows and columns (see below).
 
+These are informal based on your CSS and not an actual "mode" of the components.
+
 # Page Management
 
-Because documents may be gigantic, only *some of the pages* are rendered at any point.
+Because documents may be gigantic, only *some of the pages* should be rendered at any point.
 
 Page management is divided into these "zones":
 
-* Hot - materialized to the `canvas` and text/anno layers.
-* Warm - "placeholder" pages primarily to make scrolling happen, and provide space until pages go Hot.
-* Cold - pages outside the range of Hot and Warm pages.
+* Hot - fully materialized to the DOM.
+* Warm - "placeholder" pages primarily to make scrolling happen, and provide (correctly sized) space until pages go Hot.
+* Cold - outside the range of Hot and Warm pages.
 
-> The default settings make all pages `hot`, so the entire document is rendered upon loading.  This may not be appropriate in all cases.
+> The default settings make all pages `hot`, so the entire document is rendered upon loading.  This may not be appropriate for your use case.
 
-The zones center around the Current Page or just `page`.  The Hot zone directly impacts
-resource consumption, because the `canvas` etc. are rendered from `pdfjs`.  This is sized
-to provide a smooth UX while scrolling (i.e. moving the `page` a small amount).
+The zones center around the Current Page or just `page`.  The Hot zone directly impacts resource consumption, because the `canvas` etc. are rendered from `pdfjs`.  This is sized to provide a smooth UX while scrolling (i.e. moving the `page` a small amount).
 
-Each time the `page` moves, the zones are recalculated, and pages transition between zones as detected.  In particular, pages becoming
-`hot` are rendered.
+Each time the `page` moves, the zones are recalculated, and pages transition between zones as detected.  In particular, pages becoming `hot` are rendered.
+
+## Invoking Page Management
+
+The component has the `pageManagement` prop and implementations of the `PageManagement` class for you to invoke page management as necessary.
+
+The primary goal of Page Management is to ensure the tiles visible to the user are rendered, and other tiles not rendered, in order to balance resources and performance.  See the Page Management Demo for an illustration of how this works.
+
+It is important to note that the component has no sense of "current page" in the navigation sense; tracking this is left totally in your hands.
+
+If you do not specify `pageManagement` prop the default is used, which labels all pages `hot` to render the entire document upon loading.
+
+## Using Zones
+
+If you are presenting a finite grid, it makes little sense to render pages not visible, so you should set the `hot` zone to the number of tiles.  This prevents any other pages from being loaded with `pdfjs`.  Be aware that simply accessing the page from `pdfjs` has a cost that should be minimized.
+
+If you are in a "scrolling" scenario (e.g. a 1-column grid) then for the best control you should use an `IntersectionObserver` and invoke Page Management as needed, based on what tiles are reported as intersecting the viewport.  It is important to use the element with the scrolling, or intersection reports are not correct.
+
+> Come up with some kind of composable for this functionality, or just bake it in.
+
+## Changing the Start Tile
+
+Since there is no concept of "current page" from a navigation standpoint, there must still be a way to tell the component which tile to start rendering on, and Page Management is used for this as well.  See the Tiles Demo for details; it uses the `PageManagement_Scroll` class to "page" through a finite grid of 2x3 tiles.
 
 ## Very Large Documents
 
