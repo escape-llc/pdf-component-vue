@@ -2,7 +2,22 @@
 	<div :id="id" :class="containerClass">
 		<template v-for="page in pages" :key="page.index">
 			<slot name="pre-page" v-bind="page"></slot>
-			<slot name="page" v-bind="page"></slot>
+			<div
+				:ref="el => { mountContainer(page, el); }"
+				:id="page.id"
+				:class="pageContainerClass"
+				:style="{'grid-row': page.gridRow, 'grid-column': page.gridColumn}"
+				@click="handlePageClick($event, page)"
+			>
+				<canvas :ref="el => { mountCanvas(page, el); }" :class="canvasClass" />
+				<template v-if="textLayer">
+					<div :ref="el => { mountTextLayer(page, el); }" class="textLayer" style="position:relative" :class="textLayerClass" />
+				</template>
+				<template v-if="annotationLayer">
+					<div :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" style="position:relative" :class="annotationLayerClass" />
+				</template>
+				<slot name="page-overlay" v-bind="page"></slot>
+			</div>
 			<slot name="post-page" v-bind="page"></slot>
 		</template>
 	</div>
@@ -36,6 +51,7 @@ export default {
 		"progress", "password-requested",
 		"loaded", "loading-failed",
 		"rendered", "rendering-failed",
+		"page-click",
 		"internal-link-clicked"
 	],
 	props: {
@@ -73,6 +89,10 @@ export default {
 		containerClass: String,
 		textLayer: Boolean,
 		annotationLayer: Boolean,
+		pageContainerClass: String,
+		canvasClass: String,
+		textLayerClass: String,
+		annotationLayerClass: String,
 	},
 	data() {
 		return {
@@ -113,19 +133,17 @@ export default {
 				if (newSource !== oldSource) {
 					await this.load(newSource);
 				}
-				await this.renderPages();
 			}
 		);
 		this.$watch(
 			() => this.pageManagement, async (nv, ov) => {
-				//console.log("pageManagement", ov, nv);
+				console.log("pageManagement", ov, nv);
 				await this.renderPages();
 			}
 		);
 	},
 	mounted() {
 		this.load(this.source)
-			.then(_ => { return this.renderPages(); })
 			.then(_ => { });
 	},
 	beforeDestroy() {
@@ -156,7 +174,9 @@ export default {
 				this.document = await this.handler.load(source);
 				this.cache = new PageCache(this.linkService);
 				this.pageCount = this.document.numPages;
-				materializePages(this.cache, this.sizeMode, this.id, this.pageCount, this.pageContexts);
+				this.$emit("loaded", this.document);
+				console.log("AFTER emit.loaded");
+				materializePages(this.sizeMode, this.id, this.pageCount, this.pageContexts);
 				// TODO initialize zones
 				// load start page to get some info for placeholder tiles
 				// we got it so it's HOT now
@@ -165,7 +185,6 @@ export default {
 				const rotation = this.rotation || 0;
 				// size pages
 				this.pageContexts.forEach(pc => {
-					pc.layers(this.textLayer, this.annotationLayer);
 					this.cache.retain(pc.pageNumber, page);
 					if (pc.pageNumber === startPage) {
 						pc.hot(rotation);
@@ -176,9 +195,13 @@ export default {
 				});
 				// initial load of pages so we get something in the DOM
 				const tiles = this.getTiles();
-				this.updatePages(tiles);
-				this.$emit("loaded", this.document);
+				await this.processTiles(tiles);
+				const pages = this.updatePages(tiles);
 				// on $nextTick all the pages are mounted
+				await this.$nextTick();
+				// render pages
+				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
+				this.$emit("rendered", Array.from(tiles));
 			} catch (e) {
 				this.document = null;
 				this.pageCount = null;
@@ -207,8 +230,8 @@ export default {
 		 * @param {Array} tiles list of (sequenced) tiles.
 		 */
 		updatePages(tiles) {
-			const pages = tiles.map(tx => tx.page.wrapper());
-			console.log("updatePages (pages)", pages);
+			const pages = tiles.map(tx => tx.page);
+			console.log("updatePages (tiles)", pages);
 			this.pages = pages;
 			return pages;
 		},
@@ -235,32 +258,68 @@ export default {
 			try {
 				const rotation = this.rotation || 0;
 				const tiles = this.getTiles();
-				// start loading HOT pages
-				await Promise.all(tiles.filter(tx => tx.zone === HOT && tx.page.state !== HOT).map(async tx => {
-					const page = await this.handler.page(tx.page.pageNumber);
-					this.cache.retain(tx.page.pageNumber, page);
-					tx.page.hot(rotation);
-				}));
-				// deal with remaining state changes
-				tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.state).forEach(tx => {
-					console.log("transition new,old", tx.zone, tx.page.state);
-					switch (tx.zone) {
-						case WARM:
-							tx.page.warm(rotation);
-							break;
-						case COLD:
-							this.cache.evict(tx.page.pageNumber);
-							tx.page.cold();
-							break;
-					}
-				});
-				// final swap-a-roo
-				this.updatePages(tiles);
+				await this.processTiles(tiles);
+				if(this.pages.length === 0 || tiles[0].page.pageNumber !== this.pages[0].pageNumber) {
+					// changing tile sets
+					console.log("renderPages.change-tileset");
+					const pages = this.updatePages(tiles);
+					await this.$nextTick();
+				}
+				await Promise.all(tiles.map(async px => { await px.page.render(this.cache); }));
 				this.$emit("rendered", Array.from(tiles));
 			}
 			catch (e) {
 				this.$emit("rendering-failed", e);
 			}
+		},
+		async processTiles(tiles) {
+			// load turning-HOT pages (!HOT->HOT)
+			const rotation = this.rotation || 0;
+			await Promise.all(tiles.filter(tx => tx.zone === HOT && tx.page.state !== HOT).map(async tx => {
+				const page = await this.handler.page(tx.page.pageNumber);
+				this.cache.retain(tx.page.pageNumber, page);
+				tx.page.hot(rotation);
+			}));
+			// deal with remaining state changes
+			tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.state).forEach(tx => {
+				console.log("transition new,old", tx.page.id, tx.zone, tx.page.state);
+				switch (tx.zone) {
+					case WARM:
+						tx.page.warm(rotation);
+						break;
+					case COLD:
+						this.cache.evict(tx.page.pageNumber);
+						tx.page.cold();
+						break;
+				}
+			});
+		},
+		mountContainer(page, container) {
+			//console.log("mountContainer", page.id, container?.clientWidth, container?.clientHeight);
+			page.mountContainer(container);
+		},
+		mountCanvas(page, canvas) {
+			//console.log("mountCanvas", page.id, canvas?.clientWidth, canvas?.clientHeight);
+			page.mountCanvas(canvas);
+		},
+		mountTextLayer(page, el) {
+			//console.log("mountTextLayer", page.id, el?.clientWidth, el?.clientHeight);
+			page.mountTextLayer(el);
+		},
+		mountAnnotationLayer(page, el) {
+			//console.log("mountAnnotationLayer", page.id, el?.clientWidth, el?.clientHeight);
+			page.mountAnnotationLayer(el);
+		},
+		handlePageClick(ev, page) {
+			this.$emit("page-click", {
+				id: page.id,
+				index: page.index,
+				state: page.state,
+				pageNumber: page.pageNumber,
+				gridRow: page.gridRow,
+				gridColumn: page.gridColumn,
+				originalEvent: ev
+			});
 		},
 	},
 }

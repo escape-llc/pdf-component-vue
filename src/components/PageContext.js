@@ -50,120 +50,94 @@ class DocumentHandler_pdfjs extends DocumentHandler {
  * This MUST NOT get Proxied it uses "#" properties.
  */
 class PageContext {
-	#cache
-	#id
-	#state = COLD
-	#sizeMode = WIDTH
+	id
+	container
+	canvas
+	divText
+	divAnno
+	state = COLD
+	sizeMode = WIDTH
 	viewport
-	#index
-	#pageNumber
-	#pageTitle
-	#gridRow
-	#gridColumn
-	#rotation
-	#didRender = false
-	#renderText = true
-	#renderAnno = true
+	index
+	pageNumber
+	pageTitle
+	gridRow
+	gridColumn
+	rotation
+	didRender = false
 	/**
 	 * Ctor.
-	 * @param {PageCache} cache required to render pages.
 	 * @param {Number} sm size mode WIDTH,HEIGHT.
 	 * @param {String} id page container ID.
 	 * @param {Number} index 0-relative index.
 	 * @param {Number} pageNumber 1-relative page number.
 	 * @param {String} pageTitle string version of page number, e.g. "iii".
 	 */
-	constructor(cache, sm, id, index, pageNumber, pageTitle) {
-		this.#cache = cache;
-		this.#sizeMode = sm;
-		this.#id = id;
-		this.#index = index;
-		this.#pageNumber = pageNumber;
-		this.#pageTitle = pageTitle;
+	constructor(sm, id, index, pageNumber, pageTitle) {
+		this.sizeMode = sm;
+		this.id = id;
+		this.index = index;
+		this.pageNumber = pageNumber;
+		this.pageTitle = pageTitle;
 	}
-	/**
-	 * This is entirely so Vue does not apply Proxy to instances of PageContext.
-	 * @returns new instance.
-	 */
-	wrapper() {
-		return {
-			id: this.#id,
-			state: this.#state,
-			index: this.#index,
-			pageNumber: this.pageNumber,
-			gridRow: this.row,
-			gridColumn: this.column,
-			textLayer: this.#renderText,
-			annotationLayer: this.#renderAnno,
-			pageTitle: this.pageTitle,
-			render: async (container, canvas, div1, div2) => {
-				await this.render(container, canvas, div1, div2);
-			},
-			placeholder: (container, canvas) => {
-				this.placeholder(container, canvas);
-			},
-			unmounted: () => {
-				this.#didRender = false;
-			},
-			matches(other) {
-				if(this.id !== other.id) return false;
-				if(this.state !== other.state) return false;
-				if(this.gridRow !== other.gridRow) return false;
-				if(this.gridColumn !== other.gridColumn) return false;
-				if(this.textLayer !== other.textLayer) return false;
-				if(this.annotationLayer !== other.annotationLayer) return false;
-				return true;
-			}
-		};
-	}
-	get row() { return this.#gridRow || (this.#index + 1); }
-	get column() { return this.#gridColumn; }
-	get id() { return this.#id; }
-	get state() { return this.#state; }
-	get index() { return this.#index; }
-	get pageNumber() { return this.#pageNumber; }
-	get pageTitle() { return this.#pageTitle; }
-	is(state) { return state === this.#state; }
+	get id() { return this.id; }
+	get state() { return this.state; }
+	get index() { return this.index; }
+	get pageNumber() { return this.pageNumber; }
+	get pageTitle() { return this.pageTitle; }
+	is(state) { return state === this.state; }
 	grid(row, col) {
-		this.#gridRow = row;
-		this.#gridColumn = col;
+		this.gridRow = row;
+		this.gridColumn = col;
 	}
-	layers(text, anno) {
-		this.#renderText = text;
-		this.#renderAnno = anno;
+	mountContainer(container) {
+		this.container = container;
+		if(!container) {
+			this.didRender = false;
+			return;
+		}
 	}
-	#configure(viewport, container, canvas) {
-		container.style.setProperty("--scale-factor", viewport.scale);
-		container.style.setProperty("--viewport-width", Math.floor(viewport.width));
-		container.style.setProperty("--viewport-height", Math.floor(viewport.height));
-		canvas.width = viewport.width;
-		canvas.height = viewport.height;
+	mountCanvas(canvas) {
+		this.canvas = canvas;
 	}
-	placeholder(container, canvas) {
-		//console.log("placeholder didrender[index](row,col)(state,rotation)", this.#didRender, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
-		if(this.state !== WARM) return;
-		if(!container) return;
-		if(!canvas) return;
-		//console.log("placeholder client(w,h)", container.clientWidth, container.clientHeight);
-		const viewport = this.#cache.viewport(this.#pageNumber, this.#sizeMode, container.clientWidth, container.clientHeight, this.#rotation || 0);
-		this.#configure(viewport, container, canvas);
+	mountTextLayer(el) {
+		this.divText = el;
 	}
-	async render(container, canvas, div1, div2) {
-		//console.log("render didrender,mode[index](row,col)(state,rotation)", this.#didRender, this.#sizeMode, this.index, this.#gridRow, this.#gridColumn, this.state, this.#rotation);
-		if(this.#didRender) return;
-		if(this.state !== HOT) return;
-		if(!container) return;
-		if(!canvas) return;
-		//console.log("render client(w,h)", container.clientWidth, container.clientHeight);
-		const viewport = this.#cache.viewport(this.#pageNumber, this.#sizeMode, container.clientWidth, container.clientHeight, this.#rotation || 0);
-		this.#configure(viewport, container, canvas);
-		// MUST set this before we async anything
-		this.#didRender = true;
-		await this.#cache.render(
-			this.#pageNumber, viewport, canvas,
-			this.#renderText ? div1 : null,
-			this.#renderAnno ? div2 : null
-		);
+	mountAnnotationLayer(el) {
+		this.divAnno = el;
+	}
+	async render(cache) {
+		if(!this.container) return;
+		if(!this.canvas) return;
+		if(this.didRender) return;
+		const viewport = cache.viewport(this.pageNumber, this.sizeMode, this.container.clientWidth, this.container.clientHeight, this.rotation || 0);
+		this.container.style.setProperty("--scale-factor", viewport.scale);
+		this.container.style.setProperty("--viewport-width", Math.floor(viewport.width));
+		this.container.style.setProperty("--viewport-height", Math.floor(viewport.height));
+		if(this.canvas) {
+			this.canvas.width = viewport.width;
+			this.canvas.height = viewport.height;
+		}
+		if(this.state !== HOT) {
+			this.divText?.replaceChildren();
+			this.divAnno?.replaceChildren();
+			return;
+		}
+		this.didRender = true;
+		try {
+			await cache.renderCanvas(this.pageNumber, viewport, this.canvas);
+		}
+		finally {
+			//this.didRender = false;
+		}
+		if(this.divText) {
+			this.divText.replaceChildren();
+			await cache.renderTextLayer(this.pageNumber, viewport, this.divText);
+		}
+		if(this.divAnno) {
+			this.divAnno.replaceChildren();
+			await cache.renderAnnotationLayer(this.pageNumber, viewport, this.divAnno);
+		}
 	}
 	/**
 	 * Switch to the HOT state.
@@ -171,18 +145,18 @@ class PageContext {
 	 * @returns 
 	 */
 	hot(rotation) {
-		console.log("hot", this.#didRender, this.#index);
-		this.#rotation = rotation;
-		this.#state = HOT;
-		this.#didRender = false;
+		console.log("hot", this.didRender, this.index);
+		this.rotation = rotation;
+		this.state = HOT;
+		this.didRender = false;
 	}
 	/**
 	 * Switch to the COLD state.
 	 */
 	cold() {
-		console.log("cold", this.#didRender, this.#index);
-		this.#state = COLD;
-		this.#didRender = false;
+		console.log("cold", this.didRender, this.index);
+		this.state = COLD;
+		this.didRender = false;
 	}
 	/**
 	 * Switch to the WARM state.
@@ -190,10 +164,10 @@ class PageContext {
 	 * @returns 
 	 */
 	warm(rotation) {
-		console.log("warm", this.#didRender, this.#index);
-		this.#rotation = rotation;
-		this.#state = WARM;
-		this.#didRender = false;
+		console.log("warm", this.didRender, this.index);
+		this.rotation = rotation;
+		this.state = WARM;
+		this.didRender = false;
 	}
 }
 /**
@@ -204,10 +178,10 @@ class PageContext {
  * @param {Number} numPages number of pages to generate.
  * @param {Array} list output array.
  */
-const materializePages = (cache, sizeMode, id, numPages, list) => {
+const materializePages = (sizeMode, id, numPages, list) => {
 	for(let ix = 0; ix < numPages; ix++) {
 		const page = ix + 1;
-		list.push(new PageContext(cache, sizeMode, `${id}-page-${page}`, ix, page, page.toString()));
+		list.push(new PageContext(sizeMode, `${id}-page-${page}`, ix, page, page.toString()));
 	}
 }
 /**
@@ -229,59 +203,10 @@ const pageZone = (pageIndex, currentPageIndex, pageCount, hotzone, warmzone) => 
 	if(Math.abs(distance) <= hotzone + warmzone) return WARM;
 	return COLD;
 }
-/**
- * Encapsulates the state needed to process the pages for rendering.
- * Pages are evaluated first before updating the data model.
- * HOT pages cannot be rendered until they appear in the DOM (via nextTick).
- */
-class RenderState {
-	#currentPage
-	#hotzone
-	#warmzone
-	#pages
-	constructor(pages, currentPage, hotzone, warmzone) {
-		this.#pages = pages;
-		this.#currentPage = currentPage;
-		this.#hotzone = hotzone;
-		this.#warmzone = warmzone;
-	}
-	/**
-	 * Determine the zone for the given page, relative to current properties.
-	 * @param {PageContext} page the page.
-	 * @returns the zone COLD,WARM,HOT,undefined.
-	 */
-	zone(page) {
-		return pageZone(page.index, this.#currentPage, this.#pages.length, this.#hotzone, this.#warmzone);
-	}
-	/**
-	 * Scan the list of pages and output a list of their current zones.
-	 * @returns Array[{zone:Number,page:PageContext}] list of results.
-	 */
-	scan() {
-		const list = this.#pages.map(px => { return { zone: this.zone(px), page: px }; });
-		return list;
-	}
-	/**
-	 * Take the list of scan results and select tiles (to put into DOM).
-	 * @param {Array[{zone,page}]} scan list returned from scan().
-	 * @param {Number|undefined} count number of tiles; undefined for all pages.
-	 * @returns Selected number of tiles; MAY be fewer depending on boundaries.
-	 */
-	tiles(scan, count) {
-		const list = [];
-		let end = count ? count : this.#pages.length;
-		for(let ix = 0; ix < end; ix++) {
-			if(this.#currentPage + ix >= scan.length) break;
-			if(scan.zone === COLD) continue;
-			list.push(scan[this.#currentPage + ix]);
-		}
-		return list;
-	}
-}
 
 export {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
-	PageContext, RenderState, DocumentHandler_pdfjs,
+	PageContext, DocumentHandler_pdfjs,
 	materializePages, pageZone
 }

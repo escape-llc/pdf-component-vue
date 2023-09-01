@@ -6,14 +6,15 @@ import { WIDTH, HEIGHT } from "./PageContext";
  * This should hide the PDFJS page objects from the remainder of the application.
  */
 class PageCache {
-	#map = new Map();
-	#linkService
+	_map = new Map();
+	_linkService
+	_imageResourcesPath
 	/**
 	 * Ctor.
 	 * @param {pdfjs.PDFLinkService} linkService Required for annotation rendering.
 	 */
 	constructor(linkService) {
-		this.#linkService = linkService;
+		this._linkService = linkService;
 	}
 	/**
 	 * Instruct cache to retain this page and its statistics.
@@ -32,14 +33,14 @@ class PageCache {
 			width,
 			height
 		};
-		this.#map.set(pageNumber, entry);
+		this._map.set(pageNumber, entry);
 	}
 	/**
 	 * Instruct cache to discard this page and its statistics.
 	 * @param {Number} pageNumber 1-relative page number.
 	 */
 	evict(pageNumber) {
-		this.#map.delete(pageNumber);
+		this._map.delete(pageNumber);
 	}
 	/**
 	 * Query the cache for the existence given page number.
@@ -47,7 +48,7 @@ class PageCache {
 	 * @returns true: present; false: not present.
 	 */
 	has(pageNumber) {
-		return this.#map.has(pageNumber);
+		return this._map.has(pageNumber);
 	}
 	/**
 	 * Compute the active viewport for the page and given parameters.
@@ -59,8 +60,8 @@ class PageCache {
 	 * @returns new instance.
 	 */
 	viewport(pageNumber, mode, width, height, rotation) {
-		if(!this.#map.has(pageNumber)) throw new Error(`viewport: page {pageNumber} not in cache`);
-		const entry = this.#map.get(pageNumber);
+		if(!this._map.has(pageNumber)) throw new Error(`viewport: page {pageNumber} not in cache`);
+		const entry = this._map.get(pageNumber);
 		const pageRotation = entry.rotation + rotation;
 		switch(mode) {
 			case WIDTH:
@@ -77,47 +78,43 @@ class PageCache {
 		}
 		throw new Error(`viewport: ${mode}: unknown mode`);
 	}
-	/**
-	 * Render the page image/text/annotation layer(s).
-	 * @param {Number} pageNumber 1-relative page number.
-	 * @param {pdfjs.PageViewport} viewport current viewport.
-	 * @param {HTMLCanvasElement} canvas target canvas element.
-	 * @param {HTMLDivElement} div1 !NULL: target text layer element.
-	 * @param {HTMLDivElement} div2 !NULL: target annotation layer element.
-	 */
-	async render(pageNumber, viewport, canvas, div1, div2) {
-		if(!this.#map.has(pageNumber)) throw new Error(`render: page ${pageNumber} not in cache`);
-		const entry = this.#map.get(pageNumber);
+	async renderCanvas(pageNumber, viewport, canvas) {
+		if(!this._map.has(pageNumber)) throw new Error(`renderCanvas: page ${pageNumber} not in cache`);
+		const entry = this._map.get(pageNumber);
 		await entry.page.render({
 			canvasContext: canvas.getContext('2d'),
 			viewport,
 		}).promise
-		if(div1) {
-			const readableStream = entry.page.streamTextContent({
-				includeMarkedContent: true,
-				disableNormalization: true,
-			});
-			await pdfjs.renderTextLayer({
-				container: div1,
-				textContentSource: readableStream,
-				viewport,
-			}).promise
-		}
-		if(div2) {
-			const options = {
-				annotations: await entry.page.getAnnotations(),
-				div: div2,
-				linkService: this.#linkService,
-				page: entry.page,
-				renderInteractiveForms: false,
-				viewport: viewport/*.clone({
-					dontFlip: true,
-				})*/,
-				//imageResourcesPath: this.imageResourcesPath,
-			};
-			const anno = new pdfjs.AnnotationLayer(options);
-			anno.render(options);
-		}
+	}
+	async renderTextLayer(pageNumber, viewport, el) {
+		if(!this._map.has(pageNumber)) throw new Error(`renderTextLayer: page ${pageNumber} not in cache`);
+		const entry = this._map.get(pageNumber);
+		const readableStream = entry.page.streamTextContent({
+			includeMarkedContent: true,
+			disableNormalization: true,
+		});
+		await pdfjs.renderTextLayer({
+			container: el,
+			textContentSource: readableStream,
+			viewport,
+		}).promise
+	}
+	async renderAnnotationLayer(pageNumber, viewport, el) {
+		if(!this._map.has(pageNumber)) throw new Error(`renderAnnotationLayer: page ${pageNumber} not in cache`);
+		const entry = this._map.get(pageNumber);
+		const options = {
+			annotations: await entry.page.getAnnotations(),
+			div: el,
+			linkService: this._linkService,
+			page: entry.page,
+			renderInteractiveForms: false,
+			viewport: viewport/*.clone({
+				dontFlip: true,
+			})*/,
+			//imageResourcesPath: this.imageResourcesPath,
+		};
+		const anno = new pdfjs.AnnotationLayer(options);
+		anno.render(options);
 	}
 }
 

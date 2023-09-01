@@ -1,6 +1,6 @@
 <script>
 import { PageManagement_Scroll, PdfComponent, PdfPage } from "../components"
-import { ROW, TileConfiguration } from "../components"
+import { ROW, HEIGHT, TileConfiguration } from "../components"
 
 export default {
 	name: "Demo2View",
@@ -35,6 +35,7 @@ export default {
 			url: "/tracemonkey.pdf",
 			errorMessage: null,
 			currentPage: 1,
+			sizeMode: HEIGHT,
 			tiles: new TileConfiguration(ROW, 2, 3),
 		};
 	}
@@ -48,9 +49,14 @@ export default {
 		id="my-pdf"
 		:textLayer="true"
 		:annotationLayer="true"
+		:sizeMode="sizeMode"
 		:tileConfiguration="tiles"
 		:pageManagement="pages"
 		containerClass="document-container"
+		pageContainerClass="page-container"
+		canvasClass="page-stack"
+		annotationLayerClass="page-stack"
+		textLayerClass="page-stack"
 		@loaded="handleLoaded"
 		@loading-failed="handleError"
 		@page-rendered="handlePageRendered"
@@ -59,20 +65,6 @@ export default {
 		<template #pre-page="slotProps">
 			<div :style="{'grid-row': slotProps.gridRow,'grid-column': slotProps.gridColumn}">Page {{slotProps.pageNumber}}</div>
 		</template>
-		<template #page="slotProps">
-			<PdfPage :page="slotProps"
-				containerClass="page-container"
-				canvasClass="page-stack"
-				annotationLayerClass="page-stack"
-				textLayerClass="page-stack"
-			>
-			<!--
-			<template #page-overlay="slotProps">
-				<div class="page-stack" style="text-align:center">Page {{slotProps.pageNumber}}</div>
-			</template>
-			-->
-		</PdfPage>
-		</template>
 	</PdfComponent>
 </template>
 <style scoped>
@@ -80,24 +72,31 @@ export default {
 /* use a containing element to provide the scrolling */
 .document-container {
 	display: grid;
-	grid-template-columns: repeat(3,1fr);
-	grid-template-rows: repeat(2,1fr);
+	grid-template-columns: repeat(3,33%);
+	grid-template-rows: repeat(2,50%);
 	row-gap: .5rem;
 	column-gap: .5rem;
-	height: auto;
-	width:80vw;
+	height: 70vh;
+	width: 80vw;
 	margin: auto;
 	box-sizing: border-box;
 }
-.page-container {
+:deep(.page-container) {
 	display: grid;
 	grid-template-columns: 100%;
 	grid-template-rows: 100%;
 	background: transparent;
-	margin: auto;
 	box-sizing: border-box;
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
+	margin-left: auto;
+	margin-right:auto;
+}
+:deep(.page-stack) {
+	grid-area: 1 / 1 / 1 / 1 !important;
+	box-sizing: border-box;
+	background: transparent;
+	width:100%;
 }
 .button {
 	display: inline;

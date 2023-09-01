@@ -19,7 +19,7 @@
 </template>
 <script>
 import { COLD, WARM, HOT,
-	PageContext, RenderState, DocumentHandler_pdfjs, materializePages
+	PageContext, DocumentHandler_pdfjs, materializePages
 } from "./PageContext.js"
 
 export default {

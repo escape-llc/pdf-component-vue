@@ -30,10 +30,11 @@ export default {
 			else {
 				this.selectedPage = ev.pageNumber;
 			}
+			this.pageContainer = this.calcPageClass(ev.pageNumber);
 		},
-		pageContainer(page) {
+		calcPageClass(pageNumber) {
 			const css = ["page-container"];
-			if(page.pageNumber === this.selectedPage) {
+			if(pageNumber === this.selectedPage) {
 				css.push("page-selected");
 			}
 			return css.join(" ");
@@ -50,6 +51,7 @@ export default {
 			currentPage: 1,
 			sizeMode: HEIGHT,
 			selectedPage: null,
+			pageContainer: "page-container",
 		};
 	}
 }
@@ -57,8 +59,7 @@ export default {
 <template>
 	<h1>Page Management Demo</h1>
 	<div v-if="errorMessage">{{errorMessage}}</div>
-	<div>This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered.</div>
-	<div>The remaining pages are Warm and render as "placeholders".</div>
+	<div>This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered. The remaining pages are Warm and render as "placeholders".</div>
 	<div>Click on a page frame to change the "currentPage".  In a normal case, the unrendered tiles should not be visible to the user.</div>
 	<PdfComponent
 		id="my-pdf"
@@ -68,6 +69,11 @@ export default {
 		:tileConfiguration="tiles"
 		:pageManagement="pages"
 		containerClass="document-container"
+		:pageContainerClass="pageContainer"
+		canvasClass="page-stack"
+		annotationLayerClass="page-stack"
+		textLayerClass="page-stack"
+		@page-click="handlePageClick"
 		@loaded="handleLoaded"
 		@loading-failed="handleError"
 		@page-rendered="handlePageRendered"
@@ -76,16 +82,6 @@ export default {
 		<template #pre-page="slotProps">
 			<div :style="{'grid-row': slotProps.gridRow,'grid-column': slotProps.gridColumn}">Page {{slotProps.pageNumber}}</div>
 		</template>
-		<template #page="slotProps">
-			<PdfPage :page="slotProps"
-					:containerClass="pageContainer(slotProps)"
-					canvasClass="page-stack"
-					annotationLayerClass="page-stack"
-					textLayerClass="page-stack"
-					@page-click="handlePageClick"
-				>
-			</PdfPage>
-		</template>
 	</PdfComponent>
 </template>
 <style scoped>
@@ -93,8 +89,8 @@ export default {
 /* use a containing element to provide the scrolling */
 .document-container {
 	display: grid;
-	grid-template-columns: repeat(4,1fr);
-	grid-template-rows: repeat(4,1fr);
+	grid-template-columns: repeat(4,25%);
+	grid-template-rows: repeat(4,25%);
 	row-gap: .5rem;
 	column-gap: .5rem;
 	height: 80vh;
@@ -102,7 +98,7 @@ export default {
 	margin: auto;
 	box-sizing: border-box;
 }
-.page-container {
+:deep(.page-container) {
 	display: grid;
 	grid-template-columns: 100%;
 	grid-template-rows: 100%;
@@ -113,7 +109,13 @@ export default {
 	overflow: hidden;
 	height: 100%;
 }
-.page-selected {
+:deep(.page-stack) {
+	grid-area: 1 / 1 / 1 / 1 !important;
+	box-sizing: border-box;
+	background: transparent;
+	width:100%;
+}
+:deep(.page-selected) {
 	border: 2px solid magenta;
 }
 </style>
