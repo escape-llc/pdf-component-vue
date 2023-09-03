@@ -1,10 +1,10 @@
 <script>
-import { PageManagement_Scroll, PdfComponent, PdfPage } from "../components"
+import { PageManagement_Scroll, PdfComponent } from "../components"
 import { ROW, HEIGHT, TileConfiguration } from "../components"
 
 export default {
 	name: "Demo2View",
-	components: {PdfComponent, PdfPage},
+	components: {PdfComponent},
 	methods: {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
@@ -32,7 +32,7 @@ export default {
 	},
 	data() {
 		return {
-			url: "/tracemonkey.pdf",
+			url: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf",
 			errorMessage: null,
 			currentPage: 1,
 			sizeMode: HEIGHT,
@@ -47,12 +47,12 @@ export default {
 	<div>This demo uses Page Management to navigate through tiles, in this case 6 tiles.</div>
 	<PdfComponent
 		id="my-pdf"
+		class="document-container"
 		:textLayer="true"
 		:annotationLayer="true"
 		:sizeMode="sizeMode"
 		:tileConfiguration="tiles"
 		:pageManagement="pages"
-		containerClass="document-container"
 		pageContainerClass="page-container"
 		canvasClass="page-stack"
 		annotationLayerClass="page-stack"
@@ -76,21 +76,21 @@ export default {
 	grid-template-rows: repeat(2,50%);
 	row-gap: .5rem;
 	column-gap: .5rem;
-	height: 70vh;
-	width: 80vw;
 	margin: auto;
 	box-sizing: border-box;
+	height: 70vh;
+	width: 80vw;
 }
 :deep(.page-container) {
 	display: grid;
 	grid-template-columns: 100%;
 	grid-template-rows: 100%;
 	background: transparent;
+	margin:auto;
 	box-sizing: border-box;
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
-	margin-left: auto;
-	margin-right:auto;
+	height: 100%;
 }
 :deep(.page-stack) {
 	grid-area: 1 / 1 / 1 / 1 !important;

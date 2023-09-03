@@ -1,9 +1,9 @@
 <script>
-import { PdfComponent, PdfPage } from "../components"
+import { PdfComponent } from "../components"
 
 export default {
 	name: "Demo4View",
-	components: {PdfComponent, PdfPage},
+	components: {PdfComponent},
 	methods: {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
@@ -55,7 +55,7 @@ export default {
 		id="my-pdf"
 		:textLayer="true"
 		:annotationLayer="true"
-		containerClass="document-container"
+		class="document-container"
 		pageContainerClass="page-container"
 		canvasClass="page-stack"
 		annotationLayerClass="page-stack"
@@ -87,17 +87,11 @@ export default {
 	grid-template-columns: 1fr;
 	grid-template-rows: 1fr;
 	row-gap: .5rem;
-	width: 80vw;
-	height: auto;
 	margin: auto;
 	margin-bottom: 2rem;
 	box-sizing: border-box;
-}
-:deep(.page-stack) {
-	grid-area: 1 / 1 / 1 / 1 !important;
-	box-sizing: border-box;
-	background: transparent;
-	width:100%;
+	width: 80vw;
+	height: auto;
 }
 /* use grid to stack the layers */
 :deep(.page-container) {
@@ -109,6 +103,13 @@ export default {
 	box-sizing: border-box;
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
-	width:80vw;
+	width:100%;
+}
+/* stacks the page layers in the grid cell */
+:deep(.page-stack) {
+	grid-area: 1 / 1 / 1 / 1 !important;
+	box-sizing: border-box;
+	background: transparent;
+	width:100%;
 }
 </style>

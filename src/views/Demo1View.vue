@@ -1,9 +1,9 @@
 <script>
-import { PdfComponent, PdfPage } from "../components"
+import { PdfComponent } from "../components"
 
 export default {
 	name: "Demo1View",
-	components: {PdfComponent, PdfPage},
+	components: {PdfComponent},
 	methods: {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
@@ -22,7 +22,7 @@ export default {
 	},
 	data() {
 		return {
-			url: "/tracemonkey.pdf",
+			url: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf",
 			errorMessage: null,
 		};
 	}
@@ -33,9 +33,9 @@ export default {
 	<div v-if="errorMessage">{{errorMessage}}</div>
 	<PdfComponent
 		id="my-pdf"
+		class="document-container"
 		:textLayer="true"
 		:annotationLayer="true"
-		containerClass="document-container"
 		pageContainerClass="page-container"
 		canvasClass="page-stack"
 		annotationLayerClass="page-stack"
@@ -58,10 +58,11 @@ export default {
 	grid-template-columns: 1fr;
 	grid-template-rows: 1fr;
 	row-gap: .5rem;
-	height: auto;
 	margin: auto;
 	margin-bottom: 2rem;
 	box-sizing: border-box;
+	height: auto;
+	width:80vw;
 }
 /* use grid to stack the layers */
 :deep(.page-container) {
@@ -73,7 +74,7 @@ export default {
 	box-sizing: border-box;
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
-	width:80vw;
+	width:100%;
 }
 :deep(.page-stack) {
 	grid-area: 1 / 1 / 1 / 1 !important;

@@ -1,11 +1,11 @@
 <script>
-import { PdfComponent, PdfPage } from "../components"
+import { PdfComponent } from "../components"
 import { HEIGHT } from '../components';
 import { ROW, TileConfiguration, PageManagement_UpdateCache } from '../components';
 
 export default {
 	name: "Demo3View",
-	components: {PdfComponent, PdfPage},
+	components: {PdfComponent},
 	methods: {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
@@ -29,8 +29,13 @@ export default {
 			}
 			else {
 				this.selectedPage = ev.pageNumber;
+				if(ev.pageNumber > 0) {
+					this.cacheStartPage = ev.pageNumber;
+				}
 			}
-			this.pageContainer = this.calcPageClass(ev.pageNumber);
+		},
+		pageContainer(page) {
+			return this.calcPageClass(page.pageNumber);
 		},
 		calcPageClass(pageNumber) {
 			const css = ["page-container"];
@@ -41,17 +46,18 @@ export default {
 		}
 	},
 	computed: {
-		pages() { return new PageManagement_UpdateCache(this.selectedPage - 1, 3, undefined); }
+		pages() { return new PageManagement_UpdateCache(this.cacheStartPage - 1, 3, undefined); }
 	},
 	data() {
 		return {
-			url: "/tracemonkey.pdf",
+			url: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf",
 			tiles: new TileConfiguration(ROW, 4, 4),
 			errorMessage: null,
 			currentPage: 1,
 			sizeMode: HEIGHT,
 			selectedPage: null,
-			pageContainer: "page-container",
+			// MUST be initialized BEFORE loaded event
+			cacheStartPage: 1,
 		};
 	}
 }
@@ -60,15 +66,15 @@ export default {
 	<h1>Page Management Demo</h1>
 	<div v-if="errorMessage">{{errorMessage}}</div>
 	<div>This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered. The remaining pages are Warm and render as "placeholders".</div>
-	<div>Click on a page frame to change the "currentPage".  In a normal case, the unrendered tiles should not be visible to the user.</div>
+	<div>Click on a page frame to change the "currentPage".  In a typical case, the unrendered tiles are not visible to the user.</div>
 	<PdfComponent
 		id="my-pdf"
+		class="document-container"
 		:textLayer="true"
 		:annotationLayer="true"
 		:sizeMode="sizeMode"
 		:tileConfiguration="tiles"
 		:pageManagement="pages"
-		containerClass="document-container"
 		:pageContainerClass="pageContainer"
 		canvasClass="page-stack"
 		annotationLayerClass="page-stack"
@@ -93,10 +99,10 @@ export default {
 	grid-template-rows: repeat(4,25%);
 	row-gap: .5rem;
 	column-gap: .5rem;
-	height: 80vh;
-	width: 80vw;
 	margin: auto;
 	box-sizing: border-box;
+	height: 80vh;
+	width: 80vw;
 }
 :deep(.page-container) {
 	display: grid;

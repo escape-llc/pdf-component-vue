@@ -11,6 +11,7 @@ class PageManagement_UpdateCache extends PageManagement {
 	warmZone
 	constructor(pageIndex, hotZone, warmZone) {
 		super();
+		if(pageIndex < 0) throw new Error("pageIndex: must be GE zero");
 		this.pageIndex = pageIndex;
 		this.hotZone = hotZone;
 		this.warmZone = warmZone;
@@ -18,8 +19,8 @@ class PageManagement_UpdateCache extends PageManagement {
 	zone(page, count) {
 		return pageZone(page.index, this.pageIndex, count, this.hotZone, this.warmZone);
 	}
-	execute(pageContexts) {
-		const list = pageContexts.map(px => { return { zone: this.zone(px, pageContexts.length), page: px }; });
+	execute(pages) {
+		const list = pages.map(px => { return { zone: this.zone(px, pages.length), page: px }; });
 		return list;
 	}
 }

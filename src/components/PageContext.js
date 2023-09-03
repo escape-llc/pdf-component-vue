@@ -57,7 +57,6 @@ class PageContext {
 	divAnno
 	state = COLD
 	sizeMode = WIDTH
-	viewport
 	index
 	pageNumber
 	pageTitle
@@ -80,11 +79,6 @@ class PageContext {
 		this.pageNumber = pageNumber;
 		this.pageTitle = pageTitle;
 	}
-	get id() { return this.id; }
-	get state() { return this.state; }
-	get index() { return this.index; }
-	get pageNumber() { return this.pageNumber; }
-	get pageTitle() { return this.pageTitle; }
 	is(state) { return state === this.state; }
 	grid(row, col) {
 		this.gridRow = row;
@@ -141,8 +135,8 @@ class PageContext {
 	}
 	/**
 	 * Switch to the HOT state.
+	 * Resets didRender flag.
 	 * @param {Number} rotation document-level rotation.
-	 * @returns 
 	 */
 	hot(rotation) {
 		console.log("hot", this.didRender, this.index);
@@ -152,6 +146,7 @@ class PageContext {
 	}
 	/**
 	 * Switch to the COLD state.
+	 * Resets didRender flag.
 	 */
 	cold() {
 		console.log("cold", this.didRender, this.index);
@@ -160,8 +155,8 @@ class PageContext {
 	}
 	/**
 	 * Switch to the WARM state.
+	 * Resets didRender flag.
 	 * @param {Number} rotation document-level rotation.
-	 * @returns 
 	 */
 	warm(rotation) {
 		console.log("warm", this.didRender, this.index);
@@ -172,7 +167,6 @@ class PageContext {
 }
 /**
  * Populate the given array with "empty" pages in COLD zone.
- * @param {PageCache} cache the page cache.
  * @param {Number} sizeMode the size mode.
  * @param {String} id element id.
  * @param {Number} numPages number of pages to generate.
