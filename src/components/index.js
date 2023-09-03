@@ -5,13 +5,11 @@ import {
 import { ROW, COLUMN, TileConfiguration } from "./Tiles";
 import { PageManagement, PageManagement_UpdateCache, PageManagement_Scroll } from "./PageManagement";
 import PdfComponent from "./PdfComponent.vue";
-import PdfPage from "./PdfPage.vue";
 
 import "../pdf-component-vue.css";
 
 export {
 	PdfComponent,
-	PdfPage,
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
 	ROW, COLUMN, TileConfiguration,
