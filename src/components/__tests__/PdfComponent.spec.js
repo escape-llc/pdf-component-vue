@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 
 import { mount, flushPromises } from '@vue/test-utils'
 import PdfComponent from '../PdfComponent.vue'
-import PdfPage from '../PdfPage.vue'
 
 describe.skip('PdfComponent', () => {
 	const PDF = "http://localhost:5173/tracemonkey.pdf";

@@ -82,7 +82,7 @@ describe("pageZone", () => {
 });
 describe('PageContext', () => {
 	it('initial state', () => {
-		const page = new pc.PageContext(null, pc.WIDTH, "page-1", 0, 1, "1");
+		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
 		expect(page.id).toBe("page-1");
 		expect(page.index).toBe(0);
 		expect(page.pageNumber).toBe(1);
@@ -92,7 +92,7 @@ describe('PageContext', () => {
 	});
 	it("materialize pages", () => {
 		const list = [];
-		pc.materializePages(new PageCache(), pc.WIDTH, "pdf", 5, list);
+		pc.materializePages(pc.WIDTH, "pdf", 5, list);
 		expect(list.length).toBe(5);
 		function verify(lx, ix) {
 			expect(lx.id).toBe(`pdf-page-${lx.pageNumber}`);
@@ -106,75 +106,5 @@ describe('PageContext', () => {
 		verify(list[2], 2);
 		verify(list[3], 3);
 		verify(list[4], 4);
-	});
-});
-describe("RenderState", () => {
-	it("scan cp=0 hot=4", () => {
-		const pagecount = 15;
-		const hot = 4;
-		const warm = undefined;
-		const current = 0;
-		const list = [];
-		pc.materializePages(new PageCache(), pc.WIDTH, "pdf", pagecount, list);
-		const state = new pc.RenderState(list, current, hot, warm);
-		const output = state.scan();
-		expect(output.length).toBe(pagecount);
-		const expecting = [
-			pc.HOT, pc.HOT, pc.HOT, pc.HOT, pc.HOT,
-			pc.WARM,pc.WARM,pc.WARM,pc.WARM,pc.WARM,
-			pc.WARM,pc.WARM,pc.WARM,pc.WARM,pc.WARM,
-		];
-		for(let page = 0; page < pagecount; page++) {
-			expect(output[page].page.index).toBe(page);
-			expect(output[page].zone).toBe(expecting[page]);
-		}
-	});
-	it("tiles cp=0 hot=4 tilect=undefined", () => {
-		const pagecount = 15;
-		const hot = 4;
-		const warm = undefined;
-		const current = 0;
-		const tilect = undefined;
-		const list = [];
-		pc.materializePages(new PageCache(), pc.WIDTH, "pdf", pagecount, list);
-		const state = new pc.RenderState(list, current, hot, warm);
-		const output = state.scan();
-		expect(output.length).toBe(pagecount);
-		const expecting = [
-			pc.HOT, pc.HOT, pc.HOT, pc.HOT, pc.HOT,
-			pc.WARM,pc.WARM,pc.WARM,pc.WARM,pc.WARM,
-			pc.WARM,pc.WARM,pc.WARM,pc.WARM,pc.WARM,
-		];
-		for(let page = 0; page < pagecount; page++) {
-			expect(output[page].page.index).toBe(page);
-			expect(output[page].zone).toBe(expecting[page]);
-		}
-		const tiles = state.tiles(output, tilect);
-		expect(tiles.length).toBe(output.length);
-	});
-	it("tiles cp=0 hot=4 tilect=4", () => {
-		const pagecount = 15;
-		const hot = 4;
-		const warm = undefined;
-		const current = 0;
-		const tilect = 4;
-		const list = [];
-		pc.materializePages(new PageCache(), pc.WIDTH, "pdf", pagecount, list);
-		expect(list.length).toBe(pagecount);
-		const state = new pc.RenderState(list, current, hot, warm);
-		const output = state.scan();
-		expect(output.length).toBe(pagecount);
-		const expecting = [
-			pc.HOT, pc.HOT, pc.HOT, pc.HOT, pc.HOT,
-			pc.WARM,pc.WARM,pc.WARM,pc.WARM,pc.WARM,
-			pc.WARM,pc.WARM,pc.WARM,pc.WARM,pc.WARM,
-		];
-		for(let page = 0; page < pagecount; page++) {
-			expect(output[page].page.state).toBe(pc.COLD);
-			expect(output[page].page.index).toBe(page);
-			expect(output[page].zone).toBe(expecting[page]);
-		}
-		const tiles = state.tiles(output, tilect);
-		expect(tiles.length).toBe(tilect);
 	});
 });
