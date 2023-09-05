@@ -11,7 +11,10 @@ class PageManagement_UpdateCache extends PageManagement {
 	warmZone
 	constructor(pageIndex, hotZone, warmZone) {
 		super();
+		if(pageIndex === undefined || pageIndex === null) throw new Error("pageIndex: must be GE zero");
 		if(pageIndex < 0) throw new Error("pageIndex: must be GE zero");
+		if(hotZone !== undefined && hotZone < 0) throw new Error("hotZone: must be undefined or GE zero");
+		if(warmZone !== undefined && warmZone < 0) throw new Error("warmZone: must be undefined or GE zero");
 		this.pageIndex = pageIndex;
 		this.hotZone = hotZone;
 		this.warmZone = warmZone;
