@@ -38,9 +38,17 @@ Uses a current build of PDFJS.
 
 # Slots
 
-Slots provide you places to inject content, including the `page` itself!
+Slots provide you places to inject content.
 
-Since the page is a slot, we are obliged to provide the `PdfPage` component for your benefit.
+# Core Logic
+
+Those familiar with `pdfjs` know there are 3 "layers" involved:
+
+* `canvas` layer containing the page image
+* `text` layer containing "searchable" PDF text
+* `annotation` layer with the PDF annotations
+
+There is also lots of bookkeeping to keep everything consistent:
 
 * Interaction between DOM elements and `pdfjs`
   * Graphic, text, and annotation layers.
@@ -51,15 +59,10 @@ Since the page is a slot, we are obliged to provide the `PdfPage` component for 
 * "Bake in" the required CSS (via `style`) to make the layers render correctly.
   * The 3 layers must be "stacked" correctly for visual presentation.
 
-Why is the `page` a slot?  This is something no one else is doing in their components, but there is an important
-benefit:  You can directly attach your component to the props and emits of the `page` without relying on whatever
-passthrough the top-level component offers.
-
-What can you do with this?
+# Page Events
 
 * Attach handlers to receive page clicks directly, e.g. track "selected" page(s).
-* Alter the CSS styling of (specific) pages (`containerClass`), e.g. "highlighting" a clicked page (see demo 3).
-* Not render the pages at all with `PdfPage` and substitute your own content instead.
+* Alter the CSS styling of (specific) pages (`pageContainerClass`), e.g. "highlighting" a clicked page (see demo 3).
 
 # Scrolling
 
@@ -111,7 +114,7 @@ Using the grid system, you have options for layout:
 * Continuous - one continuous row/column of pages.  The number of tiles "visible" depends on the height of the stack currently presenting.  Use `WIDTH` mode (default) and a one-column grid (see below).
 * Tileset (n-up) - display a number of tiles in a grid pattern.  Use `HEIGHT` mode and explicit grid rows and columns (see below).
 
-These are informal based on your CSS and not an actual "mode" of the components.
+These are informal based on your CSS and not an actual "mode" of the component.
 
 # Page Management
 
