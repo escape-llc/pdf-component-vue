@@ -29,8 +29,9 @@ import { PDFLinkService } from 'pdfjs-dist/web/pdf_viewer.js';
 import {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
-	DocumentHandler_pdfjs, materializePages,
+	materializePages,
 } from "./PageContext.js";
+import { DocumentHandler_pdfjs } from "./DocumentHandler.js";
 import { PageCache } from './PageCache.js';
 import * as tile from "./Tiles.js";
 import * as page from "./PageManagement";
