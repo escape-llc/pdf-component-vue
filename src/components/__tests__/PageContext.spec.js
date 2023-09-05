@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
 import * as pc from '../PageContext.js'
-import { PageCache } from '../PageCache.js';
 
 describe("pageZone", () => {
 	it("cp=1 hot=4", () => {
@@ -89,6 +88,115 @@ describe('PageContext', () => {
 		expect(page.pageTitle).toBe("1");
 		expect(page.state).toBe(pc.COLD);
 		expect(page.is(pc.COLD)).toBe(true);
+	});
+	it("zones", () => {
+		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		page.hot(0);
+		expect(page.state).toBe(pc.HOT);
+		expect(page.is(pc.HOT)).toBe(true);
+		expect(page.didRender).toBe(false);
+		expect(page.rotation).toBe(0);
+		page.didRender = true;
+		page.rotation = undefined;
+		page.warm(90);
+		expect(page.state).toBe(pc.WARM);
+		expect(page.is(pc.WARM)).toBe(true);
+		expect(page.didRender).toBe(false);
+		expect(page.rotation).toBe(90);
+		page.didRender = true;
+		page.rotation = undefined;
+		page.cold();
+		expect(page.state).toBe(pc.COLD);
+		expect(page.is(pc.COLD)).toBe(true);
+		expect(page.didRender).toBe(false);
+		expect(page.rotation).toBe(undefined);
+	});
+	it("grid", () => {
+		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		page.grid(1,1);
+		expect(page.gridRow).toBe(1);
+		expect(page.gridColumn).toBe(1);
+	});
+	it("mount*", () => {
+		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		const el = {};
+		expect(page.container).toBe(null);
+		expect(page.canvas).toBe(null);
+		expect(page.divAnno).toBe(null);
+		expect(page.divText).toBe(null);
+		page.mountAnnotationLayer(el);
+		expect(page.divAnno).toStrictEqual(el);
+		page.mountTextLayer(el);
+		expect(page.divText).toStrictEqual(el);
+		page.mountCanvas(el);
+		expect(page.canvas).toStrictEqual(el);
+		page.mountContainer(el);
+		expect(page.container).toStrictEqual(el);
+		page.didRender = true;
+		page.mountContainer(null);
+		expect(page.container).toStrictEqual(null);
+		expect(page.didRender).toBe(false);
+	});
+	it("render", async () => {
+		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		const viewport = {
+			scale: 1,
+			width: 780,
+			height: 960,
+		};
+		const container = {
+			clientWidth: 1000,
+			clientHeight: 1000,
+			style: {
+				setProperty(name, value) {
+					console.log("setProperty", name, value);
+					if(name === "--scale-factor") {
+						expect(value).toBe(viewport.scale);
+					}
+					else if(name === "--viewport-width") {
+						expect(value).toBe(viewport.width);
+					}
+					else if(name === "--viewport-height") {
+						expect(value).toBe(viewport.height);
+					}
+				}
+			}
+		};
+		const canvas = {
+			width: undefined,
+			height: undefined
+		};
+		const divText = {
+			replaceChildren() {}
+		};
+		const divAnno = {
+			replaceChildren() {}
+		};
+		const cache = {
+			viewport(pageNumber, sizeMode, width, height, rotation) {
+				console.log("viewport", width, height);
+				return viewport;
+			},
+			renderCanvas() {
+				console.log("renderCanvas");
+			},
+			renderTextLayer(pageNumber, viewport, el) {},
+			renderAnnotationLayer(pageNumber, viewport, el) {},
+		};
+		page.mountTextLayer(divText);
+		page.mountAnnotationLayer(divAnno);
+		page.mountCanvas(canvas);
+		page.mountContainer(container);
+		page.hot(0);
+		await page.render(cache);
+		expect(page.didRender).toBe(true);
+		expect(canvas.width).toBe(viewport.width);
+		expect(canvas.height).toBe(viewport.height);
+		// warm pages do not go all the way through render()
+		page.warm(0);
+		expect(page.didRender).toBe(false);
+		await page.render(cache);
+		expect(page.didRender).toBe(false);
 	});
 	it("materialize pages", () => {
 		const list = [];
