@@ -1,60 +1,16 @@
-import * as pdf from 'pdfjs-dist/build/pdf.js'
-
 const COLD = 0, WARM = 1, HOT = 2;
 const WIDTH = 0, HEIGHT = 1;
 
-class DocumentHandler {
-	get document() { return undefined; }
-	async load(source) {
-		throw new Error("load: not implemented");
-	}
-	async page(pageNum) {
-		throw new Error("page: not implemented");
-	}
-}
-/**
- * DocumentHandler bound to the PDFJS document/page objects.
- */
-class DocumentHandler_pdfjs extends DocumentHandler {
-	#document
-	#emit
-	constructor(emitter) {
-		super();
-		this.#emit = emitter;
-	}
-	get document() { return this.#document; }
-	async load(source) {
-		this.#document = null;
-		if (source._pdfInfo) {
-			this.#document = source;
-		} else {
-			const documentLoadingTask = pdf.getDocument(source);
-			documentLoadingTask.onProgress = (progressParams) => {
-				this.#emit("progress", progressParams);
-			}
-			documentLoadingTask.onPassword = (callback, reason) => {
-				const retry = reason === pdf.PasswordResponses.INCORRECT_PASSWORD;
-				this.#emit("password-requested", callback, retry);
-			}
-			this.#document = await documentLoadingTask.promise;
-		}
-		return this.#document;
-	}
-	async page(pageNum) {
-		if(!this.#document) throw new Error("page: load was not called");
-		return await this.#document.getPage(pageNum);
-	}
-}
 /**
  * This class represents the current state of the page to child components (via wrapper).
  * This MUST NOT get Proxied it uses "#" properties.
  */
 class PageContext {
 	id
-	container
-	canvas
-	divText
-	divAnno
+	container = null
+	canvas = null
+	divText = null
+	divAnno = null
 	state = COLD
 	sizeMode = WIDTH
 	index
@@ -201,6 +157,6 @@ const pageZone = (pageIndex, currentPageIndex, pageCount, hotzone, warmzone) => 
 export {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
-	PageContext, DocumentHandler_pdfjs,
+	PageContext,
 	materializePages, pageZone
 }
