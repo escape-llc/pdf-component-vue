@@ -14,7 +14,7 @@ class PageContext {
 	sizeMode = WIDTH
 	index
 	pageNumber
-	pageTitle
+	pageLabel
 	gridRow
 	gridColumn
 	rotation
@@ -25,14 +25,14 @@ class PageContext {
 	 * @param {String} id page container ID.
 	 * @param {Number} index 0-relative index.
 	 * @param {Number} pageNumber 1-relative page number.
-	 * @param {String} pageTitle string version of page number, e.g. "iii".
+	 * @param {String} pageLabel string version of page number, e.g. "iii".
 	 */
-	constructor(sm, id, index, pageNumber, pageTitle) {
+	constructor(sm, id, index, pageNumber, pageLabel) {
 		this.sizeMode = sm;
 		this.id = id;
 		this.index = index;
 		this.pageNumber = pageNumber;
-		this.pageTitle = pageTitle;
+		this.pageLabel = pageLabel;
 	}
 	is(state) { return state === this.state; }
 	/**
