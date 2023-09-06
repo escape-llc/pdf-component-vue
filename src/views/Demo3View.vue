@@ -65,12 +65,12 @@ export default {
 <template>
 	<h1>Page Management Demo</h1>
 	<div v-if="errorMessage">{{errorMessage}}</div>
-	<div>This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered. The remaining pages are Warm and render as "placeholders".</div>
-	<div>Click on a page frame to change the "currentPage".  In a typical case, the unrendered tiles are not visible to the user.</div>
+	<div style="margin-top:1rem">This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered. The remaining pages are Warm and render as "placeholders".</div>
+	<div style="margin-bottom:1rem">Click on a page frame to change the "currentPage".  In a typical case, the unrendered tiles are not visible to the user.</div>
 	<PdfComponent
 		id="my-pdf"
 		class="document-container"
-		:textLayer="true"
+		:textLayer="false"
 		:annotationLayer="true"
 		:sizeMode="sizeMode"
 		:tileConfiguration="tiles"
@@ -110,18 +110,20 @@ export default {
 	grid-template-rows: 100%;
 	background: transparent;
 	margin: auto;
-	box-sizing: border-box;
+	box-sizing: content-box;
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
 	height: 100%;
+	transition: box-shadow .5s ease-in;
 }
 :deep(.page-stack) {
 	grid-area: 1 / 1 / 1 / 1 !important;
-	box-sizing: border-box;
+	box-sizing: content-box;
 	background: transparent;
 	width:100%;
 }
 :deep(.page-selected) {
-	border: 2px solid magenta;
+	transition: box-shadow .5s ease-in;
+	box-shadow: 0 1px 4px 2px rgba(252, 1, 210, 0.25);
 }
 </style>

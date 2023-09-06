@@ -44,11 +44,11 @@ export default {
 <template>
 	<h1>Tile Navigation Demo<button class="button" style="margin-left:1rem" @click="handlePreviousGroup">&lt;</button><button class="button" @click="handleNextGroup">&gt;</button></h1>
 	<div v-if="errorMessage">{{errorMessage}}</div>
-	<div>This demo uses Page Management to navigate through tiles, in this case 6 tiles.</div>
+	<div style="margin-top:1rem;margin-bottom:1rem">This demo uses Page Management to navigate through tiles, in this case 6 tiles.</div>
 	<PdfComponent
 		id="my-pdf"
 		class="document-container"
-		:textLayer="true"
+		:textLayer="false"
 		:annotationLayer="true"
 		:sizeMode="sizeMode"
 		:tileConfiguration="tiles"
