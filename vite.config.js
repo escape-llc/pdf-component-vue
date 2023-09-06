@@ -17,6 +17,9 @@ export default defineConfig({
 		},
 		rollupOptions: {
 			external: [...Object.keys(packageJson.peerDependencies)],
+			output: {
+				globals: { vue: "vue" }
+			}
 		},
 	},
 	plugins: [
