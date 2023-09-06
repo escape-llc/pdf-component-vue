@@ -2,8 +2,7 @@ const COLD = 0, WARM = 1, HOT = 2;
 const WIDTH = 0, HEIGHT = 1;
 
 /**
- * This class represents the current state of the page to child components (via wrapper).
- * This MUST NOT get Proxied it uses "#" properties.
+ * This class represents the current state of the page.
  */
 class PageContext {
 	id
@@ -36,10 +35,19 @@ class PageContext {
 		this.pageTitle = pageTitle;
 	}
 	is(state) { return state === this.state; }
+	/**
+	 * Initialize the grid coordinates.
+	 * @param {Number} row 1-relative grid row.
+	 * @param {Number} col 1-relative grid column.
+	 */
 	grid(row, col) {
 		this.gridRow = row;
 		this.gridColumn = col;
 	}
+	/**
+	 * Mount/unmount the page container element.
+	 * @param {HTMLDivElement|null} container page container element.
+	 */
 	mountContainer(container) {
 		this.container = container;
 		if(!container) {
@@ -56,6 +64,10 @@ class PageContext {
 	mountAnnotationLayer(el) {
 		this.divAnno = el;
 	}
+	/**
+	 * Perform a full render of page contents; sets didRender flag.
+	 * @param {PageCache} cache use for PDFJS operations.
+	 */
 	async render(cache) {
 		if(!this.container) return;
 		if(!this.canvas) return;
@@ -74,12 +86,7 @@ class PageContext {
 			return;
 		}
 		this.didRender = true;
-		try {
-			await cache.renderCanvas(this.pageNumber, viewport, this.canvas);
-		}
-		finally {
-			//this.didRender = false;
-		}
+		await cache.renderCanvas(this.pageNumber, viewport, this.canvas);
 		if(this.divText) {
 			this.divText.replaceChildren();
 			await cache.renderTextLayer(this.pageNumber, viewport, this.divText);
@@ -95,7 +102,7 @@ class PageContext {
 	 * @param {Number} rotation document-level rotation.
 	 */
 	hot(rotation) {
-		console.log("hot", this.didRender, this.index);
+		//console.log("hot", this.didRender, this.index);
 		this.rotation = rotation;
 		this.state = HOT;
 		this.didRender = false;
@@ -105,7 +112,7 @@ class PageContext {
 	 * Resets didRender flag.
 	 */
 	cold() {
-		console.log("cold", this.didRender, this.index);
+		//console.log("cold", this.didRender, this.index);
 		this.state = COLD;
 		this.didRender = false;
 	}
@@ -115,7 +122,7 @@ class PageContext {
 	 * @param {Number} rotation document-level rotation.
 	 */
 	warm(rotation) {
-		console.log("warm", this.didRender, this.index);
+		//console.log("warm", this.didRender, this.index);
 		this.rotation = rotation;
 		this.state = WARM;
 		this.didRender = false;
@@ -124,7 +131,7 @@ class PageContext {
 /**
  * Populate the given array with "empty" pages in COLD zone.
  * @param {Number} sizeMode the size mode.
- * @param {String} id element id.
+ * @param {String} id bsae element id.
  * @param {Number} numPages number of pages to generate.
  * @param {Array} list output array.
  */
