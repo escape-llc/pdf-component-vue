@@ -46,6 +46,40 @@ pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", im
 //} else {
 //	pdf.GlobalWorkerOptions.workerSrc = "../../node_modules/pdfjs-dist/build/pdf.worker.js";
 //}
+function createPrintIframe(container) {
+	return new Promise((resolve) => {
+		const iframe = document.createElement('iframe');
+		iframe.width = 0;
+		iframe.height = 0;
+		iframe.style.position = 'absolute';
+		iframe.style.top = 0;
+		iframe.style.left = 0;
+		iframe.style.border = 'none';
+		iframe.style.overflow = 'hidden';
+		iframe.onload = () => resolve(iframe);
+		container.appendChild(iframe);
+	});
+}
+function addPrintStyles(iframe, sizeX, sizeY) {
+	const style = iframe.contentWindow.document.createElement('style');
+	style.textContent = `
+		@page {
+			margin: 0;
+			size: ${sizeX}pt ${sizeY}pt;
+		}
+		body {
+			margin: 0;
+		}
+		canvas {
+			width: 100%;
+			page-break-after: always;
+			page-break-before: avoid;
+			page-break-inside: avoid;
+		}
+	`;
+	iframe.contentWindow.document.head.appendChild(style);
+	iframe.contentWindow.document.body.style.width = '100%';
+}
 
 export default {
 	name: "PdfComponent",
@@ -53,9 +87,11 @@ export default {
 		"progress", "password-requested",
 		"loaded", "loading-failed",
 		"rendered", "rendering-failed",
+		"printing-failed",
 		"page-click",
 		"internal-link-clicked"
 	],
+	expose: ["loadDocument", "print"],
 	props: {
 		id: String,
 		sizeMode: {
@@ -106,13 +142,32 @@ export default {
 		 * Path for annotation icons, including trailing slash.
 		 */
 		imageResourcesPath: String,
+		/**
+		 * Whether to render the text layer.
+		 */
 		textLayer: Boolean,
+		/**
+		 * Whether to render the annotation layer.
+		 */
 		annotationLayer: Boolean,
+		/**
+		 * CSS class(es) for each page container.
+		 * If using a Function, it receives page-info as a parameter.
+		 */
 		pageContainerClass: {
 			type: [String, Function]
 		},
+		/**
+		 * CSS for the layer to make it "stack" on the other layers.
+		 */
 		canvasClass: String,
+		/**
+		 * CSS for the layer to make it "stack" on the other layers.
+		 */
 		textLayerClass: String,
+		/**
+		 * CSS for the layer to make it "stack" on the other layers.
+		 */
 		annotationLayerClass: String,
 	},
 	data() {
@@ -158,7 +213,7 @@ export default {
 		);
 		this.$watch(
 			() => this.pageManagement, async (nv, ov) => {
-				console.log("pageManagement", ov, nv);
+				//console.log("pageManagement", ov, nv);
 				await this.renderPages();
 			}
 		);
@@ -182,10 +237,87 @@ export default {
 			await this.load(source);
 		},
 		/**
-		 * Loads a PDF document. Defines a password callback for protected
-		 * documents.
+		 * Invoke the print functionality.
+		 * @param {Number} dpi print DPI; defaults to 300.
+		 * @param {String} filename filename; defaults to empty string.
+		 * @param {Generator|undefined} pageSequence generates (1-relative) page numbers to print. Leave undefined for all pages.
+		 */
+		async print(dpi = 300, filename = "", pageSequence) {
+			if (!this.document) {
+				return;
+			}
+			const printUnits = dpi / 72;
+			const styleUnits = 96 / 72;
+			let container, title;
+			try {
+				container = document.createElement("div");
+				container.style.display = "none";
+				window.document.body.appendChild(container);
+				const iframe = await createPrintIframe(container);
+				const pageNums = [];
+				if(pageSequence) {
+					for(const px of pageSequence) {
+						pageNums.push(px);
+					}
+				}
+				else {
+					for(let ix = 1; ix <= this.pageCount; ix++) {
+						pageNums.push(ix);
+					}
+				}
+				await Promise.all(
+					pageNums.map(async (pageNum, ix) => {
+						const page = await this.handler.page(pageNum);
+						const viewport = page.getViewport({
+							scale: 1,
+							rotation: 0,
+						});
+
+						if (ix === 0) {
+							const sizeX = (viewport.width * printUnits) / styleUnits;
+							const sizeY = (viewport.height * printUnits) / styleUnits;
+							addPrintStyles(iframe, sizeX, sizeY);
+						}
+
+						const canvas = document.createElement("canvas");
+						canvas.width = viewport.width * printUnits;
+						canvas.height = viewport.height * printUnits;
+						container.appendChild(canvas);
+						const canvasClone = canvas.cloneNode();
+						iframe.contentWindow.document.body.appendChild(canvasClone);
+
+						await page.render({
+							canvasContext: canvas.getContext("2d"),
+							intent: "print",
+							transform: [printUnits, 0, 0, printUnits, 0, 0],
+							viewport,
+						}).promise;
+
+						canvasClone.getContext("2d").drawImage(canvas, 0, 0);
+					})
+				);
+				if (filename) {
+					title = window.document.title;
+					window.document.title = filename;
+				}
+				iframe.contentWindow.focus();
+				iframe.contentWindow.print();
+			}
+			catch(e) {
+				this.$emit("printing-failed", e);
+			}
+			finally {
+				if (title) {
+					window.document.title = title
+				}
+				//releaseChildCanvases(container);
+				container.parentNode?.removeChild(container);
+			}
+		},
+		/**
+		 * Load PDF document.
 		 *
-		 * NOTE: Ignored if source property is not provided.
+		 * @param {any} source Source document; see the props for possible data types accepted.
 		 */
 		async load(source) {
 			if (!source) {
@@ -194,12 +326,13 @@ export default {
 			try {
 				this.document?.destroy()
 				this.document = await this.handler.load(source);
-				this.cache = new PageCache(this.linkService);
+				this.cache = new PageCache(this.linkService, this.imageResourcesPath);
 				this.pageCount = this.document.numPages;
 				this.$emit("loaded", this.document);
 				materializePages(this.sizeMode, this.id, this.pageCount, this.pageContexts);
 				// load start page to get some info for placeholder tiles
 				const tiles = this.getTiles();
+				// TODO zero tiles?
 				const startPage = tiles[0].page.pageNumber;
 				const page = await this.handler.page(startPage);
 				// warm up the cache
@@ -211,9 +344,10 @@ export default {
 				const pages = this.updatePages(tiles);
 				// on $nextTick all the pages are mounted
 				await this.$nextTick();
-				console.log("after TICK", this.pages);
+				//console.log("after TICK", this.pages);
 				// render pages
 				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
+				// TODO use page wrappers in emit
 				this.$emit("rendered", Array.from(tiles));
 			} catch (e) {
 				this.document = null;
@@ -224,8 +358,7 @@ export default {
 			}
 		},
 		/**
-		 * Assign grid coordinates to each tile according to tileDimensions.
-		 * [0] rows; [1] columns.
+		 * Assign grid coordinates to each tile according to tileConfiguration.
 		 * @param {Array} tiles list of tiles.
 		 */
 		sequenceTiles(tiles) {
@@ -275,6 +408,7 @@ export default {
 					// changing tile sets
 					console.log("renderPages.change-tileset");
 					const pages = this.updatePages(tiles);
+					// require DOM operations before proceeding
 					await this.$nextTick();
 				}
 				await Promise.all(tiles.map(async px => { await px.page.render(this.cache); }));
@@ -322,16 +456,25 @@ export default {
 			//console.log("mountAnnotationLayer", page.id, el?.clientWidth, el?.clientHeight);
 			page.mountAnnotationLayer(el);
 		},
+		/**
+		 * Determine whether and how to use the pageContainerClass.
+		 * @param {PageContext} page the page.  only used if pageContainerClass is a Function.
+		 */
 		calculatePageClass(page) {
 			if(!this.pageContainerClass) return undefined;
 			if(this.pageContainerClass instanceof Function) {
-				const cx = this.pageContainerClass(page);
+				const cx = this.pageContainerClass(this.infoFor(page));
 				return cx;
 			}
 			return this.pageContainerClass;
 		},
-		handlePageClick(ev, page) {
-			this.$emit("page-click", {
+		/**
+		 * Create a disconnected wrapper object for the page that is "safe" for external callers.
+		 * @param {PageContext} page the source page.
+		 * @param {Event} ev original event, if any.
+		 */
+		infoFor(page, ev) {
+			return {
 				id: page.id,
 				index: page.index,
 				state: page.state,
@@ -339,7 +482,10 @@ export default {
 				gridRow: page.gridRow,
 				gridColumn: page.gridColumn,
 				originalEvent: ev
-			});
+			};
+		},
+		handlePageClick(ev, page) {
+			this.$emit("page-click", this.infoFor(page, ev));
 		},
 	},
 }
