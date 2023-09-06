@@ -6,15 +6,17 @@ import { WIDTH, HEIGHT } from "./PageContext";
  * This should hide the PDFJS page objects from the remainder of the application.
  */
 class PageCache {
-	_map = new Map();
+	_map = new Map()
 	_linkService
 	_imageResourcesPath
 	/**
 	 * Ctor.
-	 * @param {pdfjs.PDFLinkService} linkService Required for annotation rendering.
+	 * @param {pdfjs.PDFLinkService} linkService Required by annotation rendering.
+	 * @param {String} imageResourcesPath Path to annotation images.
 	 */
-	constructor(linkService) {
+	constructor(linkService, imageResourcesPath) {
 		this._linkService = linkService;
+		this._imageResourcesPath = imageResourcesPath;
 	}
 	/**
 	 * Instruct cache to retain this page and its statistics.
@@ -111,7 +113,7 @@ class PageCache {
 			viewport: viewport/*.clone({
 				dontFlip: true,
 			})*/,
-			//imageResourcesPath: this.imageResourcesPath,
+			imageResourcesPath: this._imageResourcesPath,
 		};
 		const anno = new pdfjs.AnnotationLayer(options);
 		anno.render(options);
