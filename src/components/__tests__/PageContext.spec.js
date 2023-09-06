@@ -85,7 +85,7 @@ describe('PageContext', () => {
 		expect(page.id).toBe("page-1");
 		expect(page.index).toBe(0);
 		expect(page.pageNumber).toBe(1);
-		expect(page.pageTitle).toBe("1");
+		expect(page.pageLabel).toBe("1");
 		expect(page.state).toBe(pc.COLD);
 		expect(page.is(pc.COLD)).toBe(true);
 	});
@@ -206,7 +206,7 @@ describe('PageContext', () => {
 			expect(lx.id).toBe(`pdf-page-${lx.pageNumber}`);
 			expect(lx.index).toBe(ix);
 			expect(lx.pageNumber).toBe(ix + 1);
-			expect(lx.pageTitle).toBe((ix + 1).toString());
+			expect(lx.pageLabel).toBe((ix + 1).toString());
 			expect(lx.state).toBe(pc.COLD);
 		}
 		verify(list[0], 0);
