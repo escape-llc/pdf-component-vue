@@ -66,7 +66,7 @@ export default {
 		@rendering-failed="handleRenderingFailed"
 		:source="source">
 		<template #pre-page="slotProps">
-			<div style="text-align:center" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">Page {{slotProps.pageNumber}}</div>
+			<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
 		</template>
 	</PdfComponent>
 </template>
