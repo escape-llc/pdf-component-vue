@@ -139,6 +139,14 @@ export default {
 			},
 		},
 		/**
+		 * Whether to use the PDF's page labels to "title" the pages.
+		 * Otherwise, use the cardinal page number [1..N].
+		 */
+		usePageLabels: {
+			type: Boolean,
+			default: true
+		},
+		/**
 		 * Path for annotation icons, including trailing slash.
 		 */
 		imageResourcesPath: String,
@@ -330,6 +338,16 @@ export default {
 				this.pageCount = this.document.numPages;
 				this.$emit("loaded", this.document);
 				materializePages(this.sizeMode, this.id, this.pageCount, this.pageContexts);
+				if(this.usePageLabels) {
+					const labels = await this.handler.pageLabels();
+					if(labels) {
+						// assign the page labels to the pages
+						console.log("page-labels", labels);
+						for(let ix = 0; ix < labels.length; ix++) {
+							this.pageContexts[ix].pageLabel = labels[ix];
+						}
+					}
+				}
 				// load start page to get some info for placeholder tiles
 				const tiles = this.getTiles();
 				// TODO zero tiles?
