@@ -12,7 +12,19 @@ describe("tiles", () => {
 		const vx2 = seq.next();
 		expect(vx2.done).toBe(true);
 		expect(vx2.value).toBe(undefined);
-});
+	});
+	it("for/of", () => {
+		const seq = tiles.finite(3);
+		let ix = 0;
+		for(const vx of seq) {
+			expect(vx).toBe(ix);
+			ix++;
+		};
+		expect(ix).toBe(3);
+		const vx2 = seq.next();
+		expect(vx2.done).toBe(true);
+		expect(vx2.value).toBe(undefined);
+	});
 	it("infinite", () => {
 		const seq = tiles.infinite();
 		for(let ix = 0; ix < 30; ix++) {
