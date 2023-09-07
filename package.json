@@ -1,14 +1,31 @@
 {
 	"name": "pdf-component-vue",
-	"version": "0.0.1",
-	"private": true,
+	"version": "0.0.2",
+	"private": false,
+	"description": "PDF Rendering component for Vue 3 applications",
+	"author": {
+		"name": "escape-llc",
+		"url": "https://github.com/escape-llc",
+		"email": "escape.technology.llc@gmail.com"
+	},
+	"keywords": [
+		"vue",
+		"vuejs",
+		"pdf",
+		"pdfjs"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/escape-llc/pdf-component-vue"
+	},
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
 		"preview": "vite preview",
 		"test:unit": "vitest",
-		"coverage:unit": "vitest run --coverage"
+		"coverage:unit": "vitest run --coverage",
+		"package": "npm pack --pack-destination ./dist"
 	},
 	"files": [
 		"dist"
@@ -18,7 +35,7 @@
 			"import": "./dist/pdf-component-vue.es.js",
 			"require": "./dist/pdf-component-vue.umd.js"
 		},
-		"./dist/style.css": "./dist/style.css"
+		"./pdf-component-vue.css": "./dist/style.css"
 	},
 	"main": "./dist/pdf-component-vue.umd.js",
 	"module": "./dist/pdf-component-vue.es.js",
