@@ -4,6 +4,7 @@ import { RouterLink, RouterView } from 'vue-router'
 <template>
 	<header style="margin-bottom:.25rem;margin-top:.25rem">
 		<nav>
+			<div style="font-weight:bold;margin-right:1rem">DEV</div>
 			<RouterLink to="/">Home</RouterLink>
 			<RouterLink to="/demo1">Scrolling</RouterLink>
 			<RouterLink to="/demo2">Navigation</RouterLink>
