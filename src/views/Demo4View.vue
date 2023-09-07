@@ -20,6 +20,11 @@ export default {
 			console.error("handle.render-error", ev);
 			this.errorMessage = ev.message;
 		},
+		handleInternalLink(ev) {
+			console.log("internal-link-clicked", ev);
+			const id = `#my-pdf-page-${ev.pageNumber}`;
+			document.location.hash = id;
+		},
 		handleInput(ev) {
 			console.log("handle.input", ev);
 			const file = ev.target.files[0];
@@ -64,6 +69,7 @@ export default {
 		@loading-failed="handleError"
 		@page-rendered="handlePageRendered"
 		@rendering-failed="handleRenderingFailed"
+		@internal-link-clicked="handleInternalLink"
 		:source="source">
 		<template #pre-page="slotProps">
 			<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
