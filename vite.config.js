@@ -6,14 +6,16 @@ import vue from '@vitejs/plugin-vue'
 
 import * as packageJson from './package.json'
 
+const packageName = "pdf-component-vue"
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
 	build: {
 		lib: {
 			entry: resolve('src', 'components/index.js'),
-			name: 'pdf-component-vue',
+			name: packageName,
 			formats: ['es', 'umd'],
-			fileName: (format) => `pdf-component-vue.${format}.js`,
+			fileName: (format) => `${packageName}.${format}.js`,
 		},
 		rollupOptions: {
 			external: [...Object.keys(packageJson.peerDependencies)],
@@ -25,9 +27,11 @@ export default defineConfig({
 	plugins: [
 		vue(),
 	],
+	publicDir: command === "serve" ? "public" : false,
 	resolve: {
 		alias: {
 			'@': fileURLToPath(new URL('./src', import.meta.url))
 		}
 	}
 })
+)
