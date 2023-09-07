@@ -5,10 +5,15 @@ import {
 import { ROW, COLUMN, TileConfiguration } from "./Tiles";
 import { PageManagement, PageManagement_UpdateCache, PageManagement_Scroll } from "./PageManagement";
 import PdfComponent from "./PdfComponent.vue";
+import * as pdf from "pdfjs-dist/build/pdf";
 
 import "../pdf-component-vue.css";
 
+// export the version of PDFJS we are built with
+const PdfjsVersion = pdf.version;
+
 export {
+	PdfjsVersion,
 	PdfComponent,
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
