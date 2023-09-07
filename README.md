@@ -6,6 +6,8 @@ This component is primarily for rendering tiles (i.e. PDF pages) in a `grid` or 
 
 It is not a (full-blown) viewer, but could be used to make one.
 
+[![npm version](https://badge.fury.io/js/pdf-component-vue.svg)](https://badge.fury.io/js/pdf-component-vue)
+
 ## WHY!?
 
 Excellent question!
@@ -31,7 +33,6 @@ Uses a current build of PDFJS.
   * Allow you to control the styles used for all major layout elements.
 * Have lots of `$emit` for flexibility on the consumer.
 * Leverage `slot` for content injection.
-  * This includes the `page` itself!
 * Have  "smart" page management OOTB.
 * Support real-time scrolling via `IntersectionObserver`.
 * Have "smart" page sizing based on containing element.
