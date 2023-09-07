@@ -192,8 +192,8 @@ export default {
 			const service = new PDFLinkService();
 			service.setDocument(this.document);
 			service.setViewer({
-				scrollPageIntoView: ({ pageNumber }) => {
-					this.$emit("internal-link-clicked", pageNumber);
+				scrollPageIntoView: (ev) => {
+					this.$emit("internal-link-clicked", ev);
 				},
 			});
 			return service;
