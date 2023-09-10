@@ -341,7 +341,7 @@ export default {
 					const labels = await this.handler.pageLabels();
 					if(labels) {
 						// assign the page labels to the pages
-						console.log("page-labels", labels);
+						//console.log("page-labels", labels);
 						for(let ix = 0; ix < labels.length; ix++) {
 							this.pageContexts[ix].pageLabel = labels[ix];
 						}
@@ -393,7 +393,7 @@ export default {
 		 */
 		updatePages(tiles) {
 			const pages = tiles.map(tx => tx.page);
-			console.log("updatePages (pages)", pages);
+			//console.log("updatePages (pages)", pages);
 			this.pages = pages;
 			return pages;
 		},
@@ -406,7 +406,7 @@ export default {
 			const tc = this.tileConfiguration && !isNaN(this.tileConfiguration.total) ? this.tileConfiguration.total : undefined;
 			const tiles = page.tiles(output, pm.tileStart, tc);
 			this.sequenceTiles(tiles);
-			console.log("getTiles (output,tiles)", output, tiles);
+			//console.log("getTiles (output,tiles)", output, tiles);
 			return tiles;
 		},
 		/**
@@ -422,7 +422,7 @@ export default {
 				await this.processTiles(tiles);
 				if(this.pages.length === 0 || tiles[0].page.pageNumber !== this.pages[0].pageNumber) {
 					// changing tile sets
-					console.log("renderPages.change-tileset");
+					//console.log("renderPages.change-tileset");
 					const pages = this.updatePages(tiles);
 					// require DOM operations before proceeding
 					await this.$nextTick();
@@ -444,7 +444,7 @@ export default {
 			}));
 			// deal with remaining state changes
 			tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.state).forEach(tx => {
-				console.log("transition new,old", tx.page.id, tx.zone, tx.page.state);
+				//console.log("transition new,old", tx.page.id, tx.zone, tx.page.state);
 				switch (tx.zone) {
 					case WARM:
 						tx.page.warm(rotation);

@@ -4,6 +4,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import PdfComponent from '../PdfComponent.vue'
 import * as tiles from "../Tiles"
 import * as pm from "../PageManagement"
+import { HEIGHT } from '../PageContext'
 
 function mountedPromise(options) {
 	return new Promise((resolve, reject) => {
@@ -31,6 +32,7 @@ vi.mock('pdfjs-dist/build/pdf.js', () => ({
 	GlobalWorkerOptions: {
 		workerSrc: undefined
 	},
+	renderTextLayer: (options) => ({ promise: Promise.resolve({}) }),
 	getDocument: () => ({
 		promise: Promise.resolve({
 			numPages: PAGE_COUNT,
@@ -42,6 +44,7 @@ vi.mock('pdfjs-dist/build/pdf.js', () => ({
 					height: PAGE_HEIGHT,
 					scale: 1
 				}),
+				streamTextContent: (options) => ({}),
 				getAnnotations: () => Promise.resolve([]),
 				render: () => ({
 					promise: Promise.resolve({})
@@ -210,7 +213,93 @@ describe('PdfComponent', () => {
 			const div = wrapper.get(`#my-pdf-page-${ix}`);
 			expect(div).not.toBe(undefined);
 			expect(div.element.id).toBe(`my-pdf-page-${ix}`);
-			//expect(div.element.classList.contains(`page-container-class-${ix}`)).toBe(false);
+		}
+	})
+	it("HEIGHT mode", async () => {
+		const wrapper = await mountedPromise({
+			id: "my-pdf",
+			class: "document-container",
+			sizeMode: HEIGHT,
+			tileConfiguration: new tiles.TileConfiguration(tiles.ROW, 2, 3),
+			canvasClass: "grid-stack",
+			annotationLayerClass: "grid-stack",
+			textLayerClass: "grid-stack",
+			source: PDF
+		});
+		await flushPromises();
+		expect(wrapper.emitted()).toHaveProperty("loaded");
+		expect(wrapper.emitted()).toHaveProperty("rendered");
+		const div = wrapper.get("div");
+		expect(div).not.toBe(undefined);
+		expect(div.element.id).toBe('my-pdf');
+		expect(div.element.classList.contains("document-container")).toBe(true);
+		let row = 1, column = 1;
+		for(let ix = 1; ix <= PAGE_COUNT; ix++) {
+			const div = wrapper.get(`#my-pdf-page-${ix}`);
+			expect(div).not.toBe(undefined);
+			expect(div.element.id).toBe(`my-pdf-page-${ix}`);
+			expect(div.element.classList.contains("page-container")).toBe(false);
+			const style = div.attributes("style");
+			expect(style).toContain("--scale-factor: 1");
+			expect(style).toContain(`--viewport-width: ${PAGE_WIDTH}`);
+			expect(style).toContain(`--viewport-height: ${PAGE_HEIGHT}`);
+			expect(style).toContain(`grid-row: ${row}`);
+			expect(style).toContain(`grid-column: ${column}`);
+			const canvas = div.get("canvas");
+			expect(canvas).not.toBe(undefined);
+			expect(canvas.element.classList.contains("grid-stack")).toBe(true);
+			expect(canvas.attributes("width")).toBe(PAGE_WIDTH.toString());
+			expect(canvas.attributes("height")).toBe(PAGE_HEIGHT.toString());
+			column++;
+			if(column > 3) {
+				row++;
+				column = 1;
+			}
+		}
+	})
+	it("Text layer", async () => {
+		const wrapper = await mountedPromise({
+			id: "my-pdf",
+			class: "document-container",
+			sizeMode: HEIGHT,
+			textLayer: true,
+			tileConfiguration: new tiles.TileConfiguration(tiles.ROW, 2, 3),
+			canvasClass: "grid-stack",
+			annotationLayerClass: "grid-stack",
+			textLayerClass: "grid-stack",
+			source: PDF
+		});
+		await flushPromises();
+		expect(wrapper.emitted()).toHaveProperty("loaded");
+		expect(wrapper.emitted()).toHaveProperty("rendered");
+		const div = wrapper.get("div");
+		expect(div).not.toBe(undefined);
+		expect(div.element.id).toBe('my-pdf');
+		expect(div.element.classList.contains("document-container")).toBe(true);
+		let row = 1, column = 1;
+		for(let ix = 1; ix <= PAGE_COUNT; ix++) {
+			const div = wrapper.get(`#my-pdf-page-${ix}`);
+			expect(div).not.toBe(undefined);
+			expect(div.element.id).toBe(`my-pdf-page-${ix}`);
+			expect(div.element.classList.contains("page-container")).toBe(false);
+			const style = div.attributes("style");
+			expect(style).toContain("--scale-factor: 1");
+			expect(style).toContain(`--viewport-width: ${PAGE_WIDTH}`);
+			expect(style).toContain(`--viewport-height: ${PAGE_HEIGHT}`);
+			expect(style).toContain(`grid-row: ${row}`);
+			expect(style).toContain(`grid-column: ${column}`);
+			const canvas = div.get("canvas");
+			expect(canvas).not.toBe(undefined);
+			expect(canvas.element.classList.contains("grid-stack")).toBe(true);
+			expect(canvas.attributes("width")).toBe(PAGE_WIDTH.toString());
+			expect(canvas.attributes("height")).toBe(PAGE_HEIGHT.toString());
+			const textLayer = div.get("div.textLayer");
+			expect(textLayer).not.toBe(undefined);
+			column++;
+			if(column > 3) {
+				row++;
+				column = 1;
+			}
 		}
 	})
 })
