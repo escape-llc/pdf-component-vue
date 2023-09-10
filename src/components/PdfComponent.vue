@@ -2,7 +2,6 @@
 	<div :id="id">
 		<template v-for="page in pages" :key="page.index">
 			<slot name="pre-page" v-bind="page"></slot>
-			<!-- NOTE: the $el callbacks occur depth-first -->
 			<div
 				:ref="el => { mountContainer(page, el); }"
 				:id="page.id"
@@ -365,8 +364,7 @@ export default {
 				//console.log("after TICK", this.pages);
 				// render pages
 				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
-				// TODO use page wrappers in emit
-				this.$emit("rendered", Array.from(tiles));
+				this.$emit("rendered", tiles.map(tx => this.infoFor(tx)));
 			} catch (e) {
 				this.document = null;
 				this.pageCount = null;
@@ -430,7 +428,7 @@ export default {
 					await this.$nextTick();
 				}
 				await Promise.all(tiles.map(async px => { await px.page.render(this.cache); }));
-				this.$emit("rendered", Array.from(tiles));
+				this.$emit("rendered", tiles.map(tx => this.infoFor(tx)));
 			}
 			catch (e) {
 				this.$emit("rendering-failed", e);
