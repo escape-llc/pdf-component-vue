@@ -1,5 +1,8 @@
 import * as pdf from 'pdfjs-dist/build/pdf.js'
 
+/**
+ * Base class for handlers.  Provides level of abstraction from PDFJS.
+ */
 class DocumentHandler {
 	get document() { return undefined; }
 	async load(source) {
@@ -8,12 +11,15 @@ class DocumentHandler {
 	async page(pageNum) {
 		throw new Error("page: not implemented");
 	}
+	async pageLabels() {
+		throw new Error("pageLabels: not implemented");
+	}
 }
 /**
  * DocumentHandler bound to the PDFJS document/page objects.
  */
 class DocumentHandler_pdfjs extends DocumentHandler {
-	#document
+	#document = null
 	#emit
 	constructor(emitter) {
 		super();

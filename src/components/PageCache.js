@@ -62,7 +62,7 @@ class PageCache {
 	 * @returns new instance.
 	 */
 	viewport(pageNumber, mode, width, height, rotation) {
-		if(!this._map.has(pageNumber)) throw new Error(`viewport: page {pageNumber} not in cache`);
+		if(!this._map.has(pageNumber)) throw new Error(`viewport: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
 		const pageRotation = entry.rotation + rotation;
 		switch(mode) {

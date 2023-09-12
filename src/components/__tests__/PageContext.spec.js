@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from "vitest"
 
-import * as pc from '../PageContext.js'
+import * as pc from "../PageContext"
+import * as dh from "../DocumentHandler"
+import { PageCache } from "../PageCache"
 
 describe("pageZone", () => {
 	it("cp=1 hot=4", () => {
@@ -78,7 +80,7 @@ describe("pageZone", () => {
 			expect(zone).toBe(expecting[page]);
 		}
 	});
-});
+})
 describe('PageContext', () => {
 	it('initial state', () => {
 		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
@@ -215,4 +217,37 @@ describe('PageContext', () => {
 		verify(list[3], 3);
 		verify(list[4], 4);
 	});
-});
+})
+describe("DocumentHandler", async () => {
+	it("DocumentHandler should throw for everything", () => {
+		const ddh = new dh.DocumentHandler();
+		expect(ddh.document).toBe(undefined);
+		expect(async () => { const xxx = await ddh.load("source"); }).rejects.toThrowError("load: not implemented");
+		expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: not implemented");
+		expect(async () => { const xxx = await ddh.pageLabels(); }).rejects.toThrowError("pageLabels: not implemented");
+	})
+	it("DocumentHandler_pdfjs should throw if not load()", () => {
+		const ddh = new dh.DocumentHandler_pdfjs();
+		expect(ddh.document).toBe(null);
+		expect(async () => { const xxx = await ddh.load(undefined); }).rejects.toThrowError("load: source was null or undefined");
+		expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: load was not called");
+		expect(async () => { const xxx = await ddh.pageLabels(); }).rejects.toThrowError("pageLabels: load was not called");
+	})
+})
+describe("PageCache", () => {
+	it("evicted page should fail", () => {
+		const cache = new PageCache();
+		expect(() => { const xxx = cache.viewport(99, undefined); }).toThrowError("viewport: page 99 not in cache");
+		expect(async () => { const xxx = await cache.renderCanvas(99, undefined); }).rejects.toThrowError("renderCanvas: page 99 not in cache");
+		expect(async () => { const xxx = await cache.renderTextLayer(99, undefined); }).rejects.toThrowError("renderTextLayer: page 99 not in cache");
+		expect(async () => { const xxx = await cache.renderAnnotationLayer(99, undefined); }).rejects.toThrowError("renderAnnotationLayer: page 99 not in cache");
+		cache.retain(99, {
+			rotation: 0,
+			view: [0,0,680,790],
+		});
+		expect(cache.has(99)).toBe(true);
+		expect(() => { const xxx = cache.viewport(99, 999); }).toThrowError("viewport: 999: unknown mode");
+		cache.evict(99);
+		expect(cache.has(99)).toBe(false);
+	});
+})
