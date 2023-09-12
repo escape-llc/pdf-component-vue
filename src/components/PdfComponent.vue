@@ -10,10 +10,10 @@
 				@click="handlePageClick($event, page)"
 			>
 				<canvas :ref="el => { mountCanvas(page, el); }" :class="canvasClass" />
-				<template v-if="textLayer">
+				<template v-if="textLayer && page.state === 2">
 					<div :ref="el => { mountTextLayer(page, el); }" class="textLayer" style="position:relative" :class="textLayerClass" />
 				</template>
-				<template v-if="annotationLayer">
+				<template v-if="annotationLayer && page.state === 2">
 					<div :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" style="position:relative" :class="annotationLayerClass" />
 				</template>
 				<slot name="page-overlay" v-bind="page"></slot>
@@ -34,17 +34,10 @@ import { DocumentHandler_pdfjs } from "./DocumentHandler.js";
 import { PageCache } from './PageCache.js';
 import * as tile from "./Tiles.js";
 import * as page from "./PageManagement";
-
 import '../pdf-component-vue.css';
 
 pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
-//pdf.GlobalWorkerOptions.workerSrc = "./pdf.worker.js";
 
-//if (import.meta.env.ENV === 'production') {
-//	pdf.GlobalWorkerOptions.workerSrc = "./pdf.worker.js";
-//} else {
-//	pdf.GlobalWorkerOptions.workerSrc = "../../node_modules/pdfjs-dist/build/pdf.worker.js";
-//}
 function createPrintIframe(container) {
 	return new Promise((resolve) => {
 		const iframe = document.createElement('iframe');
@@ -86,7 +79,7 @@ export default {
 		"progress", "password-requested",
 		"loaded", "loading-failed",
 		"rendered", "rendering-failed",
-		"printing-failed",
+		"printed", "printing-failed",
 		"page-click",
 		"internal-link-clicked"
 	],
@@ -206,21 +199,21 @@ export default {
 		this.cache = null;
 		// end
 		this.$watch(
-			() => [
-				this.source,
-				this.annotationLayer,
-				this.textLayer,
-				this.rotation,
-			],
-			async ([newSource], [oldSource]) => {
+			() => this.source,
+			async (newSource, oldSource) => {
 				if (newSource !== oldSource) {
 					await this.load(newSource);
 				}
 			}
 		);
 		this.$watch(
-			() => this.pageManagement, async (nv, ov) => {
-				//console.log("pageManagement", ov, nv);
+			() => [
+				this.pageManagement,
+				this.tileConfiguration,
+				this.annotationLayer,
+				this.textLayer,
+				this.rotation,
+			], async (nvs, ovs) => {
 				await this.renderPages();
 			}
 		);
@@ -247,7 +240,7 @@ export default {
 		 * Invoke the print functionality.
 		 * @param {Number} dpi print DPI; defaults to 300.
 		 * @param {String} filename filename; defaults to empty string.
-		 * @param {Generator|undefined} pageSequence generates (1-relative) page numbers to print. Leave undefined for all pages.
+		 * @param {Array|undefined} pageSequence array of (1-relative) page numbers to print. Leave undefined for all pages.
 		 */
 		async print(dpi = 300, filename = "", pageSequence) {
 			if (!this.document) {
@@ -274,33 +267,38 @@ export default {
 				}
 				await Promise.all(
 					pageNums.map(async (pageNum, ix) => {
-						const page = await this.handler.page(pageNum);
-						const viewport = page.getViewport({
-							scale: 1,
-							rotation: 0,
-						});
+						try {
+							const page = await this.handler.page(pageNum);
+							const viewport = page.getViewport({
+								scale: 1,
+								rotation: 0,
+							});
 
-						if (ix === 0) {
-							const sizeX = (viewport.width * printUnits) / styleUnits;
-							const sizeY = (viewport.height * printUnits) / styleUnits;
-							addPrintStyles(iframe, sizeX, sizeY);
+							if (ix === 0) {
+								const sizeX = (viewport.width * printUnits) / styleUnits;
+								const sizeY = (viewport.height * printUnits) / styleUnits;
+								addPrintStyles(iframe, sizeX, sizeY);
+							}
+
+							const canvas = document.createElement("canvas");
+							canvas.width = viewport.width * printUnits;
+							canvas.height = viewport.height * printUnits;
+							container.appendChild(canvas);
+							const canvasClone = canvas.cloneNode();
+							iframe.contentWindow.document.body.appendChild(canvasClone);
+
+							await page.render({
+								canvasContext: canvas.getContext("2d"),
+								intent: "print",
+								transform: [printUnits, 0, 0, printUnits, 0, 0],
+								viewport,
+							}).promise;
+
+							canvasClone.getContext("2d").drawImage(canvas, 0, 0);
 						}
-
-						const canvas = document.createElement("canvas");
-						canvas.width = viewport.width * printUnits;
-						canvas.height = viewport.height * printUnits;
-						container.appendChild(canvas);
-						const canvasClone = canvas.cloneNode();
-						iframe.contentWindow.document.body.appendChild(canvasClone);
-
-						await page.render({
-							canvasContext: canvas.getContext("2d"),
-							intent: "print",
-							transform: [printUnits, 0, 0, printUnits, 0, 0],
-							viewport,
-						}).promise;
-
-						canvasClone.getContext("2d").drawImage(canvas, 0, 0);
+						catch(e) {
+							console.error("print failed", e);
+						}
 					})
 				);
 				if (filename) {
@@ -309,6 +307,7 @@ export default {
 				}
 				iframe.contentWindow.focus();
 				iframe.contentWindow.print();
+				this.$emit("printed", iframe);
 			}
 			catch(e) {
 				this.$emit("printing-failed", e);
@@ -364,7 +363,7 @@ export default {
 				//console.log("after TICK", this.pages);
 				// render pages
 				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
-				this.$emit("rendered", tiles.map(tx => this.infoFor(tx)));
+				this.$emit("rendered", pages.map(px => this.infoFor(px)));
 			} catch (e) {
 				this.document = null;
 				this.pageCount = null;
@@ -427,8 +426,8 @@ export default {
 					// require DOM operations before proceeding
 					await this.$nextTick();
 				}
-				await Promise.all(tiles.map(async px => { await px.page.render(this.cache); }));
-				this.$emit("rendered", tiles.map(tx => this.infoFor(tx)));
+				await Promise.all(tiles.map(async tx => { await tx.page.render(this.cache); }));
+				this.$emit("rendered", tiles.map(tx => this.infoFor(tx.page)));
 			}
 			catch (e) {
 				this.$emit("rendering-failed", e);
@@ -457,19 +456,15 @@ export default {
 			});
 		},
 		mountContainer(page, el) {
-			//console.log("mountContainer", page.id, el?.clientWidth, el?.clientHeight);
 			page.mountContainer(el);
 		},
 		mountCanvas(page, el) {
-			//console.log("mountCanvas", page.id, el?.clientWidth, el?.clientHeight);
 			page.mountCanvas(el);
 		},
 		mountTextLayer(page, el) {
-			//console.log("mountTextLayer", page.id, el?.clientWidth, el?.clientHeight);
 			page.mountTextLayer(el);
 		},
 		mountAnnotationLayer(page, el) {
-			//console.log("mountAnnotationLayer", page.id, el?.clientWidth, el?.clientHeight);
 			page.mountAnnotationLayer(el);
 		},
 		/**
