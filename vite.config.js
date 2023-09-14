@@ -14,7 +14,7 @@ export default defineConfig({
 		lib: {
 			entry: resolve('src', 'components/index.js'),
 			name: packageName,
-			formats: ['es', 'umd'],
+			formats: ['es'],
 			fileName: (format) => `${packageName}.${format}.js`,
 		},
 		rollupOptions: {
