@@ -442,7 +442,7 @@ export default {
 				tx.page.hot(rotation);
 			}));
 			// deal with remaining state changes
-			tiles.filter(tx => tx.zone !== HOT).filter(tx => tx.zone !== tx.page.state).forEach(tx => {
+			tiles.filter(tx => tx.zone !== HOT && tx.zone !== tx.page.state).forEach(tx => {
 				//console.log("transition new,old", tx.page.id, tx.zone, tx.page.state);
 				switch (tx.zone) {
 					case WARM:
