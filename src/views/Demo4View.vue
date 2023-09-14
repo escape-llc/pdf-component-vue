@@ -40,6 +40,9 @@ export default {
 			//Step 3:Read the file as ArrayBuffer
 			fileReader.readAsArrayBuffer(file);
 		},
+		async handlePrint(ev) {
+			await this.$refs.pdf.print();
+		},
 	},
 	data() {
 		return {
@@ -55,9 +58,10 @@ export default {
 	<h1>Load Your Own PDF</h1>
 	<input v-if="!source" type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
 	<div v-if="errorMessage">{{errorMessage}}</div>
-	<h2 v-if="fileName" class="document-banner"><div>{{fileName}}</div><div class="document-banner-page">{{ pageCount }} Page(s)</div></h2>
+	<h2 v-if="fileName" class="document-banner"><div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button></div><div class="document-banner-page">{{ pageCount }} Page(s)</div></h2>
 	<PdfComponent
 		id="my-pdf"
+		ref="pdf"
 		:textLayer="true"
 		:annotationLayer="true"
 		class="document-container"
@@ -117,5 +121,10 @@ export default {
 	box-sizing: border-box;
 	background: transparent;
 	width:100%;
+}
+.button {
+	display: inline;
+	padding: .25rem;
+	vertical-align: middle;
 }
 </style>
