@@ -102,7 +102,6 @@ class PageContext {
 	 * @param {Number} rotation document-level rotation.
 	 */
 	hot(rotation) {
-		//console.log("hot", this.didRender, this.index);
 		this.rotation = rotation;
 		this.state = HOT;
 		this.didRender = false;
@@ -112,7 +111,6 @@ class PageContext {
 	 * Resets didRender flag.
 	 */
 	cold() {
-		//console.log("cold", this.didRender, this.index);
 		this.state = COLD;
 		this.didRender = false;
 	}
@@ -122,7 +120,6 @@ class PageContext {
 	 * @param {Number} rotation document-level rotation.
 	 */
 	warm(rotation) {
-		//console.log("warm", this.didRender, this.index);
 		this.rotation = rotation;
 		this.state = WARM;
 		this.didRender = false;
@@ -152,7 +149,6 @@ const materializePages = (sizeMode, id, numPages, list) => {
  */
 const pageZone = (pageIndex, currentPageIndex, pageCount, hotzone, warmzone) => {
 	const distance = pageIndex - currentPageIndex;
-	//console.log(`pageZone(${pageIndex},${currentPageIndex},${pageCount},${hotzone},${warmzone})`, distance);
 	if(Math.abs(distance) >= pageCount) return undefined;
 	if(hotzone === undefined) return HOT;
 	if(Math.abs(distance) <= hotzone) return HOT;
