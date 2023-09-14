@@ -151,7 +151,6 @@ describe('PageContext', () => {
 			clientHeight: 1000,
 			style: {
 				setProperty(name, value) {
-					console.log("setProperty", name, value);
 					if(name === "--scale-factor") {
 						expect(value).toBe(viewport.scale);
 					}
@@ -176,12 +175,9 @@ describe('PageContext', () => {
 		};
 		const cache = {
 			viewport(pageNumber, sizeMode, width, height, rotation) {
-				console.log("viewport", width, height);
 				return viewport;
 			},
-			renderCanvas() {
-				console.log("renderCanvas");
-			},
+			renderCanvas() {},
 			renderTextLayer(pageNumber, viewport, el) {},
 			renderAnnotationLayer(pageNumber, viewport, el) {},
 		};
