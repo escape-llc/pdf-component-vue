@@ -225,6 +225,9 @@ describe("DocumentHandler", async () => {
 		expect(async () => { const xxx = await ddh.load("source"); }).rejects.toThrowError("load: not implemented");
 		expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: not implemented");
 		expect(async () => { const xxx = await ddh.pageLabels(); }).rejects.toThrowError("pageLabels: not implemented");
+		ddh.destroy();
+		// does nothing so it should still be undefined
+		expect(ddh.document).toBe(undefined);
 	})
 	it("DocumentHandler_pdfjs should throw if not load()", () => {
 		const ddh = new dh.DocumentHandler_pdfjs();
@@ -232,6 +235,8 @@ describe("DocumentHandler", async () => {
 		expect(async () => { const xxx = await ddh.load(undefined); }).rejects.toThrowError("load: source was null or undefined");
 		expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: load was not called");
 		expect(async () => { const xxx = await ddh.pageLabels(); }).rejects.toThrowError("pageLabels: load was not called");
+		ddh.destroy();
+		expect(ddh.document).toBe(null);
 	})
 })
 describe("PageCache", () => {
