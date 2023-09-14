@@ -4,20 +4,26 @@ import * as pc from '../PageContext.js'
 import * as pm from "../PageManagement.js"
 
 describe("PageManagement", () => {
+	it("default impl", () => {
+		const pmx = new pm.PageManagement();
+		expect(pmx.tileStart).toBe(0);
+		const xx = pmx.execute([]);
+		expect(xx).toBe(undefined);
+	})
 	it("invalid pageIndex", () => {
 		expect(() => new pm.PageManagement_UpdateCache(-1, undefined, undefined))
 		.toThrow(new Error("pageIndex: must be GE zero"));
 		expect(() => new pm.PageManagement_UpdateCache(undefined, undefined, undefined))
 		.toThrow(new Error("pageIndex: must be GE zero"));
-	});
+	})
 	it("invalid hotZone", () => {
 		expect(() => new pm.PageManagement_UpdateCache(0, -1, undefined))
 		.toThrow(new Error("hotZone: must be undefined or GE zero"));
-	});
+	})
 	it("invalid warmZone", () => {
 		expect(() => new pm.PageManagement_UpdateCache(0, undefined, -1))
 		.toThrow(new Error("warmZone: must be undefined or GE zero"));
-	});
+	})
 	it("scan cp=0 hot=4", () => {
 		const pagecount = 15;
 		const hot = 4;
@@ -37,7 +43,7 @@ describe("PageManagement", () => {
 			expect(output[page].page.index).toBe(page);
 			expect(output[page].zone).toBe(expecting[page]);
 		}
-	});
+	})
 	it("tiles cp=0 hot=4 tilect=undefined", () => {
 		const pagecount = 15;
 		const hot = 4;
@@ -60,7 +66,7 @@ describe("PageManagement", () => {
 		}
 		const tiles = pm.tiles(output, 0, tilect);
 		expect(tiles.length).toBe(output.length);
-	});
+	})
 	it("tiles cp=0 hot=4 tilect=4", () => {
 		const pagecount = 15;
 		const hot = 4;
@@ -85,5 +91,5 @@ describe("PageManagement", () => {
 		}
 		const tiles = pm.tiles(output, 0, tilect);
 		expect(tiles.length).toBe(tilect);
-	});
-});
+	})
+})
