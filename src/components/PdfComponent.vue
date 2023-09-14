@@ -46,8 +46,8 @@ function createPrintIframe(container) {
 		container.appendChild(iframe);
 	});
 }
-function addPrintStyles(iframe, sizeX, sizeY) {
-	const style = iframe.contentWindow.document.createElement('style');
+function addPrintStyles(doc, sizeX, sizeY) {
+	const style = doc.createElement('style');
 	style.textContent = `
 		@page {
 			margin: 0;
@@ -63,8 +63,8 @@ function addPrintStyles(iframe, sizeX, sizeY) {
 			page-break-inside: avoid;
 		}
 	`;
-	iframe.contentWindow.document.head.appendChild(style);
-	iframe.contentWindow.document.body.style.width = '100%';
+	doc.head.appendChild(style);
+	doc.body.style.width = '100%';
 }
 
 export default {
@@ -263,7 +263,7 @@ export default {
 							if (ix === 0) {
 								const sizeX = (viewport.width * printUnits) / styleUnits;
 								const sizeY = (viewport.height * printUnits) / styleUnits;
-								addPrintStyles(iframe, sizeX, sizeY);
+								addPrintStyles(iframe.contentWindow.document, sizeX, sizeY);
 							}
 							const canvas = document.createElement("canvas");
 							canvas.width = viewport.width * printUnits;
@@ -320,7 +320,7 @@ export default {
 				const startPage = tiles[0].page.pageNumber;
 				const page = await this.handler.page(startPage);
 				// warm up the cache
-				// this allows WARM pages to have the size of page 1 instead of undefined
+				// this allows WARM pages to have the size of startPage instead of undefined
 				tiles.filter(tx => tx.zone !== COLD).forEach(tx => {
 					this.cache.retain(tx.page.pageNumber, page);
 				});
@@ -328,7 +328,6 @@ export default {
 				const pages = this.updatePages(tiles);
 				// on $nextTick all the pages are mounted
 				await this.$nextTick();
-				//console.log("after TICK", this.pages);
 				// render pages
 				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
 				this.$emit("rendered", pages.map(px => this.infoFor(px)));
@@ -360,7 +359,6 @@ export default {
 		 */
 		updatePages(tiles) {
 			const pages = tiles.map(tx => tx.page);
-			//console.log("updatePages (pages)", pages);
 			this.pages = pages;
 			return pages;
 		},
@@ -373,7 +371,6 @@ export default {
 			const tc = this.tileConfiguration && !isNaN(this.tileConfiguration.total) ? this.tileConfiguration.total : undefined;
 			const tiles = page.tiles(output, pm.tileStart, tc);
 			this.sequenceTiles(tiles);
-			//console.log("getTiles (output,tiles)", output, tiles);
 			return tiles;
 		},
 		/**
