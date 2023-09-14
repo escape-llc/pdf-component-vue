@@ -41,14 +41,8 @@ pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", im
 function createPrintIframe(container) {
 	return new Promise((resolve) => {
 		const iframe = document.createElement('iframe');
-		iframe.width = 0;
-		iframe.height = 0;
-		iframe.style.position = 'absolute';
-		iframe.style.top = 0;
-		iframe.style.left = 0;
-		iframe.style.border = 'none';
-		iframe.style.overflow = 'hidden';
 		iframe.onload = () => resolve(iframe);
+		iframe.style.display = "none";
 		container.appendChild(iframe);
 	});
 }
@@ -121,7 +115,7 @@ export default {
 		 * Each page MAY be rotated independently; it is combined with this value.
 		 */
 		rotation: {
-			type: [Number, String],
+			type: Number,
 			default: 0,
 			validator(value) {
 				if (value % 90 !== 0) {
@@ -178,11 +172,11 @@ export default {
 	},
 	computed: {
 		linkService() {
-			if (!this.document || !this.annotationLayer) {
+			if (!this.handler.document || !this.annotationLayer) {
 				return null;
 			}
 			const service = new PDFLinkService();
-			service.setDocument(this.document);
+			service.setDocument(this.handler.document);
 			service.setViewer({
 				scrollPageIntoView: (ev) => {
 					this.$emit("internal-link-clicked", ev);
@@ -193,7 +187,6 @@ export default {
 	},
 	created() {
 		// cannot be wrapped!
-		this.document = null;
 		this.pageContexts = [];
 		this.handler = new DocumentHandler_pdfjs(this.$emit);
 		this.cache = null;
@@ -210,8 +203,7 @@ export default {
 			() => [
 				this.pageManagement,
 				this.tileConfiguration,
-				this.annotationLayer,
-				this.textLayer,
+				this.scale,
 				this.rotation,
 			], async (nvs, ovs) => {
 				await this.renderPages();
@@ -223,14 +215,12 @@ export default {
 			.then(_ => { });
 	},
 	beforeDestroy() {
+		this.handler?.destroy();
 		this.handler = null;
-		this.document?.destroy()
-		this.document = null;
 	},
 	beforeUnmount() {
+		this.handler?.destroy();
 		this.handler = null;
-		this.document?.destroy()
-		this.document = null;
 	},
 	methods: {
 		async loadDocument(source) {
@@ -239,21 +229,21 @@ export default {
 		/**
 		 * Invoke the print functionality.
 		 * @param {Number} dpi print DPI; defaults to 300.
-		 * @param {String} filename filename; defaults to empty string.
 		 * @param {Array|undefined} pageSequence array of (1-relative) page numbers to print. Leave undefined for all pages.
 		 */
-		async print(dpi = 300, filename = "", pageSequence) {
-			if (!this.document) {
+		async print(dpi = 300, pageSequence) {
+			if (!this.handler.document) {
 				return;
 			}
 			const printUnits = dpi / 72;
 			const styleUnits = 96 / 72;
-			let container, title;
 			try {
-				container = document.createElement("div");
-				container.style.display = "none";
-				window.document.body.appendChild(container);
-				const iframe = await createPrintIframe(container);
+				const iframe = await createPrintIframe(window.document.body);
+				const closePrint = (ev) => {
+					window.document.body.removeChild(iframe);
+				};
+				iframe.contentWindow.onbeforeunload = closePrint;
+				iframe.contentWindow.onafterprint = closePrint;
 				const pageNums = [];
 				if(pageSequence) {
 					for(const px of pageSequence) {
@@ -269,55 +259,33 @@ export default {
 					pageNums.map(async (pageNum, ix) => {
 						try {
 							const page = await this.handler.page(pageNum);
-							const viewport = page.getViewport({
-								scale: 1,
-								rotation: 0,
-							});
-
+							const viewport = page.getViewport({ scale: 1, rotation: 0, });
 							if (ix === 0) {
 								const sizeX = (viewport.width * printUnits) / styleUnits;
 								const sizeY = (viewport.height * printUnits) / styleUnits;
 								addPrintStyles(iframe, sizeX, sizeY);
 							}
-
 							const canvas = document.createElement("canvas");
 							canvas.width = viewport.width * printUnits;
 							canvas.height = viewport.height * printUnits;
-							container.appendChild(canvas);
-							const canvasClone = canvas.cloneNode();
-							iframe.contentWindow.document.body.appendChild(canvasClone);
-
 							await page.render({
 								canvasContext: canvas.getContext("2d"),
 								intent: "print",
 								transform: [printUnits, 0, 0, printUnits, 0, 0],
 								viewport,
 							}).promise;
-
-							canvasClone.getContext("2d").drawImage(canvas, 0, 0);
+							iframe.contentWindow.document.body.appendChild(canvas);
 						}
 						catch(e) {
 							console.error("print failed", e);
 						}
 					})
 				);
-				if (filename) {
-					title = window.document.title;
-					window.document.title = filename;
-				}
-				iframe.contentWindow.focus();
 				iframe.contentWindow.print();
 				this.$emit("printed", iframe);
 			}
 			catch(e) {
 				this.$emit("printing-failed", e);
-			}
-			finally {
-				if (title) {
-					window.document.title = title
-				}
-				//releaseChildCanvases(container);
-				container.parentNode?.removeChild(container);
 			}
 		},
 		/**
@@ -330,11 +298,11 @@ export default {
 				return;
 			}
 			try {
-				this.document?.destroy()
-				this.document = await this.handler.load(source);
+				const document = await this.handler.load(source);
 				this.cache = new PageCache(this.linkService, this.imageResourcesPath);
-				this.pageCount = this.document.numPages;
-				this.$emit("loaded", this.document);
+				this.pageCount = document.numPages;
+				this.$emit("loaded", document);
+				this.pageContexts = [];
 				materializePages(this.sizeMode, this.id, this.pageCount, this.pageContexts);
 				if(this.usePageLabels) {
 					const labels = await this.handler.pageLabels();
@@ -365,7 +333,7 @@ export default {
 				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
 				this.$emit("rendered", pages.map(px => this.infoFor(px)));
 			} catch (e) {
-				this.document = null;
+				this.handler.destroy();
 				this.pageCount = null;
 				this.pages = [];
 				this.pageContexts = [];
@@ -413,7 +381,7 @@ export default {
 		 * HOT tiles are triggered.
 		 */
 		async renderPages() {
-			if (!this.document) {
+			if (!this.handler.document) {
 				return;
 			}
 			try {
