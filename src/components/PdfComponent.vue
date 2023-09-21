@@ -47,6 +47,7 @@ function createPrintIframe(container) {
 	});
 }
 function addPrintStyles(doc, sizeX, sizeY) {
+	//console.log("addPrintStyles", sizeX, sizeY);
 	const style = doc.createElement('style');
 	style.textContent = `
 		@page {
@@ -58,6 +59,8 @@ function addPrintStyles(doc, sizeX, sizeY) {
 		}
 		canvas {
 			width: 100%;
+			max-height: 100% !important;
+			height:100%;
 			page-break-after: always;
 			page-break-before: avoid;
 			page-break-inside: avoid;
@@ -71,11 +74,11 @@ export default {
 	name: "PdfComponent",
 	emits: [
 		"progress", "password-requested",
-		"loaded", "loading-failed",
-		"rendered", "rendering-failed",
-		"printed", "printing-failed",
+		"loaded", "load-failed",
+		"rendered", "render-failed",
+		"printed", "print-failed",
 		"page-click",
-		"internal-link-clicked"
+		"internal-link-click"
 	],
 	expose: ["loadDocument", "print"],
 	props: {
@@ -179,7 +182,7 @@ export default {
 			service.setDocument(this.handler.document);
 			service.setViewer({
 				scrollPageIntoView: (ev) => {
-					this.$emit("internal-link-clicked", ev);
+					this.$emit("internal-link-click", ev);
 				},
 			});
 			return service;
@@ -285,7 +288,7 @@ export default {
 				this.$emit("printed", iframe);
 			}
 			catch(e) {
-				this.$emit("printing-failed", e);
+				this.$emit("print-failed", e);
 			}
 		},
 		/**
@@ -326,8 +329,7 @@ export default {
 				});
 				await this.processTiles(tiles);
 				const pages = this.updatePages(tiles);
-				// on $nextTick all the pages are mounted
-				await this.$nextTick();
+				await this.domUpdate();
 				// render pages
 				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
 				this.$emit("rendered", pages.map(px => this.infoFor(px)));
@@ -336,7 +338,7 @@ export default {
 				this.pageCount = null;
 				this.pages = [];
 				this.pageContexts = [];
-				this.$emit("loading-failed", e);
+				this.$emit("load-failed", e);
 			}
 		},
 		/**
@@ -386,17 +388,24 @@ export default {
 				await this.processTiles(tiles);
 				if(this.pages.length === 0 || tiles[0].page.pageNumber !== this.pages[0].pageNumber) {
 					// changing tile sets
-					//console.log("renderPages.change-tileset");
 					const pages = this.updatePages(tiles);
-					// require DOM operations before proceeding
-					await this.$nextTick();
+					await this.domUpdate();
 				}
 				await Promise.all(tiles.map(async tx => { await tx.page.render(this.cache); }));
 				this.$emit("rendered", tiles.map(tx => this.infoFor(tx.page)));
 			}
 			catch (e) {
-				this.$emit("rendering-failed", e);
+				this.$emit("render-failed", e);
 			}
+		},
+		/**
+		 * Consolidate DOM update logic.
+		 */
+		async domUpdate() {
+			// TODO outgoing DOM disconnect
+			// "during" $nextTick DOM elements are unmounted/mounted
+			await this.$nextTick();
+			// TODO incoming DOM connect
 		},
 		async processTiles(tiles) {
 			// load turning-HOT pages (!HOT->HOT)

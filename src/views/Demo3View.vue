@@ -81,9 +81,9 @@ export default {
 		textLayerClass="page-stack"
 		@page-click="handlePageClick"
 		@loaded="handleLoaded"
-		@loading-failed="handleError"
+		@load-failed="handleError"
 		@page-rendered="handlePageRendered"
-		@rendering-failed="handleRenderingFailed"
+		@render-failed="handleRenderingFailed"
 		:source="url">
 		<template #pre-page="slotProps">
 			<div :style="{'grid-row': slotProps.gridRow,'grid-column': slotProps.gridColumn}">Page {{slotProps.pageNumber}}</div>

@@ -1,5 +1,5 @@
 <script>
-import { PdfComponent } from "../components"
+import { PdfComponent, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT } from "../components"
 
 export default {
 	name: "Demo4View",
@@ -8,48 +8,83 @@ export default {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
 			this.pageCount = doc.numPages;
+			this.selectedPage = 1;
 		},
 		handleError(ev) {
 			console.error("handle.load-error", ev);
-			this.errorMessage = ev.message;
+			this.errorMessage = "Load: " + ev.message;
 		},
-		handlePageRendered(ev) {
-			console.log("handle.page", ev);
+		handleRendered(ev) {
+			console.log("handle.rendered", ev);
 		},
 		handleRenderingFailed(ev) {
 			console.error("handle.render-error", ev);
-			this.errorMessage = ev.message;
+			this.errorMessage = "Render: " + ev.message;
 		},
 		handleInternalLink(ev) {
-			console.log("internal-link-clicked", ev);
+			console.log("internal-link-click", ev);
 			const id = `#my-pdf-page-${ev.pageNumber}`;
 			document.location.hash = id;
-		},
-		handleInput(ev) {
-			console.log("handle.input", ev);
-			const file = ev.target.files[0];
-			//Step 2: Read the file using file reader
-			const fileReader = new FileReader();
-			const capture = this;
-			fileReader.onload = function() {
-					//Step 4:turn array buffer into typed array
-					var typedarray = new Uint8Array(this.result);
-					capture.source = typedarray;
-					capture.fileName = file.name;
-			};
-			//Step 3:Read the file as ArrayBuffer
-			fileReader.readAsArrayBuffer(file);
 		},
 		async handlePrint(ev) {
 			await this.$refs.pdf.print();
 		},
+		handleInput(ev) {
+			console.log("handle.input", ev);
+			const file = ev.target.files[0];
+			//Step 1: Read the file using file reader
+			const fileReader = new FileReader();
+			// we must capture THIS so the ONLOAD callback below can access it
+			// the handler binds THIS itself so we cannot use a bind or arrow function
+			const capture = this;
+			fileReader.onload = function() {
+				//Step 3:turn array buffer into typed array
+				const u8a = new Uint8Array(this.result);
+				// each instance requires a separate copy of the buffer
+				capture.source = u8a;
+				// this makes a copy, which is necessary
+				capture.source2 = new Uint8Array(u8a);
+				capture.fileName = file.name;
+			};
+			//Step 2:Read the file as ArrayBuffer
+			fileReader.readAsArrayBuffer(file);
+		},
+		pageContainer(page) {
+			return this.calcPageClass(page.pageNumber);
+		},
+		calcPageClass(pageNumber) {
+			const css = ["page-container"];
+			if(pageNumber === this.selectedPage) {
+				css.push("page-selected");
+			}
+			return css.join(" ");
+		},
+		handlePageClick(ev) {
+			console.log("handle.pageClick", ev);
+			if(ev.pageNumber === this.selectedPage) {
+			}
+			else {
+				this.selectedPage = ev.pageNumber;
+				if(ev.pageNumber > 0) {
+					this.cacheStartPage = ev.pageNumber;
+				}
+			}
+		},
+	},
+	computed: {
+		pages() { return new PageManagement_Scroll(this.cacheStartPage - 1, 1, undefined); }
 	},
 	data() {
 		return {
 			source: null,
+			source2: null,
 			errorMessage: null,
 			pageCount: undefined,
 			fileName: undefined,
+			selectedPage: null,
+			cacheStartPage: 1,
+			sizeMode: HEIGHT,
+			tileControl: new TileConfiguration(COLUMN, 1, 1),
 		};
 	}
 }
@@ -58,29 +93,78 @@ export default {
 	<h1>Load Your Own PDF</h1>
 	<input v-if="!source" type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
 	<div v-if="errorMessage">{{errorMessage}}</div>
+	<div v-if="!source" style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.</div>
 	<h2 v-if="fileName" class="document-banner"><div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button></div><div class="document-banner-page">{{ pageCount }} Page(s)</div></h2>
-	<PdfComponent
-		id="my-pdf"
-		ref="pdf"
-		:textLayer="true"
-		:annotationLayer="true"
-		class="document-container"
-		pageContainerClass="page-container"
-		canvasClass="page-stack"
-		annotationLayerClass="page-stack"
-		textLayerClass="page-stack"
-		@loaded="handleLoaded"
-		@loading-failed="handleError"
-		@page-rendered="handlePageRendered"
-		@rendering-failed="handleRenderingFailed"
-		@internal-link-clicked="handleInternalLink"
-		:source="source">
-		<template #pre-page="slotProps">
-			<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
-		</template>
-	</PdfComponent>
+	<div class="main-container">
+		<div class="sidebar">
+			<PdfComponent
+				ref="pdf"
+				id="pdf-sidebar"
+				class="document-container"
+				:pageContainerClass="pageContainer"
+				:usePageLabels="true"
+				canvasClass="page-stack"
+				annotationLayerClass="page-stack"
+				textLayerClass="page-stack"
+				@loaded="handleLoaded"
+				@load-failed="handleError"
+				@rendered="handleRendered"
+				@render-failed="handleRenderingFailed"
+				@page-click="handlePageClick"
+				:source="source">
+				<template #pre-page="slotProps">
+					<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
+				</template>
+			</PdfComponent>
+		</div>
+		<div class="page-view">
+			<PdfComponent
+				id="pdf-page"
+				:textLayer="true"
+				:annotationLayer="true"
+				:pageManagement="pages"
+				:tileConfiguration="tileControl"
+				:sizeMode="sizeMode"
+				class="document-container2"
+				pageContainerClass="page-container2"
+				canvasClass="page-stack"
+				annotationLayerClass="page-stack"
+				textLayerClass="page-stack"
+				@loaded="handleLoaded"
+				@load-failed="handleError"
+				@rendered="handleRendered"
+				@render-failed="handleRenderingFailed"
+				@internal-link-click="handleInternalLink"
+				:source="source2">
+				<template #post-page="slotProps">
+					<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
+				</template>
+			</PdfComponent>
+		</div>
+	</div>
 </template>
 <style scoped>
+.main-container {
+	display: flex;
+	flex-direction: row;
+	width:calc(100vw - 2rem);
+	max-height: 92vh;
+	overflow:hidden;
+	margin-top: .25rem;
+	box-sizing: border-box;
+}
+.sidebar {
+	width: 15rem;
+	overflow-y: scroll;
+	padding-left:1rem;
+	padding-right:1rem;
+	background: gray;
+}
+.page-view {
+	flex-grow: 1;
+	margin-left:auto;
+	margin-right:auto;
+}
 .document-banner {
 	display: flex;
 	flex-direction: row;
@@ -100,8 +184,19 @@ export default {
 	margin: auto;
 	margin-bottom: 2rem;
 	box-sizing: border-box;
-	width: 80vw;
+	width: 100%;
 	height: auto;
+}
+.document-container2 {
+	display: grid;
+	grid-template-columns: 1fr;
+	grid-template-rows: 1fr;
+	row-gap: .5rem;
+	margin: auto;
+	margin-bottom: 2rem;
+	box-sizing: border-box;
+	width: 100%;
+	height: 90vh;
 }
 /* use grid to stack the layers */
 :deep(.page-container) {
@@ -110,17 +205,33 @@ export default {
 	grid-template-rows: 1fr;
 	background: transparent;
 	margin: auto;
-	box-sizing: border-box;
+	box-sizing: content-box;
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
 	width:100%;
+	transition: box-shadow .5s ease-in;
+}
+:deep(.page-container2) {
+	display: grid;
+	grid-template-columns: 100%;
+	grid-template-rows: 100%;
+	background: transparent;
+	margin:auto;
+	box-sizing: border-box;
+	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	height: 100%;
 }
 /* stacks the page layers in the grid cell */
 :deep(.page-stack) {
 	grid-area: 1 / 1 / 1 / 1 !important;
-	box-sizing: border-box;
+	box-sizing: content-box;
 	background: transparent;
 	width:100%;
+}
+:deep(.page-selected) {
+	transition: box-shadow .5s ease-in;
+	box-shadow: 0 1px 4px 2px rgba(252, 1, 210, 0.25);
 }
 .button {
 	display: inline;

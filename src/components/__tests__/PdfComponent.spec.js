@@ -14,7 +14,7 @@ function mountedPromise(options) {
 					onLoaded: () => {
 						resolve(wrapper);
 					},
-					"onLoading-failed": e => {
+					"onLoad-failed": e => {
 						reject(e);
 					}
 				}
@@ -112,7 +112,7 @@ describe('PdfComponent', () => {
 				onLoaded: () => {
 					loading = true;
 				},
-				"onLoading-failed": e => {
+				"onLoad-failed": e => {
 					error = e;
 				}
 			}
