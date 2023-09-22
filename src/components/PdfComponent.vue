@@ -292,7 +292,7 @@ export default {
 			}
 		},
 		/**
-		 * Load PDF document.
+		 * Load and initial render of PDF source.
 		 *
 		 * @param {any} source Source document; see the props for possible data types accepted.
 		 */
@@ -307,7 +307,6 @@ export default {
 					throw new Error("document has no pages");
 				}
 				this.pageCount = document.numPages;
-				this.$emit("loaded", document);
 				this.pageContexts = [];
 				materializePages(this.sizeMode, this.id, this.pageCount, this.pageContexts);
 				if(this.usePageLabels) {
@@ -321,20 +320,26 @@ export default {
 						}
 					}
 				}
-				// load start page to get some info for placeholder tiles
-				const tiles = this.getTiles();
-				const startPage = tiles[0].page.pageNumber;
-				const page = await this.handler.page(startPage);
-				// warm up the cache
-				// this allows WARM pages to have the size of startPage instead of undefined
-				tiles.filter(tx => tx.zone !== COLD).forEach(tx => {
-					this.cache.retain(tx.page.pageNumber, page);
-				});
-				await this.transition(tiles);
-				const pages = this.updateState(tiles);
-				await this.domUpdate();
-				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
-				this.$emit("rendered", pages.map(px => this.infoFor(px)));
+				this.$emit("loaded", document);
+				try {
+					// load start page to get some info for placeholder tiles
+					const tiles = this.getTiles();
+					const startPage = tiles[0].page.pageNumber;
+					const page = await this.handler.page(startPage);
+					// warm up the cache
+					// this allows WARM pages to have the size of startPage instead of undefined
+					tiles.filter(tx => tx.zone !== COLD).forEach(tx => {
+						this.cache.retain(tx.page.pageNumber, page);
+					});
+					await this.transition(tiles);
+					const pages = this.updateState(tiles);
+					await this.domUpdate();
+					await Promise.all(pages.map(async px => { await px.render(this.cache); }));
+					this.$emit("rendered", pages.map(px => this.infoFor(px)));
+				}
+				catch(ee) {
+					this.$emit("render-failed", ee);
+				}
 			} catch (e) {
 				this.handler.destroy();
 				this.pageCount = null;
@@ -410,10 +415,10 @@ export default {
 			this.domConnect(this.pageContexts.filter(px => px.container !== null));
 		},
 		domDisconnect(pages) {
-			console.log("domUpdate.disconnect", pages);
+			//console.log("domUpdate.disconnect", pages);
 		},
 		domConnect(pages) {
-			console.log("domUpdate.connect", pages);
+			//console.log("domUpdate.connect", pages);
 		},
 		async transition(tiles) {
 			// load turning-HOT pages (!HOT->HOT)
