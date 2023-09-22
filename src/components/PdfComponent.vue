@@ -1,7 +1,7 @@
 <template>
 	<div :id="id">
 		<template v-for="page in pages" :key="page.index">
-			<slot name="pre-page" v-bind="page"></slot>
+			<slot name="pre-page" v-bind="infoFor(page)"></slot>
 			<div
 				:ref="el => { mountContainer(page, el); }"
 				:id="page.id"
@@ -16,9 +16,9 @@
 				<template v-if="annotationLayer && page.state === 2">
 					<div :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" style="position:relative" :class="annotationLayerClass" />
 				</template>
-				<slot name="page-overlay" v-bind="page"></slot>
+				<slot name="page-overlay" v-bind="infoFor(page)"></slot>
 			</div>
-			<slot name="post-page" v-bind="page"></slot>
+			<slot name="post-page" v-bind="infoFor(page)"></slot>
 		</template>
 	</div>
 </template>
@@ -303,6 +303,9 @@ export default {
 			try {
 				const document = await this.handler.load(source);
 				this.cache = new PageCache(this.linkService, this.imageResourcesPath);
+				if(document.numPages <= 0) {
+					throw new Error("document has no pages");
+				}
 				this.pageCount = document.numPages;
 				this.$emit("loaded", document);
 				this.pageContexts = [];
@@ -312,14 +315,14 @@ export default {
 					if(labels) {
 						// assign the page labels to the pages
 						//console.log("page-labels", labels);
-						for(let ix = 0; ix < labels.length; ix++) {
+						const ct = Math.min(labels.length, this.pageContexts.length);
+						for(let ix = 0; ix < ct; ix++) {
 							this.pageContexts[ix].pageLabel = labels[ix];
 						}
 					}
 				}
 				// load start page to get some info for placeholder tiles
 				const tiles = this.getTiles();
-				// TODO zero tiles?
 				const startPage = tiles[0].page.pageNumber;
 				const page = await this.handler.page(startPage);
 				// warm up the cache
@@ -327,10 +330,9 @@ export default {
 				tiles.filter(tx => tx.zone !== COLD).forEach(tx => {
 					this.cache.retain(tx.page.pageNumber, page);
 				});
-				await this.processTiles(tiles);
-				const pages = this.updatePages(tiles);
+				await this.transition(tiles);
+				const pages = this.updateState(tiles);
 				await this.domUpdate();
-				// render pages
 				await Promise.all(pages.map(async px => { await px.render(this.cache); }));
 				this.$emit("rendered", pages.map(px => this.infoFor(px)));
 			} catch (e) {
@@ -356,10 +358,10 @@ export default {
 			}
 		},
 		/**
-		 * Take the tiles obtain wrappers and update the reactive state.
+		 * Take the tiles extract PageContexts and update the reactive state.
 		 * @param {Array} tiles list of (sequenced) tiles.
 		 */
-		updatePages(tiles) {
+		updateState(tiles) {
 			const pages = tiles.map(tx => tx.page);
 			this.pages = pages;
 			return pages;
@@ -385,10 +387,10 @@ export default {
 			}
 			try {
 				const tiles = this.getTiles();
-				await this.processTiles(tiles);
+				await this.transition(tiles);
 				if(this.pages.length === 0 || tiles[0].page.pageNumber !== this.pages[0].pageNumber) {
 					// changing tile sets
-					const pages = this.updatePages(tiles);
+					const pages = this.updateState(tiles);
 					await this.domUpdate();
 				}
 				await Promise.all(tiles.map(async tx => { await tx.page.render(this.cache); }));
@@ -402,12 +404,18 @@ export default {
 		 * Consolidate DOM update logic.
 		 */
 		async domUpdate() {
-			// TODO outgoing DOM disconnect
+			this.domDisconnect(this.pageContexts.filter(px => px.container !== null));
 			// "during" $nextTick DOM elements are unmounted/mounted
 			await this.$nextTick();
-			// TODO incoming DOM connect
+			this.domConnect(this.pageContexts.filter(px => px.container !== null));
 		},
-		async processTiles(tiles) {
+		domDisconnect(pages) {
+			console.log("domUpdate.disconnect", pages);
+		},
+		domConnect(pages) {
+			console.log("domUpdate.connect", pages);
+		},
+		async transition(tiles) {
 			// load turning-HOT pages (!HOT->HOT)
 			const rotation = this.rotation || 0;
 			await Promise.all(tiles.filter(tx => tx.zone === HOT && tx.page.state !== HOT).map(async tx => {

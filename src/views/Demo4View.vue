@@ -90,10 +90,12 @@ export default {
 }
 </script>
 <template>
-	<h1>Load Your Own PDF</h1>
-	<input v-if="!source" type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
+	<template v-if="!source">
+		<h1>Load Your Own PDF</h1>
+		<input type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
+		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.</div>
+	</template>
 	<div v-if="errorMessage">{{errorMessage}}</div>
-	<div v-if="!source" style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.</div>
 	<h2 v-if="fileName" class="document-banner"><div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button></div><div class="document-banner-page">{{ pageCount }} Page(s)</div></h2>
 	<div class="main-container">
 		<div class="sidebar">

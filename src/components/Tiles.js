@@ -3,6 +3,7 @@
  * @param {Number} limit Upper bound non-inclusive.
  */
 function* finite(limit) {
+	if(limit <= 0) throw new Error("finite: limit must be GT 0");
 	for(let ix = 0; ix < limit; ix++) yield ix;
 }
 /**
@@ -89,6 +90,8 @@ class TileConfiguration {
 		this.rows = rows;
 		this.columns = columns;
 		if(isNaN(this.rows) && isNaN(this.columns)) throw new Error("TileConfiguration: both rows and columns are NaN");
+		if(!isNaN(this.rows) && this.rows <= 0) throw new Error("rows: must be NaN OR GT 0");
+		if(!isNaN(this.columns) && this.columns <= 0) throw new Error("columns: must be NaN OR GT 0");
 		switch(this.direction) {
 			case ROW:
 				if(isNaN(this.columns)) throw new Error("TileConfiguration.ROW: columns is NaN; must be a number");

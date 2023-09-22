@@ -182,4 +182,16 @@ describe("TileConfiguration", () => {
 		)
 		.toThrow(new Error("TileConfiguration: 'bogus' unrecognized direction"));
 	});
+	it("error (column,0,?)", () => {
+		expect(
+			()=> { const tc = new tiles.TileConfiguration(tiles.COLUMN, 0, 1); }
+		)
+		.toThrow(new Error("rows: must be NaN OR GT 0"));
+	});
+	it("error (column,?,0)", () => {
+		expect(
+			()=> { const tc = new tiles.TileConfiguration(tiles.COLUMN, 1, 0); }
+		)
+		.toThrow(new Error("columns: must be NaN OR GT 0"));
+	});
 });
