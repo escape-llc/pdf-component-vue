@@ -1,4 +1,4 @@
-class ScrollManagement {
+class ScrollConfiguration {
 	root
 	// top,left,right,bottom
 	rootMargin
@@ -8,4 +8,4 @@ class ScrollManagement {
 	}
 }
 
-export { ScrollManagement }
+export { ScrollConfiguration }

@@ -4,7 +4,7 @@ import {
 } from "./PageContext";
 import { ROW, COLUMN, TileConfiguration } from "./Tiles";
 import { PageManagement, PageManagement_UpdateCache, PageManagement_Scroll } from "./PageManagement";
-import { ScrollManagement } from "./ScrollManagement";
+import { ScrollConfiguration } from "./ScrollConfiguration";
 import PdfComponent from "./PdfComponent.vue";
 import * as pdf from "pdfjs-dist/build/pdf";
 
@@ -19,6 +19,6 @@ export {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
 	ROW, COLUMN, TileConfiguration,
-	ScrollManagement,
+	ScrollConfiguration,
 	PageManagement, PageManagement_UpdateCache, PageManagement_Scroll
 }

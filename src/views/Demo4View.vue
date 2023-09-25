@@ -1,5 +1,61 @@
+<template>
+	<template v-if="!source">
+		<h1>Load Your Own PDF</h1>
+		<input type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
+		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.</div>
+	</template>
+	<div v-if="errorMessage">{{errorMessage}}</div>
+	<h2 v-if="fileName" class="document-banner"><div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button></div><div class="document-banner-page">{{ pageCount }} Page(s)</div></h2>
+	<div class="main-container">
+		<div ref="sidebar" class="sidebar">
+			<PdfComponent
+				ref="pdf"
+				id="pdf-sidebar"
+				class="document-container"
+				:scrollConfiguration="scroll"
+				:pageContainerClass="pageContainer"
+				:usePageLabels="true"
+				canvasClass="page-stack"
+				annotationLayerClass="page-stack"
+				textLayerClass="page-stack"
+				@loaded="handleLoaded"
+				@load-failed="handleError"
+				@rendered="handleRendered"
+				@render-failed="handleRenderingFailed"
+				@page-click="handlePageClick"
+				@visible-pages="handleVisiblePages"
+				:source="source">
+				<template #pre-page="slotProps">
+					<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
+				</template>
+			</PdfComponent>
+		</div>
+		<div class="page-view">
+			<PdfComponent
+				id="pdf-page"
+				:textLayer="true"
+				:annotationLayer="true"
+				:pageManagement="pages"
+				:tileConfiguration="tileControl"
+				:sizeMode="sizeMode"
+				class="document-container2"
+				pageContainerClass="page-container2"
+				canvasClass="page-stack"
+				annotationLayerClass="page-stack"
+				textLayerClass="page-stack"
+				@load-failed="handleError"
+				@render-failed="handleRenderingFailed"
+				@internal-link-click="handleInternalLink"
+				:source="source2">
+				<template #post-page="slotProps">
+					<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
+				</template>
+			</PdfComponent>
+		</div>
+	</div>
+</template>
 <script>
-import { PdfComponent, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT } from "../components"
+import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateCache } from "../components"
 
 export default {
 	name: "Demo4View",
@@ -9,6 +65,7 @@ export default {
 			console.log("handle.loaded", doc);
 			this.pageCount = doc.numPages;
 			this.selectedPage = 1;
+			this.scroll = new ScrollConfiguration(this.$refs.sidebar.$el, "64px 0px 0px 64px");
 		},
 		handleError(ev) {
 			console.error("handle.load-error", ev);
@@ -25,6 +82,10 @@ export default {
 			console.log("internal-link-click", ev);
 			const id = `#my-pdf-page-${ev.pageNumber}`;
 			document.location.hash = id;
+		},
+		handleVisiblePages(ev) {
+			console.log("visible pages", ev);
+			// get page range visible and create a PageManagment instance to fufill it
 		},
 		async handlePrint(ev) {
 			await this.$refs.pdf.print();
@@ -72,7 +133,8 @@ export default {
 		},
 	},
 	computed: {
-		pages() { return new PageManagement_Scroll(this.cacheStartPage - 1, 1, undefined); }
+		pages() { return new PageManagement_Scroll(this.cacheStartPage - 1, 1, undefined); },
+		sidebarPages() { return new PageManagement_UpdateCache(0, 4, undefined); }
 	},
 	data() {
 		return {
@@ -85,66 +147,11 @@ export default {
 			cacheStartPage: 1,
 			sizeMode: HEIGHT,
 			tileControl: new TileConfiguration(COLUMN, 1, 1),
+			scroll: undefined,
 		};
 	}
 }
 </script>
-<template>
-	<template v-if="!source">
-		<h1>Load Your Own PDF</h1>
-		<input type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
-		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.</div>
-	</template>
-	<div v-if="errorMessage">{{errorMessage}}</div>
-	<h2 v-if="fileName" class="document-banner"><div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button></div><div class="document-banner-page">{{ pageCount }} Page(s)</div></h2>
-	<div class="main-container">
-		<div class="sidebar">
-			<PdfComponent
-				ref="pdf"
-				id="pdf-sidebar"
-				class="document-container"
-				:pageContainerClass="pageContainer"
-				:usePageLabels="true"
-				canvasClass="page-stack"
-				annotationLayerClass="page-stack"
-				textLayerClass="page-stack"
-				@loaded="handleLoaded"
-				@load-failed="handleError"
-				@rendered="handleRendered"
-				@render-failed="handleRenderingFailed"
-				@page-click="handlePageClick"
-				:source="source">
-				<template #pre-page="slotProps">
-					<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
-				</template>
-			</PdfComponent>
-		</div>
-		<div class="page-view">
-			<PdfComponent
-				id="pdf-page"
-				:textLayer="true"
-				:annotationLayer="true"
-				:pageManagement="pages"
-				:tileConfiguration="tileControl"
-				:sizeMode="sizeMode"
-				class="document-container2"
-				pageContainerClass="page-container2"
-				canvasClass="page-stack"
-				annotationLayerClass="page-stack"
-				textLayerClass="page-stack"
-				@loaded="handleLoaded"
-				@load-failed="handleError"
-				@rendered="handleRendered"
-				@render-failed="handleRenderingFailed"
-				@internal-link-click="handleInternalLink"
-				:source="source2">
-				<template #post-page="slotProps">
-					<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
-				</template>
-			</PdfComponent>
-		</div>
-	</div>
-</template>
 <style scoped>
 .main-container {
 	display: flex;

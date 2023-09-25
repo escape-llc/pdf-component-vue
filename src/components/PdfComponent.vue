@@ -34,7 +34,7 @@ import { DocumentHandler_pdfjs } from "./DocumentHandler.js";
 import { PageCache } from './PageCache.js';
 import * as tile from "./Tiles.js";
 import * as page from "./PageManagement";
-import * as scroll from "./ScrollManagement";
+import * as scroll from "./ScrollConfiguration";
 import '../pdf-component-vue.css';
 
 pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
@@ -82,7 +82,7 @@ export default {
 		"page-click",
 		"internal-link-click"
 	],
-	expose: ["loadDocument", "print"],
+	expose: ["print"],
 	props: {
 		id: String,
 		sizeMode: {
@@ -111,10 +111,11 @@ export default {
 		 */
 		pageManagement: page.PageManagement,
 		/**
-		 * Changes the scroll management.
-		 * The component emits the 'page-visibility' event back.
+		 * Changes the scroll configuration.
+		 * The component emits the 'visibile-pages' event back.
+		 * Set this from the @loaded handler, before any DOM elements are created.
 		 */
-		scrollManagement: scroll.ScrollManagement,
+		scrollConfiguration: scroll.ScrollConfiguration,
 		/**
 		 * Desired ratio of canvas size to document size.
 		 * @values Number
@@ -241,9 +242,6 @@ export default {
 		this.pageSet = null;
 	},
 	methods: {
-		async loadDocument(source) {
-			await this.load(source);
-		},
 		/**
 		 * Invoke the print functionality.
 		 * @param {Number} dpi print DPI; defaults to 300.
@@ -437,7 +435,7 @@ export default {
 			}
 		},
 		domConnect(pages) {
-			if(!this.intersect && this.scrollManagement instanceof scroll.ScrollManagement) {
+			if(!this.intersect && this.scrollConfiguration instanceof scroll.ScrollConfiguration) {
 				this.intersect = new IntersectionObserver(entries => {
 					entries.forEach(ex => {
 						const target = this.pageContexts.filter(px => px.container === ex.target);
@@ -456,8 +454,8 @@ export default {
 					}
 					this.$emit("visible-pages", pages);
 				}, {
-					root: this.scrollManagement.root,
-					rootMargin: this.scrollManagement.rootMargin,
+					root: this.scrollConfiguration.root,
+					rootMargin: this.scrollConfiguration.rootMargin,
 					thresholds: [0, 0.25, 0.50, 0.75, 1.0]
 				});
 				this.pageSet = new Set();
