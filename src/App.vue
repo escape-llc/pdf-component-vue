@@ -1,10 +1,13 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import { PdfjsVersion } from "./components"
+const version = PdfjsVersion
+const pversion = __APP_VERSION__
 </script>
 <template>
 	<header style="margin-bottom:.25rem;margin-top:.25rem">
 		<nav>
-			<div style="font-weight:bold;margin-right:1rem">DEV</div>
+			<div style="font-weight:bold;margin-right:1rem">DEV {{ pversion }} (pdfjs {{ version }})</div>
 			<RouterLink to="/">Home</RouterLink>
 			<RouterLink to="/demo1">Scrolling</RouterLink>
 			<RouterLink to="/demo2">Navigation</RouterLink>
