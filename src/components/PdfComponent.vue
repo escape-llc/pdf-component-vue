@@ -34,6 +34,7 @@ import { DocumentHandler_pdfjs } from "./DocumentHandler.js";
 import { PageCache } from './PageCache.js';
 import * as tile from "./Tiles.js";
 import * as page from "./PageManagement";
+import * as scroll from "./ScrollManagement";
 import '../pdf-component-vue.css';
 
 pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
@@ -77,6 +78,7 @@ export default {
 		"loaded", "load-failed",
 		"rendered", "render-failed",
 		"printed", "print-failed",
+		"visible-pages",
 		"page-click",
 		"internal-link-click"
 	],
@@ -108,6 +110,11 @@ export default {
 		 * Changes the page management.
 		 */
 		pageManagement: page.PageManagement,
+		/**
+		 * Changes the scroll management.
+		 * The component emits the 'page-visibility' event back.
+		 */
+		scrollManagement: scroll.ScrollManagement,
 		/**
 		 * Desired ratio of canvas size to document size.
 		 * @values Number
@@ -193,6 +200,8 @@ export default {
 		this.pageContexts = [];
 		this.handler = new DocumentHandler_pdfjs(this.$emit);
 		this.cache = null;
+		this.intersect = null;
+		this.pageSet = null;
 		// end
 		this.$watch(
 			() => this.source,
@@ -220,10 +229,16 @@ export default {
 	beforeDestroy() {
 		this.handler?.destroy();
 		this.handler = null;
+		this.intersect?.disconnect();
+		this.intersect = null;
+		this.pageSet = null;
 	},
 	beforeUnmount() {
 		this.handler?.destroy();
 		this.handler = null;
+		this.intersect?.disconnect();
+		this.intersect = null;
+		this.pageSet = null;
 	},
 	methods: {
 		async loadDocument(source) {
@@ -415,10 +430,41 @@ export default {
 			this.domConnect(this.pageContexts.filter(px => px.container !== null));
 		},
 		domDisconnect(pages) {
-			//console.log("domUpdate.disconnect", pages);
+			if(this.intersect) {
+				//pages.forEach(px => this.intersect.unobserve(px.container));
+				this.intersect.disconnect();
+				this.pageSet.clear();
+			}
 		},
 		domConnect(pages) {
-			//console.log("domUpdate.connect", pages);
+			if(!this.intersect && this.scrollManagement instanceof scroll.ScrollManagement) {
+				this.intersect = new IntersectionObserver(entries => {
+					entries.forEach(ex => {
+						const target = this.pageContexts.filter(px => px.container === ex.target);
+						if(target.length) {
+							if(ex.isIntersecting) {
+								this.pageSet.add(target[0]);
+							}
+							else {
+								this.pageSet.delete(target[0]);
+							}
+						}
+					});
+					const pages = [];
+					for(let px of this.pageSet.values()) {
+						pages.push(this.infoFor(px));
+					}
+					this.$emit("visible-pages", pages);
+				}, {
+					root: this.scrollManagement.root,
+					rootMargin: this.scrollManagement.rootMargin,
+					thresholds: [0, 0.25, 0.50, 0.75, 1.0]
+				});
+				this.pageSet = new Set();
+			}
+			if(this.intersect) {
+				pages.forEach(px => this.intersect.observe(px.container));
+			}
 		},
 		async transition(tiles) {
 			// load turning-HOT pages (!HOT->HOT)
