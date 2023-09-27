@@ -1,7 +1,7 @@
 <script>
 import { PdfComponent } from "../components"
 import { HEIGHT } from '../components';
-import { ROW, TileConfiguration, PageManagement_UpdateCache } from '../components';
+import { ROW, TileConfiguration, PageManagement_UpdateZones } from '../components';
 
 export default {
 	name: "Demo3View",
@@ -46,7 +46,7 @@ export default {
 		}
 	},
 	computed: {
-		pages() { return new PageManagement_UpdateCache(this.cacheStartPage - 1, 3, undefined); }
+		pages() { return new PageManagement_UpdateZones(this.cacheStartPage - 1, 3, undefined); }
 	},
 	data() {
 		return {
