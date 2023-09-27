@@ -1,11 +1,17 @@
-import { COLD, pageZone } from "./PageContext";
+import { COLD, WARM, HOT, pageZone } from "./PageContext";
+/**
+ * Functions as an abstract base class for page management implementations.
+ */
 class PageManagement {
 	execute(pageContexts) {
 		return undefined;
 	}
 	get tileStart() { return 0; }
 }
-class PageManagement_UpdateCache extends PageManagement {
+/**
+ * Page management based on HOT/WARM/COLD "zones" centered around a specific page.
+ */
+class PageManagement_UpdateZones extends PageManagement {
 	pageIndex
 	hotZone
 	warmZone
@@ -27,7 +33,36 @@ class PageManagement_UpdateCache extends PageManagement {
 		return list;
 	}
 }
-class PageManagement_Scroll extends PageManagement_UpdateCache {
+/**
+ * Page management based on explicit page range.
+ * Use in (dynamic) scrolling situations to limit resource consumption.
+ */
+class PageManagement_UpdateRange extends PageManagement {
+	start
+	stop
+	constructor(start, stop) {
+		super();
+		if(start === undefined || start === null) throw new Error("start: must be GE zero");
+		if(start < 0) throw new Error("start: must be GE zero");
+		if(stop === undefined || stop === null) throw new Error("stop: must be GE zero");
+		if(stop < 0) throw new Error("stop: must be GE zero");
+		if(stop < start) throw new Error("stop: must be GE start");
+		this.start = start;
+		this.stop = stop;
+	}
+	zone(page) {
+		return page.index >= this.start && page.index <= this.stop ? HOT : WARM;
+	}
+	execute(pages) {
+		const list = pages.map(px => { return { zone: this.zone(px), page: px }; });
+		return list;
+	}
+}
+/**
+ * Page management that sets a starting tile for rendering.
+ * Use this to "page" through groups of tiles.
+ */
+class PageManagement_Scroll extends PageManagement_UpdateZones {
 	constructor(pageIndex, hotZone, warmZone) {
 		super(pageIndex, hotZone, warmZone);
 	}
@@ -51,4 +86,4 @@ const tiles = (scan, pageIndex, tileCount) => {
 	return list;
 }
 
-export { PageManagement, PageManagement_UpdateCache, PageManagement_Scroll, tiles }
+export { PageManagement, PageManagement_UpdateZones, PageManagement_UpdateRange, PageManagement_Scroll, tiles }

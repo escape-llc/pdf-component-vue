@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest'
 
 import * as pc from '../PageContext.js'
 import * as pm from "../PageManagement.js"
+import * as sc from "../ScrollConfiguration.js"
 
-describe("PageManagement", () => {
+describe("PageManagement_UpdateZones", () => {
 	it("default impl", () => {
 		const pmx = new pm.PageManagement();
 		expect(pmx.tileStart).toBe(0);
@@ -11,17 +12,17 @@ describe("PageManagement", () => {
 		expect(xx).toBe(undefined);
 	})
 	it("invalid pageIndex", () => {
-		expect(() => new pm.PageManagement_UpdateCache(-1, undefined, undefined))
+		expect(() => new pm.PageManagement_UpdateZones(-1, undefined, undefined))
 		.toThrow(new Error("pageIndex: must be GE zero"));
-		expect(() => new pm.PageManagement_UpdateCache(undefined, undefined, undefined))
+		expect(() => new pm.PageManagement_UpdateZones(undefined, undefined, undefined))
 		.toThrow(new Error("pageIndex: must be GE zero"));
 	})
 	it("invalid hotZone", () => {
-		expect(() => new pm.PageManagement_UpdateCache(0, -1, undefined))
+		expect(() => new pm.PageManagement_UpdateZones(0, -1, undefined))
 		.toThrow(new Error("hotZone: must be undefined or GE zero"));
 	})
 	it("invalid warmZone", () => {
-		expect(() => new pm.PageManagement_UpdateCache(0, undefined, -1))
+		expect(() => new pm.PageManagement_UpdateZones(0, undefined, -1))
 		.toThrow(new Error("warmZone: must be undefined or GE zero"));
 	})
 	it("scan cp=0 hot=4", () => {
@@ -31,7 +32,7 @@ describe("PageManagement", () => {
 		const current = 0;
 		const list = [];
 		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
-		const state = new pm.PageManagement_UpdateCache(current, hot, warm);
+		const state = new pm.PageManagement_UpdateZones(current, hot, warm);
 		const output = state.execute(list);
 		expect(output.length).toBe(pagecount);
 		const expecting = [
@@ -52,7 +53,7 @@ describe("PageManagement", () => {
 		const tilect = undefined;
 		const list = [];
 		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
-		const state = new pm.PageManagement_UpdateCache(current, hot, warm);
+		const state = new pm.PageManagement_UpdateZones(current, hot, warm);
 		const output = state.execute(list);
 		expect(output.length).toBe(pagecount);
 		const expecting = [
@@ -76,7 +77,7 @@ describe("PageManagement", () => {
 		const list = [];
 		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
 		expect(list.length).toBe(pagecount);
-		const state = new pm.PageManagement_UpdateCache(current, hot, warm);
+		const state = new pm.PageManagement_UpdateZones(current, hot, warm);
 		const output = state.execute(list);
 		expect(output.length).toBe(pagecount);
 		const expecting = [
@@ -91,5 +92,82 @@ describe("PageManagement", () => {
 		}
 		const tiles = pm.tiles(output, 0, tilect);
 		expect(tiles.length).toBe(tilect);
+	})
+})
+describe("PageManagement_UpdateRange", ()=> {
+	it("invalid start", () => {
+		expect(() => new pm.PageManagement_UpdateRange(-1, undefined))
+		.toThrow(new Error("start: must be GE zero"));
+	})
+	it("invalid stop", () => {
+		expect(() => new pm.PageManagement_UpdateRange(0, -1))
+		.toThrow(new Error("stop: must be GE zero"));
+		expect(() => new pm.PageManagement_UpdateRange(3, 0))
+		.toThrow(new Error("stop: must be GE start"));
+	})
+	it("scan start=0 stop=7", () => {
+		const pagecount = 15;
+		const start = 0;
+		const stop = 7;
+		const list = [];
+		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
+		const state = new pm.PageManagement_UpdateRange(start, stop);
+		expect(state.tileStart).toBe(0);
+		const output = state.execute(list);
+		expect(output.length).toBe(pagecount);
+		const expecting = [
+			pc.HOT, pc.HOT, pc.HOT, pc.HOT, pc.HOT,
+			pc.HOT, pc.HOT, pc.HOT, pc.WARM,pc.WARM,
+			pc.WARM,pc.WARM,pc.WARM,pc.WARM,pc.WARM,
+		];
+		for(let page = 0; page < pagecount; page++) {
+			expect(output[page].page.index).toBe(page);
+			expect(output[page].zone).toBe(expecting[page]);
+		}
+	})
+	it("scan start=0 stop=7, start=8 stop=10", () => {
+		const pagecount = 15;
+		const start = 0;
+		const stop = 7;
+		const list = [];
+		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
+		const state = new pm.PageManagement_UpdateRange(start, stop);
+		const output = state.execute(list);
+		expect(output.length).toBe(pagecount);
+		const expecting = [
+			pc.HOT, pc.HOT, pc.HOT, pc.HOT, pc.HOT,
+			pc.HOT, pc.HOT, pc.HOT, pc.WARM,pc.WARM,
+			pc.WARM,pc.WARM,pc.WARM,pc.WARM,pc.WARM,
+		];
+		for(let page = 0; page < pagecount; page++) {
+			expect(output[page].page.index).toBe(page);
+			expect(output[page].zone).toBe(expecting[page]);
+		}
+		// apply state updates
+		output.forEach(ox => { ox.page.state = ox.zone; });
+		// move the HOT window
+		const start2 = 8;
+		const stop2 = 10;
+		const state2 = new pm.PageManagement_UpdateRange(start2, stop2);
+		const output2 = state2.execute(list);
+		expect(output2.length).toBe(pagecount);
+		// previously HOT pages turn WARM, previously COLD pages remain COLD
+		const expecting2 = [
+			pc.WARM, pc.WARM, pc.WARM, pc.WARM, pc.WARM,
+			pc.WARM, pc.WARM, pc.WARM, pc.HOT,  pc.HOT,
+			pc.HOT,  pc.WARM, pc.WARM, pc.WARM, pc.WARM,
+		];
+		for(let page = 0; page < pagecount; page++) {
+			expect(output2[page].page.index).toBe(page);
+			expect(output2[page].zone).toBe(expecting2[page]);
+		}
+	})
+})
+describe("ScrollConfiguration", ()=>{
+	it("ctor", () => {
+		const margin = "0px 0px 0px 0px";
+		const cfg = new sc.ScrollConfiguration(document.createElement("div"), margin);
+		expect(cfg.root instanceof HTMLDivElement).toBe(true);
+		expect(cfg.rootMargin).toBe(margin);
 	})
 })
