@@ -400,7 +400,7 @@ export default {
 		getTiles() {
 			const pm = this.pageManagement ? this.pageManagement : new page.PageManagement_UpdateZones(0, undefined, undefined);
 			const output = pm.execute(this.pageContexts);
-			console.log(`${this.id}.getTiles`, pm, output);
+			//console.log(`${this.id}.getTiles`, pm, output);
 			const tc = this.tileConfiguration && !isNaN(this.tileConfiguration.total) ? this.tileConfiguration.total : undefined;
 			const tiles = page.tiles(output, pm.tileStart, tc);
 			this.sequenceTiles(tiles);
