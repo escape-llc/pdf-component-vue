@@ -179,6 +179,7 @@ export default {
 		return {
 			pages: [],
 			pageCount: null,
+			rendering: false,
 		}
 	},
 	computed: {
@@ -228,22 +229,14 @@ export default {
 			.then(_ => { });
 	},
 	beforeDestroy() {
-		this.handler?.destroy();
-		this.handler = null;
-		this.intersect?.disconnect();
-		this.intersect = null;
-		this.pageSet = null;
+		this.cleanup();
 	},
 	beforeUnmount() {
-		this.handler?.destroy();
-		this.handler = null;
-		this.intersect?.disconnect();
-		this.intersect = null;
-		this.pageSet = null;
+		this.cleanup();
 	},
 	methods: {
 		/**
-		 * Invoke the print functionality.
+		 * Render the document to a hidden IFRAME and trigger print dialog.
 		 * @param {Number} dpi print DPI; defaults to 300.
 		 * @param {Array|undefined} pageSequence array of (1-relative) page numbers to print. Leave undefined for all pages.
 		 */
@@ -305,14 +298,26 @@ export default {
 			}
 		},
 		/**
+		 * Clean up resources.
+		 */
+		cleanup() {
+			this.handler?.destroy();
+			this.handler = null;
+			this.intersect?.disconnect();
+			this.intersect = null;
+			this.pageSet = null;
+		},
+		/**
 		 * Load and initial render of PDF source.
 		 *
 		 * @param {any} source Source document; see the props for possible data types accepted.
 		 */
 		async load(source) {
 			if (!source) {
+				this.rendering = false;
 				return;
 			}
+			this.rendering = true;
 			try {
 				const document = await this.handler.load(source);
 				this.cache = new PageCache(this.linkService, this.imageResourcesPath);
@@ -360,10 +365,13 @@ export default {
 				this.pageContexts = [];
 				this.$emit("load-failed", e);
 			}
+			finally {
+				this.rendering = false;
+			}
 		},
 		/**
 		 * Assign grid coordinates to each tile according to tileConfiguration.
-		 * @param {Array} tiles list of tiles.
+		 * @param {{ zone:Number, page:PageContext }[]} tiles list of tiles.
 		 */
 		sequenceTiles(tiles) {
 			if (!this.tileConfiguration) return;
@@ -377,7 +385,8 @@ export default {
 		},
 		/**
 		 * Take the tiles extract PageContexts and update the reactive state.
-		 * @param {Array} tiles list of (sequenced) tiles.
+		 * @param {{ zone:Number, page:PageContext }[]} tiles list of (sequenced) tiles.
+		 * @returns {PageContext[]} array of pages.
 		 */
 		updateState(tiles) {
 			const pages = tiles.map(tx => tx.page);
@@ -386,10 +395,12 @@ export default {
 		},
 		/**
 		 * Run the page management and tile sequencing and return the list of tiles to render.
+		 * @returns {{ zone:Number, page:PageContext }[]} list of updated page zones.
 		 */
 		getTiles() {
-			const pm = this.pageManagement ? this.pageManagement : new page.PageManagement_UpdateCache(0, undefined, undefined);
+			const pm = this.pageManagement ? this.pageManagement : new page.PageManagement_UpdateZones(0, undefined, undefined);
 			const output = pm.execute(this.pageContexts);
+			console.log(`${this.id}.getTiles`, pm, output);
 			const tc = this.tileConfiguration && !isNaN(this.tileConfiguration.total) ? this.tileConfiguration.total : undefined;
 			const tiles = page.tiles(output, pm.tileStart, tc);
 			this.sequenceTiles(tiles);
@@ -403,6 +414,7 @@ export default {
 			if (!this.handler.document) {
 				return;
 			}
+			this.rendering = true;
 			try {
 				const tiles = this.getTiles();
 				await this.transition(tiles);
@@ -417,6 +429,9 @@ export default {
 			catch (e) {
 				this.$emit("render-failed", e);
 			}
+			finally {
+				this.rendering = false;
+			}
 		},
 		/**
 		 * Consolidate DOM update logic.
@@ -427,6 +442,10 @@ export default {
 			await this.$nextTick();
 			this.domConnect(this.pageContexts.filter(px => px.container !== null));
 		},
+		/**
+		 * Handle outgoing DOM elements.
+		 * @param {PageContext[]} pages list of PageContext.
+		 */
 		domDisconnect(pages) {
 			if(this.intersect) {
 				//pages.forEach(px => this.intersect.unobserve(px.container));
@@ -434,6 +453,10 @@ export default {
 				this.pageSet.clear();
 			}
 		},
+		/**
+		 * Handle incoming DOM elements.
+		 * @param {PageContext[]} pages list of PageContext.
+		 */
 		domConnect(pages) {
 			if(!this.intersect && this.scrollConfiguration instanceof scroll.ScrollConfiguration) {
 				this.intersect = new IntersectionObserver(entries => {
@@ -464,6 +487,10 @@ export default {
 				pages.forEach(px => this.intersect.observe(px.container));
 			}
 		},
+		/**
+		 * Perform zone transitions on the tiles in the list.
+		 * @param {{ zone:Number, page:PageContext }[]} tiles list of tiles to process.
+		 */
 		async transition(tiles) {
 			// load turning-HOT pages (!HOT->HOT)
 			const rotation = this.rotation || 0;
@@ -526,6 +553,11 @@ export default {
 				originalEvent: ev
 			};
 		},
+		/**
+		 * Emit the page-click event.
+		 * @param {Event} ev click event.
+		 * @param {PageContext} page clicked page.
+		 */
 		handlePageClick(ev, page) {
 			this.$emit("page-click", this.infoFor(page, ev));
 		},
