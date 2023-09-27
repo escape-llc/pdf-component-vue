@@ -13,6 +13,7 @@
 				id="pdf-sidebar"
 				class="document-container"
 				:scrollConfiguration="scroll"
+				:pageManagement="sidebarPages"
 				:pageContainerClass="pageContainer"
 				:usePageLabels="true"
 				canvasClass="page-stack"
@@ -44,7 +45,7 @@
 				annotationLayerClass="page-stack"
 				textLayerClass="page-stack"
 				@load-failed="handleError"
-				@render-failed="handleRenderingFailed"
+				@render-failed="handleRenderingFailedPage"
 				@internal-link-click="handleInternalLink"
 				:source="source2">
 				<template #post-page="slotProps">
@@ -55,7 +56,7 @@
 	</div>
 </template>
 <script>
-import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateCache } from "../components"
+import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateRange } from "../components"
 
 export default {
 	name: "Demo4View",
@@ -75,8 +76,12 @@ export default {
 			console.log("handle.rendered", ev);
 		},
 		handleRenderingFailed(ev) {
-			console.error("handle.render-error", ev);
-			this.errorMessage = "Render: " + ev.message;
+			console.error("sidebar.render-error", ev);
+			this.errorMessage = "Render Sidebar: " + ev.message;
+		},
+		handleRenderingFailedPage(ev) {
+			console.error("page.render-error", ev);
+			this.errorMessage = "Render Page: " + ev.message;
 		},
 		handleInternalLink(ev) {
 			console.log("internal-link-click", ev);
@@ -86,6 +91,14 @@ export default {
 		handleVisiblePages(ev) {
 			console.log("visible pages", ev);
 			// get page range visible and create a PageManagment instance to fufill it
+			const indexes = ev.map(xx => xx.index);
+			const min = Math.min(...indexes);
+			const max = Math.max(...indexes);
+			// pad the region so nearby off-screen pages are rendered
+			// this avoids FoUC when clicking the sidebar's scroll bar
+			const margin = Math.floor(ev.length/2) + 1;
+			this.scrollStart = Math.max(0, min - margin);
+			this.scrollStop = Math.min(this.pageCount - 1, max + margin);
 		},
 		async handlePrint(ev) {
 			await this.$refs.pdf.print();
@@ -134,7 +147,7 @@ export default {
 	},
 	computed: {
 		pages() { return new PageManagement_Scroll(this.cacheStartPage - 1, 1, undefined); },
-		sidebarPages() { return new PageManagement_UpdateCache(0, 4, undefined); }
+		sidebarPages() { return new PageManagement_UpdateRange(this.scrollStart, this.scrollStop); }
 	},
 	data() {
 		return {
@@ -148,6 +161,8 @@ export default {
 			sizeMode: HEIGHT,
 			tileControl: new TileConfiguration(COLUMN, 1, 1),
 			scroll: undefined,
+			scrollStart: 0,
+			scrollStop: 4,
 		};
 	}
 }
