@@ -303,6 +303,12 @@ export default {
 		cleanup() {
 			this.handler?.destroy();
 			this.handler = null;
+			this.cleanDocument();
+		},
+		/**
+		 * Reset the state associated with a new document loading.
+		 */
+		cleanDocument() {
 			this.intersect?.disconnect();
 			this.intersect = null;
 			this.pageSet = null;
@@ -319,6 +325,7 @@ export default {
 			}
 			this.rendering = true;
 			try {
+				this.cleanDocument();
 				const document = await this.handler.load(source);
 				this.cache = new PageCache(this.linkService, this.imageResourcesPath);
 				if(document.numPages <= 0) {
@@ -454,10 +461,9 @@ export default {
 			}
 		},
 		/**
-		 * Handle incoming DOM elements.
-		 * @param {PageContext[]} pages list of PageContext.
+		 * Ensure the IntersectionObserver is activated if requested.
 		 */
-		domConnect(pages) {
+		ensureIntersection() {
 			if(!this.intersect && this.scrollConfiguration instanceof scroll.ScrollConfiguration) {
 				this.intersect = new IntersectionObserver(entries => {
 					entries.forEach(ex => {
@@ -483,6 +489,13 @@ export default {
 				});
 				this.pageSet = new Set();
 			}
+		},
+		/**
+		 * Handle incoming DOM elements.
+		 * @param {PageContext[]} pages list of PageContext.
+		 */
+		domConnect(pages) {
+			this.ensureIntersection();
 			if(this.intersect) {
 				pages.forEach(px => this.intersect.observe(px.container));
 			}
