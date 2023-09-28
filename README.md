@@ -6,7 +6,16 @@ This component is primarily for rendering tiles (i.e. PDF pages) in a `grid` or 
 
 It is not a (full-blown) viewer, but could be used to make one.
 
+~~~~~~
+npm install pdf-component-vue
+~~~~~~
+
 [![npm version](https://badge.fury.io/js/pdf-component-vue.svg)](https://badge.fury.io/js/pdf-component-vue)
+![workflow](https://github.com/escape-llc/pdf-component-vue/actions/workflows/node.js.yml//badge.svg)
+
+![image](https://github.com/escape-llc/pdf-component-vue/assets/3513926/528e064b-de59-42a3-a872-6b68d4edf744)
+
+![image](https://github.com/escape-llc/pdf-component-vue/assets/3513926/281a397a-0cb9-4123-95c1-5d62e5268030)
 
 ## WHY!?
 
