@@ -5,7 +5,12 @@
 		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.</div>
 	</template>
 	<div v-if="errorMessage">{{errorMessage}}</div>
-	<h2 v-if="fileName" class="document-banner"><div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button></div><div class="document-banner-page">{{ pageCount }} Page(s)</div></h2>
+	<h2 v-if="fileName" class="document-banner">
+		<div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button>
+		<button class="button" style="margin-left:.25rem" @click="handleClose">Open</button>
+		</div>
+		<div class="document-banner-page">{{ pageCount }} Page(s)</div>
+	</h2>
 	<div class="main-container">
 		<div ref="sidebar" class="sidebar">
 			<PdfComponent
@@ -53,20 +58,86 @@
 				</template>
 			</PdfComponent>
 		</div>
+		<div v-if="outline" class="sidebar">
+			<Tree :config="config" :nodes="outline" @nodeFocus="handleOutlineClick"/>
+		</div>
 	</div>
 </template>
 <script>
+import Tree from "vue3-treeview";
 import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateRange } from "../components"
+import "vue3-treeview/dist/style.css";
 
 export default {
 	name: "Demo4View",
-	components: {PdfComponent},
+	components: {PdfComponent, Tree},
 	methods: {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
 			this.pageCount = doc.numPages;
 			this.selectedPage = 1;
 			this.scroll = new ScrollConfiguration(this.$refs.sidebar.$el, "64px 0px 0px 64px");
+			doc.getAttachments().then(ax => {
+				console.log("attachments", ax);
+			});
+			this.unwrapOutline(doc).then(outline => {
+				console.log("unwrapOutline", outline);
+				// convert to format needed for the tree view
+				const nodes = {};
+				const config = {
+					roots: [],
+					padding: 0,
+				};
+				let symx = 1;
+				function processLevel(level, parent) {
+					level.forEach(ox => {
+						const id = `id${symx++}`;
+						const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[] };
+						nodes[id] = node;
+						parent.children.push(id);
+						if(ox.items.length) {
+							processLevel(ox.items, node);
+						}
+					});
+				}
+				outline.forEach(ox => {
+					const id = `id${symx++}`;
+					const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[] };
+					nodes[id] = node;
+					config.roots.push(id);
+					if(ox.items.length) {
+						processLevel(ox.items, node);
+					}
+				});
+				console.log("nodes", nodes);
+				this.outline = nodes;
+				this.config = config;
+			});
+		},
+		async unwrapOutlineItem(doc, ox) {
+			const dest = await doc.getDestination(ox.dest);
+			const pidx = await doc.getPageIndex(dest[0]);
+			let items = [];
+			if(ox.items.length) {
+				const outline = await Promise.all(ox.items.map(async oxi => {
+					const xx = await this.unwrapOutlineItem(doc, oxi);
+					return xx;
+				}));
+				items = outline;
+			}
+			return { outline: ox, pageIndex: pidx, items };
+		},
+		async unwrapOutline(doc) {
+			const ol = await doc.getOutline();
+			if(ol) {
+				console.log("doc.outline", ol);
+				const outline = await Promise.all(ol.map(async ox => {
+					const xx = await this.unwrapOutlineItem(doc, ox);
+					return xx;
+				}));
+				return outline;
+			}
+			return [];
 		},
 		handleError(ev) {
 			console.error("handle.load-error", ev);
@@ -102,6 +173,11 @@ export default {
 		},
 		async handlePrint(ev) {
 			await this.$refs.pdf.print();
+		},
+		handleClose(ev) {
+			this.source = null;
+			this.source2 = null;
+			this.cacheStartPage = 1;
 		},
 		handleInput(ev) {
 			console.log("handle.input", ev);
@@ -144,6 +220,18 @@ export default {
 				}
 			}
 		},
+		handleOutlineClick(ev) {
+			console.log("handle.outlineClick", ev);
+			const pageNumber = ev.pageIndex + 1;
+			if(pageNumber === this.selectedPage) {
+			}
+			else {
+				this.selectedPage = pageNumber;
+				if(pageNumber > 0) {
+					this.cacheStartPage = pageNumber;
+				}
+			}
+		},
 	},
 	computed: {
 		pages() { return new PageManagement_Scroll(this.cacheStartPage - 1, 1, undefined); },
@@ -157,6 +245,8 @@ export default {
 			pageCount: undefined,
 			fileName: undefined,
 			selectedPage: null,
+			outline: null,
+			config: null,
 			cacheStartPage: 1,
 			sizeMode: HEIGHT,
 			tileControl: new TileConfiguration(COLUMN, 1, 1),
@@ -168,6 +258,9 @@ export default {
 }
 </script>
 <style scoped>
+:deep(.node-text) {
+	cursor: pointer;
+}
 .main-container {
 	display: flex;
 	flex-direction: row;
@@ -183,6 +276,7 @@ export default {
 	padding-left:1rem;
 	padding-right:1rem;
 	background: gray;
+	scroll-snap-type: y proximity;
 }
 .page-view {
 	flex-grow: 1;
@@ -234,6 +328,7 @@ export default {
 	overflow: hidden;
 	width:100%;
 	transition: box-shadow .5s ease-in;
+	scroll-snap-stop: start;
 }
 :deep(.page-container2) {
 	display: grid;

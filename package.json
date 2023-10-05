@@ -1,8 +1,8 @@
 {
 	"name": "pdf-component-vue",
-	"version": "0.0.2",
+	"version": "0.1.0",
 	"private": false,
-	"license":"Apache-2.0",
+	"license": "Apache-2.0",
 	"description": "PDF Rendering component for Vue 3 applications",
 	"author": {
 		"name": "escape-llc",
@@ -40,7 +40,8 @@
 	},
 	"module": "./dist/pdf-component-vue.es.js",
 	"dependencies": {
-		"pdfjs-dist": "^3.11.174"
+		"pdfjs-dist": "^3.11.174",
+		"vue3-treeview": "^0.4.1"
 	},
 	"peerDependencies": {
 		"vue": "^3.3.4",
