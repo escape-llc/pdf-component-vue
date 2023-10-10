@@ -2,9 +2,10 @@
 	<template v-if="!source">
 		<h1>Load Your Own PDF</h1>
 		<input type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
-		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.</div>
+		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.  Page thumbnails on the left use Scroll Management to minimize pages rendered.</div>
+		<div>For extra credit, document outline (if present) is displayed on the right, courtesy of <a href="https://github.com/N00ts/vue3-treeview">vue3-treeview</a>.</div>
 	</template>
-	<div v-if="errorMessage">{{errorMessage}}</div>
+	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
 	<h2 v-if="fileName" class="document-banner">
 		<div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button>
 		<button class="button" style="margin-left:.25rem" @click="handleClose">Open</button>
@@ -66,6 +67,7 @@
 <script>
 import Tree from "vue3-treeview";
 import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateRange } from "../components"
+import { unwrapOutline } from "../components";
 import "vue3-treeview/dist/style.css";
 
 export default {
@@ -73,15 +75,15 @@ export default {
 	components: {PdfComponent, Tree},
 	methods: {
 		handleLoaded(doc) {
-			console.log("handle.loaded", doc);
+			console.log("sidebar.loaded", doc);
 			this.pageCount = doc.numPages;
 			this.selectedPage = 1;
 			this.scroll = new ScrollConfiguration(this.$refs.sidebar.$el, "64px 0px 0px 64px");
 			doc.getAttachments().then(ax => {
 				console.log("attachments", ax);
 			});
-			this.unwrapOutline(doc).then(outline => {
-				console.log("unwrapOutline", outline);
+			unwrapOutline(doc).then(outline => {
+				console.log("unwrapOutline.then", outline);
 				// convert to format needed for the tree view
 				const nodes = {};
 				const config = {
@@ -92,7 +94,7 @@ export default {
 				function processLevel(level, parent) {
 					level.forEach(ox => {
 						const id = `id${symx++}`;
-						const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[] };
+						const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[], state: {disabled:false,hidden:false} };
 						nodes[id] = node;
 						parent.children.push(id);
 						if(ox.items.length) {
@@ -102,49 +104,32 @@ export default {
 				}
 				outline.forEach(ox => {
 					const id = `id${symx++}`;
-					const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[] };
+					if(ox.error) return;
+					const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[], state: {disabled:false,hidden:false} };
 					nodes[id] = node;
 					config.roots.push(id);
 					if(ox.items.length) {
 						processLevel(ox.items, node);
 					}
 				});
-				console.log("nodes", nodes);
-				this.outline = nodes;
 				this.config = config;
+				if(outline.length > 0) {
+					this.outline = nodes;
+				}
+				else {
+					this.outline = undefined;
+				}
 			});
-		},
-		async unwrapOutlineItem(doc, ox) {
-			const dest = await doc.getDestination(ox.dest);
-			const pidx = await doc.getPageIndex(dest[0]);
-			let items = [];
-			if(ox.items.length) {
-				const outline = await Promise.all(ox.items.map(async oxi => {
-					const xx = await this.unwrapOutlineItem(doc, oxi);
-					return xx;
-				}));
-				items = outline;
-			}
-			return { outline: ox, pageIndex: pidx, items };
-		},
-		async unwrapOutline(doc) {
-			const ol = await doc.getOutline();
-			if(ol) {
-				console.log("doc.outline", ol);
-				const outline = await Promise.all(ol.map(async ox => {
-					const xx = await this.unwrapOutlineItem(doc, ox);
-					return xx;
-				}));
-				return outline;
-			}
-			return [];
 		},
 		handleError(ev) {
 			console.error("handle.load-error", ev);
 			this.errorMessage = "Load: " + ev.message;
 		},
+		handleRenderedPages(ev) {
+			console.log("pages.rendered", ev);
+		},
 		handleRendered(ev) {
-			console.log("handle.rendered", ev);
+			console.log("sidebar.rendered", ev);
 		},
 		handleRenderingFailed(ev) {
 			console.error("sidebar.render-error", ev);
@@ -258,6 +243,10 @@ export default {
 }
 </script>
 <style scoped>
+.error {
+	color: red;
+	font-style: italic;
+}
 :deep(.node-text) {
 	cursor: pointer;
 }
