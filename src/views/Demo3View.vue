@@ -63,10 +63,10 @@ export default {
 }
 </script>
 <template>
-	<h1>Page Management Demo</h1>
-	<div v-if="errorMessage">{{errorMessage}}</div>
+	<h1>Page Management</h1>
+	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
 	<div style="margin-top:1rem">This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered. The remaining pages are Warm and render as "placeholders".</div>
-	<div style="margin-bottom:1rem">Click on a page frame to change the "currentPage".  In a typical case, the unrendered tiles are not visible to the user.</div>
+	<div style="margin-bottom:1rem">Click on a page frame to change the "currentPage".  In a typical case, the unrendered tiles are not visible to the user (see next demo).</div>
 	<PdfComponent
 		id="my-pdf"
 		class="document-container"
@@ -91,6 +91,10 @@ export default {
 	</PdfComponent>
 </template>
 <style scoped>
+.error {
+	color: red;
+	font-style: italic;
+}
 /* use grid for sequence of pages */
 /* use a containing element to provide the scrolling */
 .document-container {

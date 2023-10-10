@@ -1,49 +1,9 @@
-<script>
-import { PageManagement_Scroll, PdfComponent } from "../components"
-import { ROW, HEIGHT, TileConfiguration } from "../components"
-
-export default {
-	name: "Demo2View",
-	components: {PdfComponent},
-	methods: {
-		handleLoaded(doc) {
-			console.log("handle.loaded", doc);
-		},
-		handleError(ev) {
-			console.error("handle.load-error", ev);
-			this.errorMessage = ev.message;
-		},
-		handlePageRendered(ev) {
-			console.log("handle.page", ev);
-		},
-		handleRenderingFailed(ev) {
-			console.error("handle.render-error", ev);
-			this.errorMessage = ev.message;
-		},
-		handlePreviousGroup(ev) {
-			this.currentPage = Math.max(1, this.currentPage - this.tiles.total);
-		},
-		handleNextGroup(ev) {
-			this.currentPage = this.currentPage + this.tiles.total;
-		},
-	},
-	computed: {
-		pages() { return new PageManagement_Scroll(this.currentPage - 1, this.tiles.total, undefined); }
-	},
-	data() {
-		return {
-			url: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf",
-			errorMessage: null,
-			currentPage: 1,
-			sizeMode: HEIGHT,
-			tiles: new TileConfiguration(ROW, 2, 3),
-		};
-	}
-}
-</script>
 <template>
-	<h1>Tile Navigation Demo<button class="button" style="margin-left:1rem" @click="handlePreviousGroup">&lt;</button><button class="button" @click="handleNextGroup">&gt;</button></h1>
-	<div v-if="errorMessage">{{errorMessage}}</div>
+	<h1>Tiles and Navigation
+		<button class="button" :disabled="currentPage == 1" style="margin-left:1rem" @click="handlePreviousGroup">&lt;</button>
+		<button class="button" :disabled="currentPage >= pageCount - tiles.total" @click="handleNextGroup">&gt;</button>
+	</h1>
+	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
 	<div style="margin-top:1rem;margin-bottom:1rem">This demo uses Page Management to navigate through tiles, in this case 6 tiles.</div>
 	<PdfComponent
 		id="my-pdf"
@@ -67,7 +27,58 @@ export default {
 		</template>
 	</PdfComponent>
 </template>
+<script>
+import { PageManagement_Scroll, PdfComponent } from "../components"
+import { ROW, HEIGHT, TileConfiguration } from "../components"
+
+export default {
+	name: "Demo2View",
+	components: {PdfComponent},
+	methods: {
+		handleLoaded(doc) {
+			console.log("handle.loaded", doc);
+			this.pageCount = doc.numPages;
+		},
+		handleError(ev) {
+			console.error("handle.load-error", ev);
+			this.errorMessage = ev.message;
+		},
+		handlePageRendered(ev) {
+			console.log("handle.page", ev);
+		},
+		handleRenderingFailed(ev) {
+			console.error("handle.render-error", ev);
+			this.errorMessage = ev.message;
+		},
+		handlePreviousGroup(ev) {
+			this.currentPage = Math.max(1, this.currentPage - this.tiles.total);
+		},
+		handleNextGroup(ev) {
+			if(this.currentPage + this.tiles.total < this.pageCount) {
+				this.currentPage = this.currentPage + this.tiles.total;
+			}
+		},
+	},
+	computed: {
+		pages() { return new PageManagement_Scroll(this.currentPage - 1, this.tiles.total, undefined); }
+	},
+	data() {
+		return {
+			url: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf",
+			errorMessage: null,
+			currentPage: 1,
+			sizeMode: HEIGHT,
+			pageCount: 0,
+			tiles: new TileConfiguration(ROW, 2, 3),
+		};
+	}
+}
+</script>
 <style scoped>
+.error {
+	color: red;
+	font-style: italic;
+}
 /* use grid for sequence of pages */
 /* use a containing element to provide the scrolling */
 .document-container {

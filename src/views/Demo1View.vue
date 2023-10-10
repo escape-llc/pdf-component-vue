@@ -29,8 +29,8 @@ export default {
 }
 </script>
 <template>
-	<h1>Basic Scrolling Demo</h1>
-	<div v-if="errorMessage">{{errorMessage}}</div>
+	<h1>Basic Usage</h1>
+	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
 	<PdfComponent
 		id="my-pdf"
 		class="document-container"
@@ -51,6 +51,10 @@ export default {
 	</PdfComponent>
 </template>
 <style scoped>
+.error {
+	color: red;
+	font-style: italic;
+}
 /* use grid for sequence of pages */
 /* use a containing element to provide the scrolling */
 .document-container {
