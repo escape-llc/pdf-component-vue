@@ -9,7 +9,7 @@ const pversion = __APP_VERSION__
 		<nav>
 			<div style="font-weight:bold;margin-right:1rem">DEV {{ pversion }} (pdfjs {{ version }})</div>
 			<RouterLink to="/">Home</RouterLink>
-			<RouterLink to="/demo1">Scrolling</RouterLink>
+			<RouterLink to="/demo1">Basic</RouterLink>
 			<RouterLink to="/demo2">Navigation</RouterLink>
 			<RouterLink to="/demo3">Page Management</RouterLink>
 			<RouterLink to="/demo4">Load Your Own PDF</RouterLink>
