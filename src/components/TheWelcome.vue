@@ -5,6 +5,9 @@ import ToolingIcon from './icons/IconTooling.vue'
 import EcosystemIcon from './icons/IconEcosystem.vue'
 import CommunityIcon from './icons/IconCommunity.vue'
 import SupportIcon from './icons/IconSupport.vue'
+import { PdfjsVersion } from "../components";
+const pdfjs = PdfjsVersion
+const version = __APP_VERSION__
 </script>
 
 <template>
@@ -14,9 +17,16 @@ import SupportIcon from './icons/IconSupport.vue'
 		</template>
 		<template #heading>Documentation</template>
 
-		Vue’s
-		<a href="https://vuejs.org/" target="_blank" rel="noopener">official documentation</a>
-		provides you with all information you need to get started.
+		<code style="margin-top:.5rem">npm install pdf-component-vue</code>
+		<br/>
+		<a style="display:inline-block;margin-top:.5rem" href="https://badge.fury.io/js/pdf-component-vue">
+			<img src="https://badge.fury.io/js/pdf-component-vue.svg" alt="npm version" height="24">
+		</a>
+		<br/>
+		This project is hosted on <a href="https://github.com/escape-llc/pdf-component-vue">github</a>.
+		<br/>
+		Go to the project's wiki for
+		<a href="https://github.com/escape-llc/pdf-component-vue/wiki" target="_blank" rel="noopener">more information</a>.
 	</WelcomeItem>
 
 	<WelcomeItem>
@@ -25,61 +35,53 @@ import SupportIcon from './icons/IconSupport.vue'
 		</template>
 		<template #heading>Tooling</template>
 
-		This project is served and bundled with
-		<a href="https://vitejs.dev/guide/features.html" target="_blank" rel="noopener">Vite</a>. The
-		recommended IDE setup is
-		<a href="https://code.visualstudio.com/" target="_blank" rel="noopener">VSCode</a> +
-		<a href="https://github.com/johnsoncodehk/volar" target="_blank" rel="noopener">Volar</a>. If
-		you need to test your components and web pages, check out
-		<a href="https://www.cypress.io/" target="_blank" rel="noopener">Cypress</a> and
-		<a href="https://on.cypress.io/component" target="_blank">Cypress Component Testing</a>.
-
-		<br />
-
-		More instructions are available in <code>README.md</code>.
+		The NPM package and this demo use
+		<a href="https://vitejs.dev/guide/features.html" target="_blank" rel="noopener">Vite</a> for development and bundling.
+		<br/>
+		We use <a href="https://vitest.dev/">vitest</a> for unit tests.
 	</WelcomeItem>
 
 	<WelcomeItem>
 		<template #icon>
 			<EcosystemIcon />
 		</template>
-		<template #heading>Ecosystem</template>
+		<template #heading>PDFJS</template>
 
-		Get official tools and libraries for your project:
-		<a href="https://pinia.vuejs.org/" target="_blank" rel="noopener">Pinia</a>,
-		<a href="https://router.vuejs.org/" target="_blank" rel="noopener">Vue Router</a>,
-		<a href="https://test-utils.vuejs.org/" target="_blank" rel="noopener">Vue Test Utils</a>, and
-		<a href="https://github.com/vuejs/devtools" target="_blank" rel="noopener">Vue Dev Tools</a>. If
-		you need more resources, we suggest paying
-		<a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">Awesome Vue</a>
-		a visit.
+		Currently bundled with version <b>{{ pdfjs }}</b> of 
+		<a href="https://mozilla.github.io/pdf.js/" target="_blank" rel="noopener">pdfjs-dist</a>.
+		<br/>
+		<a style="display:inline-block;margin-top:.5rem" href="https://badge.fury.io/js/pdfjs-dist">
+			<img src="https://badge.fury.io/js/pdfjs-dist.svg" alt="npm version" height="24">
+		</a>
 	</WelcomeItem>
 
 	<WelcomeItem>
 		<template #icon>
 			<CommunityIcon />
 		</template>
-		<template #heading>Community</template>
+		<template #heading>Demo</template>
 
-		Got stuck? Ask your question on
-		<a href="https://chat.vuejs.org" target="_blank" rel="noopener">Vue Land</a>, our official
-		Discord server, or
-		<a href="https://stackoverflow.com/questions/tagged/vue.js" target="_blank" rel="noopener">StackOverflow</a>. You
-		should also subscribe to
-		<a href="https://news.vuejs.org" target="_blank" rel="noopener">our mailing list</a> and follow
-		the official
-		<a href="https://twitter.com/vuejs" target="_blank" rel="noopener">@vuejs</a>
-		twitter account for latest news in the Vue world.
+		This is version <b>{{ version }}</b> of the demo.
+		<br/>
+		Where possible we use the well-known <a href="https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf"><i>Tracemonkey</i></a> document. It consists of these use cases:
+		<ul>
+			<li>Basic scrolling demo.  This the simplest use case of WIDTH mode, loading all the pages in a column.</li>
+			<li>Basic tiles demo with paging. This shows a 2x3 grid of tiles in HEIGHT mode, with paging.</li>
+			<li>Page Management demo.  This shows all 14 pages, but only the "HOT" pages render.  The "HOT" zone is centered on the page you click.</li>
+			<li>Faux viewer using 2 instances of <code>pdf-component-vue</code> in HEIGHT mode, with a local PDF you select.  Thumbnails on the left; click to display the page on the right.</li>
+		</ul>
 	</WelcomeItem>
 
 	<WelcomeItem>
 		<template #icon>
 			<SupportIcon />
 		</template>
-		<template #heading>Support Vue</template>
+		<template #heading>Support Us!</template>
 
-		As an independent project, Vue relies on community backing for its sustainability. You can help
-		us by
-		<a href="https://vuejs.org/sponsor/" target="_blank" rel="noopener">becoming a sponsor</a>.
+		As an open source provider, eScape relies on community backing for its sustainability. You can help!
+		<br/>
+		<a style="display:inline-block;margin-top:.5rem" href="https://www.paypal.com/donate/?hosted_button_id=G8P9TW4QT6C3U" target="_blank" rel="noopener">
+			<img alt="Donating" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" style="max-width:128px"/>
+		</a>
 	</WelcomeItem>
 </template>
