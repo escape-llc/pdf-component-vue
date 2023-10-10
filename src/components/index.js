@@ -5,6 +5,7 @@ import {
 import { ROW, COLUMN, TileConfiguration } from "./Tiles";
 import { PageManagement, PageManagement_UpdateZones, PageManagement_UpdateRange, PageManagement_Scroll } from "./PageManagement";
 import { ScrollConfiguration } from "./ScrollConfiguration";
+import { unwrapOutline, unwrapOutlineItem, lookupPage } from "./Utils";
 import PdfComponent from "./PdfComponent.vue";
 import * as pdf from "pdfjs-dist/build/pdf";
 
@@ -20,5 +21,6 @@ export {
 	WIDTH, HEIGHT,
 	ROW, COLUMN, TileConfiguration,
 	ScrollConfiguration,
+	unwrapOutline, unwrapOutlineItem, lookupPage,
 	PageManagement, PageManagement_UpdateZones, PageManagement_UpdateRange, PageManagement_Scroll
 }
