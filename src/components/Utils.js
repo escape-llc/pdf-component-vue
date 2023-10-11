@@ -1,7 +1,7 @@
 /**
  * Take the outline "destination" and resolve it to a page index (not number).
- * @param {import("pdfjs-dist").PDFDocumentProxy} doc PDF document.
- * @param {import("pdfjs-dist/types/src/display/api").RefProxy} ox PDF outline entry.
+ * @param {PDFDocumentProxy} doc PDF document.
+ * @param {RefProxy} ox PDF outline entry.
  * @returns the page index OR -1 if there was an exception.
  */
 async function lookupPage(doc, ox) {
@@ -23,8 +23,8 @@ async function lookupPage(doc, ox) {
 }
 /**
  * Take the outline and recursively drill down and build up the outline.
- * @param {import("pdfjs-dist").PDFDocumentProxy} doc PDF document.
- * @param {import("pdfjs-dist/types/src/display/api").RefProxy} ox PDF outline entry.
+ * @param {PDFDocumentProxy} doc PDF document.
+ * @param {RefProxy} ox PDF outline entry.
  * @returns {{ outline: RefProxy, pageIndex: Number, items: Array, error: Exception? }} the page index.
  */
 async function unwrapOutlineItem(doc, ox) {
@@ -47,7 +47,7 @@ async function unwrapOutlineItem(doc, ox) {
 }
 /**
  * Take the document outline, recurisvely traverse it and resolve all pageIndex values.
- * @param {import("pdfjs-dist").PDFDocumentProxy} doc PDF document.
+ * @param {PDFDocumentProxy} doc PDF document.
  * @returns {Array} array of top-level outline items.  MAY be empty if no outline is available.
  */
 async function unwrapOutline(doc) {

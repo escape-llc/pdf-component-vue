@@ -73,7 +73,7 @@ class PageManagement_Scroll extends PageManagement_UpdateZones {
  * @param {Array} scan list of scan results.
  * @param {Number} pageIndex starting index.
  * @param {Number|undefined} tileCount tile count.  if undefined use scan.length.
- * @returns 
+ * @returns {Array} output list of renderable tiles.
  */
 const tiles = (scan, pageIndex, tileCount) => {
 	const list = [];
