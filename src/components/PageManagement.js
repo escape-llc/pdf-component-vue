@@ -15,6 +15,12 @@ class PageManagement_UpdateZones extends PageManagement {
 	pageIndex
 	hotZone
 	warmZone
+	/**
+	 * Instruct page management to set zones based on the given index.
+	 * @param {number} pageIndex 0-relative page index.  This is the "center" point.
+	 * @param {number} hotZone size of HOT zone; UNDEFINED makes all pages HOT.
+	 * @param {number} warmZone size of WARM zone; UNDEFINED makes all non-HOT pages WARM.
+	 */
 	constructor(pageIndex, hotZone, warmZone) {
 		super();
 		if(pageIndex === undefined || pageIndex === null) throw new Error("pageIndex: must be GE zero");
@@ -40,6 +46,13 @@ class PageManagement_UpdateZones extends PageManagement {
 class PageManagement_UpdateRange extends PageManagement {
 	start
 	stop
+	/**
+	 * Instruct page management to make the given inclusive range of pages HOT.
+	 * All remaining pages are WARM.
+	 * Use this in response to scroll management events.
+	 * @param {number} start 0-relative starting index.
+	 * @param {number} stop 0-relative ending index.
+	 */
 	constructor(start, stop) {
 		super();
 		if(start === undefined || start === null) throw new Error("start: must be GE zero");
@@ -63,6 +76,13 @@ class PageManagement_UpdateRange extends PageManagement {
  * Use this to "page" through groups of tiles.
  */
 class PageManagement_Scroll extends PageManagement_UpdateZones {
+	/**
+	 * Same as update zones, but also sets the starting tile for rendering.
+	 * Use this to page through groups of tiles in a fixed grid.
+	 * @param {number} pageIndex 0-relative page index.  This is the "center" point.
+	 * @param {number} hotZone size of HOT zone; UNDEFINED makes all pages HOT.
+	 * @param {number} warmZone size of WARM zone; UNDEFINED makes all non-HOT pages WARM.
+	 */
 	constructor(pageIndex, hotZone, warmZone) {
 		super(pageIndex, hotZone, warmZone);
 	}
