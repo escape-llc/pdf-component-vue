@@ -1,8 +1,6 @@
 # Vue 3 PDF Component
 
-Taking a stab at creating an up-to-date PDFJS-based Vue JS component.
-
-This component is primarily for rendering tiles (i.e. PDF pages) in a `grid` or `flex` layout.
+`pdf-component-vue` is an up-to-date PDFJS-based Vue JS component, primarily for rendering tiles (i.e. PDF pages) in a `grid` or `flex` layout.
 
 It is not a (full-blown) viewer, but could be used to make one.
 
@@ -49,7 +47,7 @@ Uses a current build of PDFJS.
 
 # Slots
 
-Slots provide you places to inject content.
+Slots provide you places to inject content.  This provides means to display page labels, etc.
 
 # Core Logic
 
@@ -72,14 +70,7 @@ There is also lots of bookkeeping to keep everything consistent:
 
 # Page Events
 
-* Attach handlers to receive page clicks directly, e.g. track "selected" page(s).
-* Alter the CSS styling of (specific) pages (`pageContainerClass`), e.g. "highlighting" a clicked page (see demo 3).
-
-# Scrolling
-
-In the Continuous mode, it is important to host the component directly inside the element that provides scrolling, e.g. a `div` with `overflow` management so it has scroll bar(s).  This element is used with an `IntersectionObserver` to determine what tiles are visible.
-
-The most common case is row-major-auto 1-column grid in `WIDTH` size mode (see below); the document container's width is used as the rendering width, and the height is calulated from that using the page's aspect ratio.  The height should be `auto` in this case.  The parent element of the document container will scroll (subject to CSS) vertically.
+Attach handlers to receive page clicks directly, e.g. track "selected" page(s).  Alter the CSS styling of (specific) pages (`pageContainerClass`), e.g. "highlighting" a clicked page (see demo 3).
 
 # Auto-sizing
 
@@ -106,11 +97,11 @@ The document container element should use `display:grid` and specify row and col
 
 Once the final set of `tiles` is calculated, the grid numbering is applied.  The `tileConfiguration` is used to calculate the row and column coordinates for each tile.
 
-If no `tileConfiguration` is given, the default is applied: the tile sequence is `grid-row`, and `grid-column` is not used (it is `undefined` and produces no CSS).
+If no `tileConfiguration` is given, no sequencing is applied: the `grid-row` and `grid-column` are both `undefined` (and produce no CSS).
 
 The `TileConfiguration` class provides the following features:
 
-* Ordering row and column major.
+* Ordering row major and column major.
 * Fixed count in major and minor dimensions; build "finite" grids of fixed size.
 * Variable count in major dimension; allow for "auto" grids.
 
@@ -125,7 +116,7 @@ Using the grid system, you have options for layout:
 * Continuous - one continuous row/column of pages.  The number of tiles "visible" depends on the height of the stack currently presenting.  Use `WIDTH` mode (default) and a one-column grid (see below).
 * Tileset (n-up) - display a number of tiles in a grid pattern.  Use `HEIGHT` mode and explicit grid rows and columns (see below).
 
-These are informal based on your CSS and not an actual "mode" of the component.
+> These are informal based on your CSS and not an actual "mode" of the component.
 
 # Page Management
 
@@ -139,40 +130,59 @@ Page management is divided into these "zones":
 
 > The default settings make all pages `hot`, so the entire document is rendered upon loading.  This may not be appropriate for your use case.
 
-The zones center around the Current Page or just `page`.  The Hot zone directly impacts resource consumption, because the `canvas` etc. are rendered from `pdfjs`.  This is sized to provide a smooth UX while scrolling (i.e. moving the `page` a small amount).
+The zones center around the `page` indicated by Page Management (zero by default).  The Hot zone directly impacts resource consumption, because the `canvas` etc. are rendered from `pdfjs`.  This is sized to provide a smooth UX while scrolling (i.e. moving the `page` a small amount).
 
-Each time the `page` moves, the zones are recalculated, and pages transition between zones as detected.  In particular, pages becoming `hot` are rendered.
+Each time the `pageManagement` prop changes, the zones are recalculated, and pages transition between zones as detected.  In particular, pages becoming `hot` are rendered, and previously `hot` pages get layers (text, annotation) unmounted (if enabled).
+
+## Current and Selected Pages
+
+It is important to note that the component is strictly a tile-rendering engine, and has no sense of "current page" or "selected page(s)".  Tracking this is left totally in your hands.
+
+> See the Page Management and Faux Viewer demos for how to manage a "current/selected page".
 
 ## Invoking Page Management
 
 The component has the `pageManagement` prop and implementations of the `PageManagement` class for you to invoke page management as necessary.
 
-The primary goal of Page Management is to ensure the tiles visible to the user are rendered, and other tiles not rendered, in order to balance resources and performance.  See the Page Management Demo for an illustration of how this works.
+The primary goal of Page Management is to ensure the tiles visible to the user are rendered, and other tiles not rendered, in order to balance resources and performance.
 
-It is important to note that the component has no sense of "current page" in the navigation sense; tracking this is left totally in your hands.
+> See the Page Management Demo for an illustration of how the zones work.
+
+The easiest way to provide Page Management is via a `computed` property that in turn is tied to reactive state.
 
 If you do not specify `pageManagement` prop the default is used, which labels all pages `hot` to render the entire document upon loading.
+
+## Changing the Start Tile
+
+As mentioned above, the component has no concept of "current page".  However, there must still be a way to tell the component which tile to start rendering on, and Page Management is used for this as well.
+
+> See the Navigation Demo for details; it uses `PageManagement_Scroll` to "page" through a finite grid of 2x3 tiles.
 
 ## Using Zones
 
 If you are presenting a finite grid, it makes little sense to render pages not visible, so you should set the `hot` zone to the number of tiles.  This prevents any other pages from being loaded with `pdfjs`.  Be aware that simply accessing the page from `pdfjs` has a cost that should be minimized.
 
-If you are in a "scrolling" scenario (e.g. a 1-column grid) then for the best control you should use an `IntersectionObserver` and invoke Page Management as needed, based on what tiles are reported as intersecting the viewport.  It is important to use the element with the scrolling, or intersection reports are not correct.
-
-> Come up with some kind of composable for this functionality, or just bake it in.
-
-## Changing the Start Tile
-
-Since there is no concept of "current page" from a navigation standpoint, there must still be a way to tell the component which tile to start rendering on, and Page Management is used for this as well.  See the Tiles Demo for details; it uses the `PageManagement_Scroll` class to "page" through a finite grid of 2x3 tiles.
+If you are in a "scrolling" scenario (e.g. a 1-column grid) then for the best control you should use Scroll Management (see below).
 
 ## Very Large Documents
 
 So why have 3 zones?  Consider a document with 1000 pages.  The number of DOM elements for just placeholders
-for every page may be too large for the user's device, so it is desirable to keep this to a reasonable number,
-say 100.
+for every page may be too large for the user's device, so it is desirable to keep this to a reasonable number, say 100.
 
 What this means is that for the 1000 page document, only 100 "pages" are represented in the DOM at any point (Hot + Warm), providing enough
 elements for scrolling to work.
+
+# Scrolling
+
+In the Continuous mode, it is important to host the component directly inside the element that provides scrolling, e.g. a `div` with `overflow` management so it has scroll bar(s).  This element is used with an `IntersectionObserver` to determine what tiles are visible (see below).
+
+The most common case is row-major-auto 1-column grid in `WIDTH` size mode (see below); the document container's width is used as the rendering width, and the height is calulated from that using the page's aspect ratio.  The height should be `auto` in this case.  The parent element of the document container will scroll (subject to CSS) vertically.
+
+## Activate Scroll Management
+
+You activate Scroll Management by supplying a value to the `scrollConfiguration` prop, usually during the `loaded` event.  Once set, the component emits `visible-pages` events back to you, via an `IntersectionObserver` it controls.  You must arrange to receive this event, then configure a suitable `PageManagement` instance (in this case `PageManagement_UpdateRange`) and assign it to the `pageManagement` prop.
+
+> See the Faux Viewer demo for how to use Scroll Management.
 
 # Thanks
 
