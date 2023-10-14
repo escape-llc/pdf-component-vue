@@ -7,14 +7,13 @@
 				:id="page.id"
 				:class=" calculatePageClass(page)"
 				:style="{'grid-row': page.gridRow, 'grid-column': page.gridColumn}"
+				:data-state="page.stateReactive"
 				@click="handlePageClick($event, page)"
 			>
 				<canvas :ref="el => { mountCanvas(page, el); }" :class="canvasClass" />
-				<template v-if="textLayer && page.state === 2">
-					<div :ref="el => { mountTextLayer(page, el); }" class="textLayer" style="position:relative" :class="textLayerClass" />
-				</template>
-				<template v-if="annotationLayer && page.state === 2">
-					<div :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" style="position:relative" :class="annotationLayerClass" />
+				<template v-if="page.stateReactive === 2">
+					<div v-if="textLayer" :ref="el => { mountTextLayer(page, el); }" class="textLayer" style="position:relative" :class="textLayerClass" />
+					<div v-if="annotationLayer" :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" style="position:relative" :class="annotationLayerClass" />
 				</template>
 				<slot name="page-overlay" v-bind="infoFor(page)"></slot>
 			</div>
