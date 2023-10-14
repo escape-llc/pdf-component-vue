@@ -1,6 +1,8 @@
 const COLD = 0, WARM = 1, HOT = 2;
 const WIDTH = 0, HEIGHT = 1;
 
+import { ref } from "vue";
+
 /**
  * This class represents the current state of the page.
  */
@@ -10,7 +12,7 @@ class PageContext {
 	canvas = null
 	divText = null
 	divAnno = null
-	state = COLD
+	stateReactive = ref(COLD)
 	sizeMode = WIDTH
 	index
 	pageNumber
@@ -35,6 +37,8 @@ class PageContext {
 		this.pageLabel = pageLabel;
 	}
 	is(state) { return state === this.state; }
+	get state() { return this.stateReactive.value; }
+	set state(vx) { this.stateReactive.value = vx; }
 	/**
 	 * Initialize the grid coordinates.
 	 * @param {Number} row 1-relative grid row.
@@ -70,7 +74,6 @@ class PageContext {
 	 */
 	async render(cache) {
 		if(!this.container) return;
-		if(!this.canvas) return;
 		if(this.didRender) return;
 		const viewport = cache.viewport(this.pageNumber, this.sizeMode, this.container.clientWidth, this.container.clientHeight, this.rotation || 0);
 		this.container.style.setProperty("--scale-factor", viewport.scale);
@@ -80,20 +83,25 @@ class PageContext {
 			this.canvas.width = viewport.width;
 			this.canvas.height = viewport.height;
 		}
+		this.didRender = true;
 		if(this.state !== HOT) {
+			// these can still be live so clean them out
+			if(this.divText || this.divAnno) console.error("OMFG", this.id, this.state);
 			this.divText?.replaceChildren();
 			this.divAnno?.replaceChildren();
-			return;
 		}
-		this.didRender = true;
-		await cache.renderCanvas(this.pageNumber, viewport, this.canvas);
-		if(this.divText) {
-			this.divText.replaceChildren();
-			await cache.renderTextLayer(this.pageNumber, viewport, this.divText);
-		}
-		if(this.divAnno) {
-			this.divAnno.replaceChildren();
-			await cache.renderAnnotationLayer(this.pageNumber, viewport, this.divAnno);
+		else {
+			if(this.canvas) {
+				await cache.renderCanvas(this.pageNumber, viewport, this.canvas);
+			}
+			if(this.divText) {
+				this.divText.replaceChildren();
+				await cache.renderTextLayer(this.pageNumber, viewport, this.divText);
+			}
+			if(this.divAnno) {
+				this.divAnno.replaceChildren();
+				await cache.renderAnnotationLayer(this.pageNumber, viewport, this.divAnno);
+			}
 		}
 	}
 	/**
