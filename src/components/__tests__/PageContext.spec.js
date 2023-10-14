@@ -164,37 +164,74 @@ describe('PageContext', () => {
 			}
 		};
 		const canvas = {
+			reset() { this.width = undefined; this.height = undefined },
 			width: undefined,
 			height: undefined
 		};
 		const divText = {
-			replaceChildren() {}
+			called: false,
+			reset() { this.called = false; },
+			replaceChildren() { this.called = true; }
 		};
 		const divAnno = {
-			replaceChildren() {}
+			called: false,
+			reset() { this.called = false; },
+			replaceChildren() { this.called = true; }
 		};
 		const cache = {
+			called: false,
+			reset() { this.called = false; },
 			viewport(pageNumber, sizeMode, width, height, rotation) {
+				expect(pageNumber).toBe(page.pageNumber);
+				expect(sizeMode).toBe(page.sizeMode);
+				expect(width).toBe(container.clientWidth);
+				expect(height).toBe(container.clientHeight);
+				expect(rotation).toBe(0);
 				return viewport;
 			},
-			renderCanvas() {},
-			renderTextLayer(pageNumber, viewport, el) {},
-			renderAnnotationLayer(pageNumber, viewport, el) {},
+			renderCanvas() { this.called = true; },
+			renderTextLayer(pageNumber, viewport, el) {
+				expect(pageNumber).toBe(page.pageNumber);
+				expect(el).toBe(divText);
+			},
+			renderAnnotationLayer(pageNumber, viewport, el) {
+				expect(pageNumber).toBe(page.pageNumber);
+				expect(el).toBe(divAnno);
+			},
 		};
 		page.mountTextLayer(divText);
 		page.mountAnnotationLayer(divAnno);
 		page.mountCanvas(canvas);
 		page.mountContainer(container);
 		page.hot(0);
+		expect(page.didRender).toBe(false);
+		expect(page.state).toBe(pc.HOT);
 		await page.render(cache);
 		expect(page.didRender).toBe(true);
 		expect(canvas.width).toBe(viewport.width);
 		expect(canvas.height).toBe(viewport.height);
-		// warm pages do not go all the way through render()
+		expect(divAnno.called).toBe(true);
+		expect(divText.called).toBe(true);
+		expect(cache.called).toBe(true);
+		cache.reset();
+		canvas.reset();
+		divAnno.reset();
+		divText.reset();
+		// warm pages also set the flag
 		page.warm(0);
+		// warm pages have no extra layer divs
+		// VUE would call these during template processing in the component
+		page.mountTextLayer(null);
+		page.mountAnnotationLayer(null);
+		expect(page.state).toBe(pc.WARM);
 		expect(page.didRender).toBe(false);
 		await page.render(cache);
-		expect(page.didRender).toBe(false);
+		expect(page.didRender).toBe(true);
+		expect(canvas.width).toBe(viewport.width);
+		expect(canvas.height).toBe(viewport.height);
+		expect(divAnno.called).toBe(false);
+		expect(divText.called).toBe(false);
+		expect(cache.called).toBe(false);
 	});
 	it("materialize pages", () => {
 		const list = [];
