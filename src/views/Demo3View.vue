@@ -82,7 +82,7 @@ export default {
 		@page-click="handlePageClick"
 		@loaded="handleLoaded"
 		@load-failed="handleError"
-		@page-rendered="handlePageRendered"
+		@rendered="handlePageRendered"
 		@render-failed="handleRenderingFailed"
 		:source="url">
 		<template #pre-page="slotProps">
