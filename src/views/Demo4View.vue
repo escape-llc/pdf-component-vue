@@ -23,8 +23,6 @@
 				:pageContainerClass="pageContainer"
 				:usePageLabels="true"
 				canvasClass="page-stack"
-				annotationLayerClass="page-stack"
-				textLayerClass="page-stack"
 				@loaded="handleLoaded"
 				@load-failed="handleError"
 				@rendered="handleRendered"
