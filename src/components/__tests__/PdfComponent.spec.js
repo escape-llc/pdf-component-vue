@@ -201,6 +201,9 @@ describe('PdfComponent', () => {
 		}
 		wrapper.unmount();
 	})
+	/*
+	Flame test for Page Management.
+	*/
 	it("PageManagement.watch", async () => {
 		const wrapper = await mountedPromise({
 			id: "my-pdf",
@@ -224,6 +227,81 @@ describe('PdfComponent', () => {
 			expect(div).not.toBe(undefined);
 			expect(div.element.id).toBe(`my-pdf-page-${ix}`);
 		}
+		wrapper.unmount();
+	})
+	/*
+	This case tests the proper mounting/unmounting of DOM elements when pages change from HOT to WARM.
+	This relies on the STATE property being reactive (conditional rendering in the template).
+	*/
+	it("PageManagement mount/unmount", async () => {
+		const wrapper = await mountedPromise({
+			id: "my-pdf",
+			class: "document-container",
+			textLayer: true,
+			annotationLayer: true,
+			tileConfiguration: new tiles.TileConfiguration(tiles.ROW, 2, 3),
+			canvasClass: "grid-stack",
+			annotationLayerClass: "grid-stack",
+			textLayerClass: "grid-stack",
+			pageManagement: new pm.PageManagement_UpdateRange(0, 1),
+			source: PDF
+		});
+		await flushPromises();
+		expect(wrapper.emitted()).toHaveProperty("loaded");
+		expect(wrapper.emitted()).toHaveProperty("rendered");
+		const div = wrapper.get("div");
+		expect(div).not.toBe(undefined);
+		expect(div.element.id).toBe('my-pdf');
+		expect(div.element.classList.contains("document-container")).toBe(true);
+		function checkPage(div, ix) {
+			expect(div).not.toBe(undefined);
+			expect(div.element.id).toBe(`my-pdf-page-${ix}`);
+			const canvas = div.get("canvas");
+			expect(canvas).not.toBe(undefined);
+			expect(canvas.element.classList.contains("grid-stack")).toBe(true);
+			expect(canvas.attributes("width")).toBe(PAGE_WIDTH.toString());
+			expect(canvas.attributes("height")).toBe(PAGE_HEIGHT.toString());
+		}
+		function checkTextLayer(div, ix) {
+			const layer = div.get("div.textLayer");
+			expect(layer).not.toBe(undefined);
+			expect(layer.element.classList.contains("grid-stack")).toBe(true);
+		}
+		function checkNoTextLayer(div, ix) {
+			const layer = div.find("div.textLayer");
+			expect(layer.exists()).toBe(false);
+		}
+		function checkAnnoLayer(div, ix) {
+			const layer = div.get("div.annotationLayer");
+			expect(layer).not.toBe(undefined);
+			expect(layer.element.classList.contains("grid-stack")).toBe(true);
+		}
+		function checkNoAnnoLayer(div, ix) {
+			const layer = div.find("div.annotationLayer");
+			expect(layer.exists()).toBe(false);
+		}
+		function checkPageLoop(p1, p2) {
+			for(let ix = 0; ix < PAGE_COUNT; ix++) {
+				const div = wrapper.get(`#my-pdf-page-${ix + 1}`);
+				checkPage(div, ix + 1);
+				if(ix == p1 || ix == p2) {
+					checkTextLayer(div, ix);
+					checkAnnoLayer(div, ix);
+				}
+				else {
+					checkNoTextLayer(div, ix);
+					checkNoAnnoLayer(div, ix);
+				}
+			}
+		}
+		async function updateRange(p1, p2) {
+			await wrapper.setProps({ pageManagement: new pm.PageManagement_UpdateRange(p1, p2) });
+			await flushPromises();
+			checkPageLoop(p1, p2);
+		}
+		checkPageLoop(0, 1);
+		await updateRange(2, 3);
+		await updateRange(4, 5);
 		wrapper.unmount();
 	})
 	it("HEIGHT mode", async () => {
@@ -269,6 +347,9 @@ describe('PdfComponent', () => {
 		}
 		wrapper.unmount();
 	})
+	/*
+	Flame test for text layer.
+	*/
 	it("Text layer", async () => {
 		const wrapper = await mountedPromise({
 			id: "my-pdf",
@@ -315,6 +396,9 @@ describe('PdfComponent', () => {
 		}
 		wrapper.unmount();
 	})
+	/*
+	Flame test for annotation layer.
+	*/
 	it("Annotation Layer", async () => {
 		const wrapper = await mountedPromise({
 			id: "my-pdf",
