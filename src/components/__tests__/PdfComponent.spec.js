@@ -21,6 +21,30 @@ function mountedPromise(options) {
 		});
 	});
 }
+/**
+ * This version throws the given error from the $emit(loaded).
+ * NOTE: this generates Vue Warning in the console: Unhandled error during execution of component event handler.
+ * Doesn't make sense because the component DOES catch that error (it is NOT unhandled) and emit the correct event.
+ * @param {any} options create options.
+ * @param {*} ex the error to raise.
+ * @returns new Promise<Wrapper,Error>.
+ */
+function mountedPromiseLoadedError(options, ex) {
+	return new Promise((resolve, reject) => {
+			const wrapper = mount(PdfComponent, {
+				props: {
+					...options,
+					onLoaded: () => {
+						//resolve(wrapper);
+						throw ex;
+					},
+					"onLoad-failed": ee => {
+						resolve({ wrapper, ee });
+					}
+				}
+		});
+	});
+}
 
 const PAGE_WIDTH = 680;
 const PAGE_HEIGHT = 890;
@@ -96,6 +120,22 @@ describe('PdfComponent', () => {
 			expect(canvas.attributes("height")).toBe(PAGE_HEIGHT.toString());
 		}
 		wrapper.unmount();
+	})
+	it("source.load-failed", async () => {
+		const ex = new Error("This is my error");
+		const { wrapper, ee } = await mountedPromiseLoadedError({
+			id: "my-pdf",
+			class: "document-container",
+			pageContainerClass: "page-container",
+			canvasClass: "grid-stack",
+			annotationLayerClass: "grid-stack",
+			textLayerClass: "grid-stack",
+			source: PDF
+		}, ex);
+		expect(wrapper).not.toBe(undefined);
+		expect(wrapper.emitted()).toHaveProperty("loaded");
+		expect(wrapper.emitted()).toHaveProperty("load-failed");
+		expect(ee).toBe(ex);
 	})
 	it('source.watch', async () => {
 		let loading = false;
