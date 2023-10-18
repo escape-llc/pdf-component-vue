@@ -12,6 +12,36 @@ npm install pdf-component-vue
 ![workflow](https://github.com/escape-llc/pdf-component-vue/actions/workflows/node.js.yml//badge.svg)
 ![codeql](https://github.com/escape-llc/pdf-component-vue/actions/workflows/github-code-scanning/codeql/badge.svg)
 
+## Features
+
+Plenty of features to customize to your use case, especially if you want to control resources and DOM size.
+
+* Based on v3 `pdfjs-dist`.
+* Tailored for `grid` or `flex` treatment.
+  * Control CSS classes for all major layout elements.
+  * Control row and column numbering of page cells.
+* Use `slot` for content injection.
+  * Include arbitrary content before/after page cell, e.g. page number.
+  * Include arbitrary content in the page cell.
+* Lots of `$emit` for flexibility on the consumer.
+  * Pass through of key `pdfjs` events.
+  * Navigation: PDF Link and Page cell clicks.
+  * Loading and rendering status.
+  * Visible pages (when scrolling is configured).
+* "Smart" auto-sizing based on containing element.
+  * Specify "width" or "height" mode.
+  * Use CSS to size page cells.
+* Display PDF layers: page image, text, annotation.
+* Render via `OffscreenCanvas` and `requestAnimationFrame` for smooth updates.
+* Integrated support for PDF page labels; show up in `slotProps`.
+* Utility functions to work with PDF Outline, e.g. Table of Contents.
+  * Does the dirty work of "resolving" page numbers from the arcane `dest` field.
+  * Take the result and plug into your favorite Tree View!
+* "Smart" page management to control resource consumption.
+  * Offscreen pages may have their elements unmounted to save DOM resources.
+* Just-in-time page rendering while scrolling via `IntersectionObserver`.
+* Re-render page image on size changes via `ResizeObserver`.
+
 ## Demo Pages
 The demo app that is part of the repo presents some common use cases.  Below are sample screen captures.
 
@@ -42,16 +72,6 @@ This assumes you may know a little about how `pdfjs` works; there is lots of glo
 You don't require any knowledge of `pdfjs` to use this control.
 
 Uses a current build of PDFJS.
-
-## Goals
-
-* Be CSS-agnostic, but biased towards `grid` and `flex` treatment.
-  * Allow you to control the styles used for all major layout elements.
-* Have lots of `$emit` for flexibility on the consumer.
-* Leverage `slot` for content injection.
-* Have  "smart" page management OOTB.
-* Support real-time scrolling via `IntersectionObserver`.
-* Have "smart" page sizing based on containing element.
 
 # Slots
 
