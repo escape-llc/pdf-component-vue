@@ -212,6 +212,25 @@ You activate Scroll Management by supplying a value to the `scrollConfiguration`
 
 > See the Faux Viewer demo for how to use Scroll Management.
 
+# Resizing
+
+If your use case includes resizing of pages, e.g. because the window size changes on a desktop platform, you will run into several issues:
+
+* The `canvas` image does not automatically redraw itself at the new size.
+  * You get a rescaled version of the image from the original size you rendered at.
+  * Most noticeable when going from smaller to larger size (blur).
+* The text and annotation layers do not rescale themselves to the new size.
+  * `pdfjs` uses special CSS properties to calculate their CSS `position`.
+  * The value of these special CSS properties depend on the containing element's dimensions (at time of rendering).
+
+Needless to say, if you are anticipating dynamic page resizing, you must enable Resize Management.
+
+## Activate Resize Management
+
+You activate Resize Management by supplying a value of type `ResizeConfiguration` to the `resizeConfiguration` prop.  You must do this on or before the `loaded` event.  Once set, the component uses a `ResizeObserver` to track the DOM.  The options in `resizeConfiguration` determine when to trigger the resize logic.
+
+Once, triggered, the identified pages are re-rendered.  Hot and Warm pages have the special CSS properties updated, and Hot pages get the `canvas` redrawn.
+
 # Thanks
 
 * Author of `vue-pdf-embed` for inspiration https://github.com/hrynko/vue-pdf-embed/blob/master/src/vue-pdf-embed.vue
