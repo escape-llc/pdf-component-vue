@@ -34,6 +34,12 @@ const router = createRouter({
 			name: 'demo4',
 			// route level code-splitting
 			component: () => import('../views/Demo4View.vue')
+		},
+		{
+			path: '/demo5',
+			name: 'demo5',
+			// route level code-splitting
+			component: () => import('../views/Demo5View.vue')
 		}
 	]
 })
