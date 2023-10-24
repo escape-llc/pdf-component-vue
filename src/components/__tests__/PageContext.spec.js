@@ -1,8 +1,26 @@
-import { describe, it, expect } from "vitest"
+import { vi, describe, it, expect } from "vitest"
 
 import * as pc from "../PageContext"
 import * as dh from "../DocumentHandler"
 import { PageCache } from "../PageCache"
+
+global.OffscreenCanvas = vi.fn().mockImplementation((width, height) => {
+	return {
+			height,
+			width,
+			oncontextlost: vi.fn(),
+			oncontextrestored: vi.fn(),
+			getContext: vi.fn(() => undefined),
+			convertToBlob: vi.fn(),
+			transferToImageBitmap: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn()
+	};
+});
+HTMLCanvasElement.prototype.getContext = (ct) => ({
+	drawImage: (canvas, left, top) => { }
+})
 
 describe("pageZone", () => {
 	it("cp=1 hot=4", () => {
