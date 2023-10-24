@@ -34,6 +34,7 @@ import { PageCache } from './PageCache.js';
 import * as tile from "./Tiles.js";
 import * as page from "./PageManagement";
 import * as scroll from "./ScrollConfiguration";
+import * as resize from "./ResizeConfiguration";
 import '../pdf-component-vue.css';
 
 pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
@@ -78,6 +79,7 @@ export default {
 		"rendered", "render-failed",
 		"printed", "print-failed",
 		"visible-pages",
+		"resize-pages",
 		"page-click",
 		"internal-link-click"
 	],
@@ -155,6 +157,10 @@ export default {
 		 */
 		annotationLayer: Boolean,
 		/**
+		 * If not NULL/UNDEFINED, Whether to actively resize the layers via ResizeObserver.
+		 */
+		resizeConfiguration: resize.ResizeConfiguration,
+		/**
 		 * CSS class(es) for each page container.
 		 * If using a Function, it receives page-info as a parameter.
 		 */
@@ -183,7 +189,7 @@ export default {
 	},
 	computed: {
 		linkService() {
-			if (!this.handler.document || !this.annotationLayer) {
+			if (!this.handler?.document || !this.annotationLayer) {
 				return null;
 			}
 			const service = new PDFLinkService();
@@ -202,7 +208,9 @@ export default {
 		this.handler = new DocumentHandler_pdfjs(this.$emit);
 		this.cache = null;
 		this.intersect = null;
-		this.pageSet = null;
+		this.resizer = null;
+		this.resizeTracker = null;
+		this.pageSetIntersect = null;
 		// end
 		this.$watch(
 			() => this.source,
@@ -310,7 +318,11 @@ export default {
 		cleanDocument() {
 			this.intersect?.disconnect();
 			this.intersect = null;
-			this.pageSet = null;
+			this.pageSetIntersect = null;
+			this.resizer?.disconnect();
+			this.resizer = null;
+			this.resizeTracker?.reset();
+			this.resizeTracker = null;
 		},
 		/**
 		 * Load and initial render of PDF source.
@@ -453,10 +465,15 @@ export default {
 		 * @param {PageContext[]} pages list of PageContext.
 		 */
 		domDisconnect(pages) {
+			if(this.resizer) {
+				//pages.forEach(px => this.resizer.unobserve(px.container));
+				this.resizer.disconnect();
+				this.resizeTracker.reset();
+			}
 			if(this.intersect) {
 				//pages.forEach(px => this.intersect.unobserve(px.container));
 				this.intersect.disconnect();
-				this.pageSet.clear();
+				this.pageSetIntersect.clear();
 			}
 		},
 		/**
@@ -469,15 +486,15 @@ export default {
 						const target = this.pageContexts.filter(px => px.container === ex.target);
 						if(target.length) {
 							if(ex.isIntersecting) {
-								this.pageSet.add(target[0]);
+								this.pageSetIntersect.add(target[0]);
 							}
 							else {
-								this.pageSet.delete(target[0]);
+								this.pageSetIntersect.delete(target[0]);
 							}
 						}
 					});
 					const pages = [];
-					for(let px of this.pageSet.values()) {
+					for(let px of this.pageSetIntersect.values()) {
 						pages.push(this.infoFor(px));
 					}
 					this.$emit("visible-pages", pages);
@@ -486,7 +503,42 @@ export default {
 					rootMargin: this.scrollConfiguration.rootMargin,
 					thresholds: [0, 0.25, 0.50, 0.75, 1.0]
 				});
-				this.pageSet = new Set();
+				this.pageSetIntersect = new Set();
+			}
+		},
+		ensureResize() {
+			if(this.resizeConfiguration) {
+				if(!this.resizer) {
+					this.resizer = new ResizeObserver(entries => {
+						entries.forEach(ex => {
+							const target = this.pageContexts.filter(px => px.container === ex.target);
+							if(target.length) {
+								// track by devicePixelContentBoxSize
+								const dpsize = ex.devicePixelContentBoxSize[0];
+								this.resizeTracker.track(target[0], dpsize);
+							}
+						});
+						// only trigger if size changes by a threshold, e.g. 1 pixel is not enough of a change
+						this.resizeTracker.trackComplete(this.resizeConfiguration, async resize => {
+							// potential race due to setTimeout; SHOULD NOT filter any elements!
+							const available = resize.filter(rx => rx.target.container);
+							if(available.length) {
+								// prepare "safe" data for $emit
+								const emit = available.map(rx => {
+									return { page: this.infoFor(rx.target), di: rx.di, db: rx.db, upsize: rx.upsize, redrawCanvas: rx.upsize };
+								});
+								// component owner has opportunity to alter the redrawCanvas flags
+								this.$emit("resize-pages", emit);
+								await Promise.all(available.map(async rx => {
+									// redraw according redrawCanvas flag
+									const redraw = emit.find(ex => ex.page.id === rx.target.id);
+									await rx.target.resize(this.cache, redraw ? redraw.redrawCanvas : rx.upsize);
+								}));
+							}
+						});
+					});
+					this.resizeTracker = new resize.ResizeTracker();
+				}
 			}
 		},
 		/**
@@ -497,6 +549,10 @@ export default {
 			this.ensureIntersection();
 			if(this.intersect) {
 				pages.forEach(px => this.intersect.observe(px.container));
+			}
+			this.ensureResize();
+			if(this.resizer) {
+				pages.forEach(px => this.resizer.observe(px.container));
 			}
 		},
 		/**
