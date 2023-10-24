@@ -18,10 +18,6 @@ global.OffscreenCanvas = vi.fn().mockImplementation((width, height) => {
 			dispatchEvent: vi.fn()
 	};
 });
-HTMLCanvasElement.prototype.getContext = (ct) => ({
-	drawImage: (canvas, left, top) => { }
-})
-
 describe("pageZone", () => {
 	it("cp=1 hot=4", () => {
 		const pagecount = 15;
@@ -184,7 +180,12 @@ describe('PageContext', () => {
 		const canvas = {
 			reset() { this.width = undefined; this.height = undefined },
 			width: undefined,
-			height: undefined
+			height: undefined,
+			getContext(xx) {
+				return {
+					drawImage: (canvas, left, top) => { }
+				};
+			}
 		};
 		const divText = {
 			called: false,

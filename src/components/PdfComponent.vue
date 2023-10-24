@@ -507,38 +507,36 @@ export default {
 			}
 		},
 		ensureResize() {
-			if(this.resizeConfiguration) {
-				if(!this.resizer) {
-					this.resizer = new ResizeObserver(entries => {
-						entries.forEach(ex => {
-							const target = this.pageContexts.filter(px => px.container === ex.target);
-							if(target.length) {
-								// track by devicePixelContentBoxSize
-								const dpsize = ex.devicePixelContentBoxSize[0];
-								this.resizeTracker.track(target[0], dpsize);
-							}
-						});
-						// only trigger if size changes by a threshold, e.g. 1 pixel is not enough of a change
-						this.resizeTracker.trackComplete(this.resizeConfiguration, async resize => {
-							// potential race due to setTimeout; SHOULD NOT filter any elements!
-							const available = resize.filter(rx => rx.target.container);
-							if(available.length) {
-								// prepare "safe" data for $emit
-								const emit = available.map(rx => {
-									return { page: this.infoFor(rx.target), di: rx.di, db: rx.db, upsize: rx.upsize, redrawCanvas: rx.upsize };
-								});
-								// component owner has opportunity to alter the redrawCanvas flags
-								this.$emit("resize-pages", emit);
-								await Promise.all(available.map(async rx => {
-									// redraw according redrawCanvas flag
-									const redraw = emit.find(ex => ex.page.id === rx.target.id);
-									await rx.target.resize(this.cache, redraw ? redraw.redrawCanvas : rx.upsize);
-								}));
-							}
-						});
+			if(!this.resizer && this.resizeConfiguration instanceof resize.ResizeConfiguration) {
+				this.resizer = new ResizeObserver(entries => {
+					entries.forEach(ex => {
+						const target = this.pageContexts.filter(px => px.container === ex.target);
+						if(target.length) {
+							// track by devicePixelContentBoxSize
+							const dpsize = ex.devicePixelContentBoxSize[0];
+							this.resizeTracker.track(target[0], dpsize);
+						}
 					});
-					this.resizeTracker = new resize.ResizeTracker();
-				}
+					// only trigger if size changes by a threshold, e.g. 1 pixel is not enough of a change
+					this.resizeTracker.trackComplete(this.resizeConfiguration, async resize => {
+						// potential race due to setTimeout; SHOULD NOT filter any elements!
+						const available = resize.filter(rx => rx.target.container);
+						if(available.length) {
+							// prepare "safe" data for $emit
+							const emit = available.map(rx => {
+								return { page: this.infoFor(rx.target), di: rx.di, db: rx.db, upsize: rx.upsize, redrawCanvas: rx.upsize };
+							});
+							// component owner has opportunity to alter the redrawCanvas flags
+							this.$emit("resize-pages", emit);
+							await Promise.all(available.map(async rx => {
+								// redraw according redrawCanvas flag
+								const redraw = emit.find(ex => ex.page.id === rx.target.id);
+								await rx.target.resize(this.cache, redraw ? redraw.redrawCanvas : rx.upsize);
+							}));
+						}
+					});
+				});
+				this.resizeTracker = new resize.ResizeTracker();
 			}
 		},
 		/**
