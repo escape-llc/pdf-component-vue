@@ -69,30 +69,41 @@ class PageContext {
 		this.divAnno = el;
 	}
 	/**
-	 * Perform a full render of page contents; sets didRender flag.
-	 * @param {PageCache} cache use for PDFJS operations.
+	 * Compute the viewport and set the special CSS properties.
+	 * --scale-factor   Used by PDFJS
+	 * --viewport-xxx   Made available for client CSS rules
+	 * @param {PageCache} cache Use for page operations.
+	 * @returns viewport
 	 */
-	async render(cache) {
-		if(!this.container) return;
-		if(this.didRender) return;
+	containerViewport(cache) {
 		const viewport = cache.viewport(this.pageNumber, this.sizeMode, this.container.clientWidth, this.container.clientHeight, this.rotation || 0);
 		this.container.style.setProperty("--scale-factor", viewport.scale);
 		this.container.style.setProperty("--viewport-width", Math.floor(viewport.width));
 		this.container.style.setProperty("--viewport-height", Math.floor(viewport.height));
+		return viewport;
+	}
+	/**
+	 * Perform a full render of page contents; sets didRender flag.
+	 * @param {PageCache} cache use for page operations.
+	 */
+	async render(cache) {
+		if(!this.container) return;
+		if(this.didRender) return;
+		const viewport = this.containerViewport(cache);
 		if(this.canvas) {
 			this.canvas.width = viewport.width;
 			this.canvas.height = viewport.height;
 		}
 		this.didRender = true;
 		if(this.state !== HOT) {
-			// these can still be live so clean them out
+			// the cause of this is fixed, deprecate
 			if(this.divText || this.divAnno) console.error("OMFG", this.id, this.state);
 			this.divText?.replaceChildren();
 			this.divAnno?.replaceChildren();
 		}
 		else {
 			if(this.canvas) {
-				await cache.renderCanvas(this.pageNumber, viewport, this.canvas);
+				await this.renderTheCanvas(cache, viewport);
 			}
 			if(this.divText) {
 				this.divText.replaceChildren();
@@ -101,6 +112,42 @@ class PageContext {
 			if(this.divAnno) {
 				this.divAnno.replaceChildren();
 				await cache.renderAnnotationLayer(this.pageNumber, viewport, this.divAnno);
+			}
+		}
+	}
+	/**
+	 * Render to an OffscreenCanvas then use requestAnimationFrame() for a smooth update.
+	 * @param {PageCache} cache Use for page operations.
+	 * @param {Viewport} viewport Use to size everything.
+	 * @returns Promise
+	 */
+	async renderTheCanvas(cache, viewport) {
+		if(!this.canvas) return;
+		const oc = new OffscreenCanvas(viewport.width, viewport.height);
+		await cache.renderCanvas(this.pageNumber, viewport, oc);
+		const ibm = oc.transferToImageBitmap();
+		requestAnimationFrame(() => {
+			if(!this.canvas) return;
+			this.canvas.width = viewport.width;
+			this.canvas.height = viewport.height;
+			const ctx = this.canvas.getContext("2d");
+			ctx.drawImage(ibm, 0, 0);
+		});
+	}
+	/**
+	 * Perform the resize pass.
+	 * Only performs if didRender is TRUE.
+	 * @param {PageCache} cache Use for page operations.
+	 * @param {Boolean} draw true: redraw canvas; false: update CSS only.
+	 * @returns Promise
+	 */
+	async resize(cache, draw) {
+		if(!this.container) return;
+		if(!this.didRender) return;
+		const viewport = this.containerViewport(cache);
+		if(this.state === HOT) {
+			if(this.canvas && draw === true) {
+				await this.renderTheCanvas(cache, viewport);
 			}
 		}
 	}
