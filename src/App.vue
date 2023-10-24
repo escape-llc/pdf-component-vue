@@ -12,7 +12,8 @@ const pversion = __APP_VERSION__
 			<RouterLink to="/demo1">Basic</RouterLink>
 			<RouterLink to="/demo2">Navigation</RouterLink>
 			<RouterLink to="/demo3">Page Management</RouterLink>
-			<RouterLink to="/demo4">Load Your Own PDF</RouterLink>
+			<RouterLink to="/demo4">Faux Viewer</RouterLink>
+			<RouterLink to="/demo5">Resize</RouterLink>
 		</nav>
 	</header>
 	<div>
