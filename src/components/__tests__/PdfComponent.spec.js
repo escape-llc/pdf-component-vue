@@ -1,5 +1,4 @@
 import { vi, describe, it, expect } from 'vitest'
-
 import { mount, flushPromises } from '@vue/test-utils'
 import PdfComponent from '../PdfComponent.vue'
 import * as tiles from "../Tiles"
@@ -49,6 +48,21 @@ function mountedPromiseLoadedError(options, ex) {
 const PAGE_WIDTH = 680;
 const PAGE_HEIGHT = 890;
 const PAGE_COUNT = 6;
+
+global.OffscreenCanvas = vi.fn().mockImplementation((width, height) => {
+	return {
+			height,
+			width,
+			oncontextlost: vi.fn(),
+			oncontextrestored: vi.fn(),
+			getContext: vi.fn(() => undefined),
+			convertToBlob: vi.fn(),
+			transferToImageBitmap: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn()
+	};
+});
 
 HTMLCanvasElement.prototype.getContext = (ct) => ({
 	drawImage: (canvas, left, top) => { }
