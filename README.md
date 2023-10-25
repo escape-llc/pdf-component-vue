@@ -115,7 +115,7 @@ In all cases, aspect ratio is preserved.
 
 ## Resizing
 
-Because the `canvas` layer is literally a drawing of the page, it requires redrawing once the size of the page container element changes, for layout (conform to new size) resources (down size) and legibility (up size).  This is tracked and handled internally (via `ResizeObserver`).
+Because the `canvas` layer is literally a drawing of the page, it requires redrawing once the size of the page container element changes, for layout (conform to new size) resources (down size) and legibility (up size).  This is tracked and handled internally when you activate Resize Management (see below).
 
 # Grid System
 
@@ -208,7 +208,7 @@ The most common case is row-major-auto 1-column grid in `WIDTH` size mode (see b
 
 ## Activate Scroll Management
 
-You activate Scroll Management by supplying a value to the `scrollConfiguration` prop, usually during the `loaded` event.  Once set, the component emits `visible-pages` events back to you, via an `IntersectionObserver` it controls.  You must arrange to receive this event, then configure a suitable `PageManagement` instance (in this case `PageManagement_UpdateRange`) and assign it to the `pageManagement` prop.
+Activate Scroll Management by supplying a value to the `scrollConfiguration` prop, usually during the `loaded` event.  Once set, the component emits `visible-pages` events back to you, via an `IntersectionObserver` it controls.  You must arrange to receive this event, then configure a suitable `PageManagement` instance (in this case `PageManagement_UpdateRange`) and assign it to the `pageManagement` prop.
 
 > See the Faux Viewer demo for how to use Scroll Management.
 
@@ -223,13 +223,25 @@ If your use case includes resizing of pages, e.g. because the window size change
   * `pdfjs` uses special CSS properties to calculate their CSS `position`.
   * The value of these special CSS properties depend on the containing element's dimensions (at time of rendering).
 
-Needless to say, if you are anticipating dynamic page resizing, you must enable Resize Management.
+Needless to say, if you are anticipating dynamic page resizing, you must activate Resize Management.
 
 ## Activate Resize Management
 
-You activate Resize Management by supplying a value of type `ResizeConfiguration` to the `resizeConfiguration` prop.  You must do this on or before the `loaded` event.  Once set, the component uses a `ResizeObserver` to track the DOM.  The options in `resizeConfiguration` determine when to trigger the resize logic.
+Activate Resize Management by supplying a value of type `ResizeConfiguration` to the `resizeConfiguration` prop.  You must do this on or before the `loaded` event.  Once set, the component uses a `ResizeObserver` to track the DOM.  The options in `resizeConfiguration` determine when to trigger the resize logic.
 
-Once, triggered, the identified pages are re-rendered.  Hot and Warm pages have the special CSS properties updated, and Hot pages get the `canvas` redrawn.
+Once set, the component emits `resize-pages` events back to you, via a `ResizeObserver` it controls.  If you don't need to customize behavior, you may skip receiving this event.  When receiving this event, you get an `Array` of resize page data, with the pages that will be affected.
+
+* `page` is the same information sent from the other events.
+* `di` delta inline change in `px`.
+* `db` delta block change in `px`.
+* `upsize` whether the element is increasing in size (since last render).
+* `renderCanvas` flag indicating desire to redraw the `canvas`; based on the `upsize` value (see below).
+
+The important aspect of this is the `redrawCanvas` flag of each entry, which you must set to `true` for the pages that require a `canvas` redraw.
+
+By default (no event handler) the component requests a `canvas` redraw when upsizing only.
+
+Hot and Warm pages have the special CSS properties updated, and Hot pages with the `redrawCanvas` flag set get the `canvas` redrawn.
 
 # Thanks
 
