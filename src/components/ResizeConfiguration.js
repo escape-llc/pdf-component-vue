@@ -11,9 +11,9 @@ class ResizeConfiguration {
 	 * @param {number} triggerTime Update delay in MS; MUST be GT zero to accommodate ResizeObserver behavior.
 	 */
 	constructor(deltaInline, deltaBlock, triggerTime) {
-		if(!Number.isInteger(deltaInline)) throw new Erorr("deltaInline: must be an integer");
-		if(!Number.isInteger(deltaBlock)) throw new Erorr("deltaBlock: must be an integer");
-		if(!Number.isInteger(triggerTime)) throw new Erorr("triggerTime: must be an integer");
+		if(!Number.isInteger(deltaInline)) throw new Error("deltaInline: must be an integer");
+		if(!Number.isInteger(deltaBlock)) throw new Error("deltaBlock: must be an integer");
+		if(!Number.isInteger(triggerTime)) throw new Error("triggerTime: must be an integer");
 		if(deltaInline < 0) throw new Error("deltaInline: must be GE zero");
 		if(deltaBlock < 0) throw new Error("deltaBlock: must be GE zero");
 		// this MUST be non-zero because of the way ResizeObserver callbacks can occur
@@ -96,9 +96,7 @@ class ResizeTracker {
 			this.trigger = -1;
 			const resize = this.compute(config);
 			this.active.clear();
-			if(resize.length) {
-				await resizecb(resize);
-			}
+			await resizecb(resize);
 		}, config.triggerTime);
 	}
 }
