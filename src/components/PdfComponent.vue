@@ -22,26 +22,26 @@
 	</div>
 </template>
 <script>
-import * as pdf from 'pdfjs-dist/build/pdf.js';
-import { PDFLinkService } from 'pdfjs-dist/web/pdf_viewer.js';
+import * as pdf from "pdfjs-dist/build/pdf.js";
+import { PDFLinkService } from "pdfjs-dist/web/pdf_viewer.js";
 import {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
 	materializePages,
 } from "./PageContext.js";
 import { DocumentHandler_pdfjs } from "./DocumentHandler.js";
-import { PageCache } from './PageCache.js';
+import { PageCache } from "./PageCache.js";
 import * as tile from "./Tiles.js";
 import * as page from "./PageManagement";
 import * as scroll from "./ScrollConfiguration";
 import * as resize from "./ResizeConfiguration";
-import '../pdf-component-vue.css';
+import "../pdf-component-vue.css";
 
 pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
 
 function createPrintIframe(container) {
-	return new Promise((resolve) => {
-		const iframe = document.createElement('iframe');
+	return new Promise(resolve => {
+		const iframe = document.createElement("iframe");
 		iframe.onload = () => resolve(iframe);
 		iframe.style.display = "none";
 		container.appendChild(iframe);
@@ -91,7 +91,7 @@ export default {
 			default: WIDTH,
 			validator(value) {
 				if (value !== WIDTH && value !== HEIGHT) {
-					throw new Error('sizeMode must be 0 (WIDTH) or 1 (HEIGHT)');
+					throw new Error("sizeMode must be 0 (WIDTH) or 1 (HEIGHT)");
 				}
 				return true;
 			},
@@ -131,7 +131,7 @@ export default {
 			default: 0,
 			validator(value) {
 				if (value % 90 !== 0) {
-					throw new Error('Rotation must be 0 or a multiple of 90.');
+					throw new Error("Rotation must be 0 or a multiple of 90.");
 				}
 				return true;
 			},
@@ -248,7 +248,7 @@ export default {
 		 * @param {Array|undefined} pageSequence array of (1-relative) page numbers to print. Leave undefined for all pages.
 		 */
 		async print(dpi = 300, pageSequence) {
-			if (!this.handler.document) {
+			if (!this.handler?.document) {
 				return;
 			}
 			const printUnits = dpi / 72;
@@ -330,7 +330,7 @@ export default {
 		 * @param {any} source Source document; see the props for possible data types accepted.
 		 */
 		async load(source) {
-			if (!source) {
+			if (!source || !this.handler) {
 				this.rendering = false;
 				return;
 			}
@@ -340,7 +340,7 @@ export default {
 				const document = await this.handler.load(source);
 				this.cache = new PageCache(this.linkService, this.imageResourcesPath);
 				if(document.numPages <= 0) {
-					throw new Error("document has no pages");
+					throw new Error("load: document has no pages");
 				}
 				this.pageCount = document.numPages;
 				this.pageContexts = [];
@@ -425,11 +425,37 @@ export default {
 			return tiles;
 		},
 		/**
+		 * Perform zone transitions on the tiles in the list.
+		 * @param {{ zone:Number, page:PageContext }[]} tiles list of tiles to process.
+		 */
+		 async transition(tiles) {
+			// load turning-HOT pages (!HOT->HOT)
+			const rotation = this.rotation || 0;
+			await Promise.all(tiles.filter(tx => tx.zone === HOT && tx.page.state !== HOT).map(async tx => {
+				const page = await this.handler.page(tx.page.pageNumber);
+				this.cache.retain(tx.page.pageNumber, page);
+				tx.page.hot(rotation);
+			}));
+			// deal with remaining state changes
+			tiles.filter(tx => tx.zone !== HOT && tx.zone !== tx.page.state).forEach(tx => {
+				//console.log("transition new,old", tx.page.id, tx.zone, tx.page.state);
+				switch (tx.zone) {
+					case WARM:
+						tx.page.warm(rotation);
+						break;
+					case COLD:
+						this.cache.evict(tx.page.pageNumber);
+						tx.page.cold();
+						break;
+				}
+			});
+		},
+		/**
 		 * Render the pages based on current position and zones.
 		 * HOT tiles are triggered.
 		 */
 		async renderPages() {
-			if (!this.handler.document) {
+			if (!this.handler?.document) {
 				return;
 			}
 			this.rendering = true;
@@ -459,6 +485,20 @@ export default {
 			// "during" $nextTick DOM elements are unmounted/mounted
 			await this.$nextTick();
 			this.domConnect(this.pageContexts.filter(px => px.container !== null));
+		},
+		/**
+		 * Handle incoming DOM elements.
+		 * @param {PageContext[]} pages list of PageContext.
+		 */
+		 domConnect(pages) {
+			this.ensureIntersection();
+			if(this.intersect) {
+				pages.forEach(px => this.intersect.observe(px.container));
+			}
+			this.ensureResize();
+			if(this.resizer) {
+				pages.forEach(px => this.resizer.observe(px.container));
+			}
 		},
 		/**
 		 * Handle outgoing DOM elements.
@@ -493,11 +533,11 @@ export default {
 							}
 						}
 					});
-					const pages = [];
+					const emit = [];
 					for(let px of this.pageSetIntersect.values()) {
-						pages.push(this.infoFor(px));
+						emit.push(this.infoFor(px));
 					}
-					this.$emit("visible-pages", pages);
+					this.$emit("visible-pages", emit);
 				}, {
 					root: this.scrollConfiguration.root,
 					rootMargin: this.scrollConfiguration.rootMargin,
@@ -538,46 +578,6 @@ export default {
 				});
 				this.resizeTracker = new resize.ResizeTracker();
 			}
-		},
-		/**
-		 * Handle incoming DOM elements.
-		 * @param {PageContext[]} pages list of PageContext.
-		 */
-		domConnect(pages) {
-			this.ensureIntersection();
-			if(this.intersect) {
-				pages.forEach(px => this.intersect.observe(px.container));
-			}
-			this.ensureResize();
-			if(this.resizer) {
-				pages.forEach(px => this.resizer.observe(px.container));
-			}
-		},
-		/**
-		 * Perform zone transitions on the tiles in the list.
-		 * @param {{ zone:Number, page:PageContext }[]} tiles list of tiles to process.
-		 */
-		async transition(tiles) {
-			// load turning-HOT pages (!HOT->HOT)
-			const rotation = this.rotation || 0;
-			await Promise.all(tiles.filter(tx => tx.zone === HOT && tx.page.state !== HOT).map(async tx => {
-				const page = await this.handler.page(tx.page.pageNumber);
-				this.cache.retain(tx.page.pageNumber, page);
-				tx.page.hot(rotation);
-			}));
-			// deal with remaining state changes
-			tiles.filter(tx => tx.zone !== HOT && tx.zone !== tx.page.state).forEach(tx => {
-				//console.log("transition new,old", tx.page.id, tx.zone, tx.page.state);
-				switch (tx.zone) {
-					case WARM:
-						tx.page.warm(rotation);
-						break;
-					case COLD:
-						this.cache.evict(tx.page.pageNumber);
-						tx.page.cold();
-						break;
-				}
-			});
 		},
 		mountContainer(page, el) {
 			page.mountContainer(el);
