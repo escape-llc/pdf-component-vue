@@ -12,6 +12,8 @@ npm install pdf-component-vue
 ![workflow](https://github.com/escape-llc/pdf-component-vue/actions/workflows/node.js.yml//badge.svg)
 ![codeql](https://github.com/escape-llc/pdf-component-vue/actions/workflows/github-code-scanning/codeql/badge.svg)
 
+> Currently documenting `0.2.0`.
+
 ## Features
 
 Plenty of features to customize to your use case, especially if you want to control resources and DOM size.
@@ -28,6 +30,7 @@ Plenty of features to customize to your use case, especially if you want to cont
   * Navigation: PDF Link and Page cell clicks.
   * Loading and rendering status.
   * Visible pages (when scrolling is configured).
+  * Resize (when resize is configured).
 * "Smart" auto-sizing based on containing element.
   * Specify "width" or "height" mode.
   * Use CSS to size page cells.
@@ -245,4 +248,5 @@ Hot and Warm pages have the special CSS properties updated, and Hot pages with t
 
 # Thanks
 
-* Author of `vue-pdf-embed` for inspiration https://github.com/hrynko/vue-pdf-embed/blob/master/src/vue-pdf-embed.vue
+* `vue-pdf-embed` inspiration and some initial source https://github.com/hrynko/vue-pdf-embed/blob/master/src/vue-pdf-embed.vue
+* `vue3-treeview` the TreeView UI in the Faux Viewer demo https://github.com/N00ts/vue3-treeview
