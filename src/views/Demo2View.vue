@@ -28,7 +28,7 @@
 	</PdfComponent>
 </template>
 <script>
-import { PageManagement_Scroll, PdfComponent } from "../components"
+import { PageManagement_Scroll, PageManagement_UpdateZones, PdfComponent } from "../components"
 import { ROW, HEIGHT, TileConfiguration } from "../components"
 
 export default {
@@ -60,7 +60,7 @@ export default {
 		},
 	},
 	computed: {
-		pages() { return new PageManagement_Scroll(this.currentPage - 1, this.tiles.total, undefined); }
+		pages() { return new PageManagement_Scroll(this.currentPage - 1, new PageManagement_UpdateZones(this.currentPage - 1, this.tiles.total, undefined)); }
 	},
 	data() {
 		return {

@@ -139,8 +139,12 @@ export default {
 		},
 		handleInternalLink(ev) {
 			console.log("internal-link-click", ev);
-			const id = `#my-pdf-page-${ev.pageNumber}`;
-			document.location.hash = id;
+			this.selectedPage = ev.pageNumber;
+			//const id = `#my-pdf-page-${ev.pageNumber}`;
+			//document.location.hash = id;
+			if(ev.pageNumber > 0) {
+					this.cacheStartPage = ev.pageNumber;
+				}
 		},
 		handleVisiblePages(ev) {
 			console.log("visible pages", ev);
@@ -217,7 +221,7 @@ export default {
 		},
 	},
 	computed: {
-		pages() { return new PageManagement_Scroll(this.cacheStartPage - 1, 1, undefined); },
+		pages() { return new PageManagement_Scroll(this.cacheStartPage - 1, new PageManagement_UpdateRange(this.cacheStartPage - 1, this.cacheStartPage - 1)); },
 		sidebarPages() { return new PageManagement_UpdateRange(this.scrollStart, this.scrollStop); }
 	},
 	data() {

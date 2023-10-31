@@ -271,7 +271,7 @@ describe('PdfComponent', () => {
 		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
-		await wrapper.setProps({ pageManagement: new pm.PageManagement_Scroll(1, undefined, undefined) });
+		await wrapper.setProps({ pageManagement: new pm.PageManagement_Scroll(1, new pm.PageManagement_UpdateZones(0, undefined, undefined)) });
 		const div = wrapper.get("div");
 		expect(div).not.toBe(undefined);
 		expect(div.element.id).toBe('my-pdf');
