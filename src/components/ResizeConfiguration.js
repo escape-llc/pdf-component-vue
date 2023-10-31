@@ -1,3 +1,5 @@
+import { Trigger } from "./Trigger";
+
 class ResizeConfiguration {
 	deltaInline
 	deltaBlock
@@ -29,21 +31,18 @@ class ResizeConfiguration {
 /**
  * ResizeTracker helps with the logic associated with tracking the stream of ResizeObserver callbacks.
  */
-class ResizeTracker {
+class ResizeTracker extends Trigger {
 	lastKnown = new Map();
 	active = new Map();
-	trigger = -1
-	constructor() { }
+	constructor() { super(); }
 	/**
 	 * Clear the maps and cancel the trigger task.
+	 * @override
 	 */
 	reset() {
 		this.lastKnown.clear();
 		this.active.clear();
-		if(this.trigger > -1) {
-			clearTimeout(this.trigger);
-		}
-		this.trigger = -1;
+		super.reset();
 	}
 	/**
 	 * Cache the currently known size from ResizeObserver callbacks.
@@ -51,13 +50,12 @@ class ResizeTracker {
 	 * @param {ResizeObserverSize} dpsize the current DPI rect.
 	 */
 	track(page, dpsize) {
-		//console.log("track", page.id, dpsize);
 		this.active.set(page, dpsize);
 	}
 	/**
 	 * Do the bookkeeping for resize handling.
 	 * @param {ResizeConfiguration} config resize config.
-	 * @returns {PageContext[]} pages that need a resize refresh.
+	 * @returns {{target: PageContext, db: Number, di: Number, upsize: Boolean }[]} pages that need a resize refresh.
 	 */
 	compute(config) {
 		const resize = [];
@@ -66,7 +64,6 @@ class ResizeTracker {
 				const dpsize = this.lastKnown.get(key);
 				const db = value.blockSize - dpsize.blockSize;
 				const di = value.inlineSize - dpsize.inlineSize;
-				//console.log("compute.dxdy", key.id, db, di);
 				if(Math.abs(db) > config.deltaBlock || Math.abs(di) > config.deltaInline) {
 					// schedule a resize
 					resize.push({ target: key, db, di, upsize: db > 0 && di > 0 });
@@ -75,29 +72,27 @@ class ResizeTracker {
 				}
 			}
 			else {
-				//console.log("compute.init", key.id);
 				this.lastKnown.set(key, value);
 			}
 		});
 		return resize;
 	}
 	/**
-	 * Call after processing ResizeObserver entries.
-	 * Manages the async trigger task.  While this is called before the timeout expires, the task is rescheduled.
-	 * Callback receives PageContext[] with the pages to refresh; MUST return Promise[].
-	 * @param {ResizeConfiguration} config Resize config.
-	 * @param {Function(PageContext[])} resizecb Use to process the resize callback when it is triggered.  Receives PageContext[].
+	 * @callback TrackCallback
+	 * @param pages {{target: PageContext, db: Number, di: Number, upsize: Boolean }[]} the list of pages
+	 * @returns {void}
 	 */
-	trackComplete(config, resizecb) {
-		if(this.trigger > -1) {
-			clearTimeout(this.trigger);
-		}
-		this.trigger = setTimeout(async () => {
-			this.trigger = -1;
-			const resize = this.compute(config);
+	/**
+	 * Call after processing ResizeObserver entries.
+	 * @param {ResizeConfiguration} config Resize config.
+	 * @param {TrackCallback} cb Use to process the resize callback when it is triggered.
+	 */
+	trackComplete(config, cb) {
+		this.schedule(config.triggerTime, async () => {
+			const pages = this.compute(config);
 			this.active.clear();
-			await resizecb(resize);
-		}, config.triggerTime);
+			await cb(pages);
+		});
 	}
 }
 
