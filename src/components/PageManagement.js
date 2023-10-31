@@ -5,12 +5,17 @@ import { COLD, WARM, HOT, pageZone } from "./PageContext";
 class PageManagement {
 	/**
 	 * Perform the business logic to associate a zone with every page.
+	 * @abstract
 	 * @param {PageContext[]} pageContexts list of pages.
 	 * @returns {{zone: Number, page: PageContext}[]} list of page management information.
 	 */
 	execute(pageContexts) {
 		return undefined;
 	}
+	/**
+	 * @virtual
+	 * Return the start tile index.
+	 */
 	get tileStart() { return 0; }
 }
 /**
@@ -41,6 +46,7 @@ class PageManagement_UpdateZones extends PageManagement {
 	}
 	/**
 	 * Perform the business logic to associate a zone with every page.
+	 * @override
 	 * @param {PageContext[]} pages list of pages.
 	 * @returns {{zone: Number, page: PageContext}[]} list of page management information.
 	 */
@@ -76,6 +82,12 @@ class PageManagement_UpdateRange extends PageManagement {
 	zone(page) {
 		return page.index >= this.start && page.index <= this.stop ? HOT : WARM;
 	}
+	/**
+	 * Perform the business logic to associate a zone with every page.
+	 * @override
+	 * @param {PageContext[]} pages list of pages.
+	 * @returns {{zone: Number, page: PageContext}[]} list of page management information.
+	 */
 	execute(pages) {
 		const list = pages.map(px => { return { zone: this.zone(px), page: px }; });
 		return list;
@@ -103,9 +115,14 @@ class PageManagement_Scroll extends PageManagement {
 		this.pageIndex = pageIndex;
 		this.pm = pm;
 	}
+	/**
+	 * @override
+	 * Use the given page index from ctor.
+	 */
 	get tileStart() { return this.pageIndex; }
 	/**
 	 * Delegate to the backing PageManagement.
+	 * @override
 	 * @param {PageContext[]} pages list of pages.
 	 * @returns {{zone: Number, page: PageContext}[]} list of page management information.
 	 */

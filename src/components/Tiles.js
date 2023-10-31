@@ -1,6 +1,8 @@
 /**
  * Generate the sequence [0..limit)
+ * @generator
  * @param {Number} limit Upper bound non-inclusive.
+ * @yields {Number} next element.
  */
 function* finite(limit) {
 	if(limit <= 0) throw new Error("finite: limit must be GT 0");
@@ -8,16 +10,26 @@ function* finite(limit) {
 }
 /**
  * Generate the sequence [0...] without end.
+ * @generator
+ * @yields {Number} next element.
  */
 function* infinite() {
 	let ix = 0;
 	while(true) yield ix++;
 }
 /**
+ * @callback GridCallback
+ * @param {Number} major Major dimension index.
+ * @param {Number} minor Minor dimension index.
+ * @returns {any} Return as necessary.
+ */
+/**
  * General-purpose grid coordinate generation.
+ * @generator
+ * @yields {Number} next element.
  * @param {Generator} major Major dimension generator.
  * @param {Function} minorfunc Minor dimension Generator-returning Function.
- * @param {Function} cb Callback to yield objects back to caller.  Receives (maj.value,min.value) as parameters.
+ * @param {GridCallback} cb Callback to yield objects back to caller.  Receives (maj.value,min.value) as parameters.
  */
 function* grid(major, minorfunc, cb) {
 	if(!(minorfunc instanceof Function)) throw new Error("minorfunc: must be a Function returning a Generator");
@@ -37,6 +49,8 @@ function* grid(major, minorfunc, cb) {
 /**
  * Generate row-major sequence of coordinates.
  * (0,0)...(0,n-1),(1,0)...(1,n-1),...
+ * @generator
+ * @yields {{row: Number, column: Number}} Row and Column coordinates.
  * @param {Generator} rows Row generator.
  * @param {Function} colsfunc  Column generator callback; MUST return a new Generator.
  */
@@ -58,6 +72,8 @@ function* rowMajor(rows, colsfunc) {
 /**
  * Generate column-major sequence of coordinates.
  * (0,0)...(n-1,0),(0,1)...(n-1,1),...
+ * @generator
+ * @yields {{row: Number, column: Number}} Row and Column coordinates.
  * @param {Function} rowsfunc Row generator callback; MUST return a new Generator.
  * @param {Generator} columns Column generator.
  */
@@ -85,6 +101,13 @@ class TileConfiguration {
 	 * Return the total cells or NaN if one of the dimensions is "auto".
 	 */
 	get total() { return this.rows*this.columns; }
+	/**
+	 * Ctor.
+	 * Only ONE of rows/columns can be NaN.
+	 * @param {String} direction One of ROW or COLUMN.
+	 * @param {Number} rows Number of rows (GT 0) or NaN.
+	 * @param {Number} columns Number of columns (GT 0) or NaN.
+	 */
 	constructor(direction, rows, columns) {
 		this.direction = direction;
 		this.rows = rows;
@@ -103,6 +126,10 @@ class TileConfiguration {
 				throw new Error(`TileConfiguration: '${this.direction}' unrecognized direction`);
 		}
 	}
+	/**
+	 * Build a Generator for the sequence and return it.
+	 * @returns {Generator} A generator configured according to the options.
+	 */
 	sequence() {
 		switch(this.direction) {
 			case ROW:
