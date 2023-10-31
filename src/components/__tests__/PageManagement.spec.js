@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from "vitest"
 
-import * as pc from '../PageContext.js'
+import * as pc from "../PageContext.js"
 import * as pm from "../PageManagement.js"
 import * as sc from "../ScrollConfiguration.js"
 
@@ -94,7 +94,7 @@ describe("PageManagement_UpdateZones", () => {
 		expect(tiles.length).toBe(tilect);
 	})
 })
-describe("PageManagement_UpdateRange", ()=> {
+describe("PageManagement_UpdateRange", () => {
 	it("invalid start", () => {
 		expect(() => new pm.PageManagement_UpdateRange(-1, undefined))
 		.toThrow(new Error("start: must be GE zero"));
@@ -163,7 +163,23 @@ describe("PageManagement_UpdateRange", ()=> {
 		}
 	})
 })
-describe("ScrollConfiguration", ()=>{
+describe("PageManagement_Scroll", () => {
+	it("invalid pageIndex", () => {
+		expect(() => new pm.PageManagement_Scroll(-1, undefined))
+		.toThrow(new Error("pageIndex: must be GE zero"));
+	})
+	it("invalid pm", () => {
+		expect(() => new pm.PageManagement_Scroll(0, undefined))
+		.toThrow(new Error("pm: MUST be an instance of PageManagement"));
+		expect(() => new pm.PageManagement_Scroll(0, new sc.ScrollConfiguration()))
+		.toThrow(new Error("pm: MUST be an instance of PageManagement"));
+	})
+	it("valid", () => {
+		expect(() => new pm.PageManagement_Scroll(-1, new pm.PageManagement_UpdateZones(0)))
+		.toThrow(new Error("pageIndex: must be GE zero"));
+	})
+})
+describe("ScrollConfiguration", () => {
 	it("ctor", () => {
 		const margin = "0px 0px 0px 0px";
 		const cfg = new sc.ScrollConfiguration(document.createElement("div"), margin);
