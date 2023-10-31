@@ -27,6 +27,8 @@ const version = __APP_VERSION__
 		<br/>
 		Go to the project's wiki for
 		<a href="https://github.com/escape-llc/pdf-component-vue/wiki" target="_blank" rel="noopener">more information</a>.
+		<br/>
+		Visit our <a href="https://escape-technology-llc.com/">Home Page</a> for more information about eScape.
 	</WelcomeItem>
 
 	<WelcomeItem>
@@ -38,7 +40,7 @@ const version = __APP_VERSION__
 		The NPM package and this demo use
 		<a href="https://vitejs.dev/guide/features.html" target="_blank" rel="noopener">Vite</a> for development and bundling.
 		<br/>
-		We use <a href="https://vitest.dev/">vitest</a> for unit tests.
+		We use <a href="https://vitest.dev/">vitest</a> for unit tests and test coverage.
 	</WelcomeItem>
 
 	<WelcomeItem>
@@ -68,7 +70,9 @@ const version = __APP_VERSION__
 			<li>Basic scrolling demo.  This the simplest use case of WIDTH mode, loading all the pages in a column.</li>
 			<li>Basic tiles demo with paging. This shows a 2x3 grid of tiles in HEIGHT mode, with paging.</li>
 			<li>Page Management demo.  This shows all 14 pages, but only the "HOT" pages render.  The "HOT" zone is centered on the page you click.</li>
-			<li>Faux viewer using 2 instances of <code>pdf-component-vue</code> in HEIGHT mode, with a local PDF you select.  Thumbnails on the left; click to display the page on the right.</li>
+			<li>Faux viewer using 2 instances of <code>pdf-component-vue</code> in HEIGHT mode, with a local PDF you select.  Thumbnails on the left; click to display the page.
+ Document outline is presented on the right, courtesy of the <a href="https://github.com/N00ts/vue3-treeview"><code>vue3-treeview</code></a> component.</li>
+			<li>Resize Management demo.  Switch between two different sizes and watch the pages re-render in response.</li>
 		</ul>
 	</WelcomeItem>
 
