@@ -3,6 +3,11 @@ import { COLD, WARM, HOT, pageZone } from "./PageContext";
  * Functions as an abstract base class for page management implementations.
  */
 class PageManagement {
+	/**
+	 * Perform the business logic to associate a zone with every page.
+	 * @param {PageContext[]} pageContexts list of pages.
+	 * @returns {{zone: Number, page: PageContext}[]} list of page management information.
+	 */
 	execute(pageContexts) {
 		return undefined;
 	}
@@ -34,6 +39,11 @@ class PageManagement_UpdateZones extends PageManagement {
 	zone(page, count) {
 		return pageZone(page.index, this.pageIndex, count, this.hotZone, this.warmZone);
 	}
+	/**
+	 * Perform the business logic to associate a zone with every page.
+	 * @param {PageContext[]} pages list of pages.
+	 * @returns {{zone: Number, page: PageContext}[]} list of page management information.
+	 */
 	execute(pages) {
 		const list = pages.map(px => { return { zone: this.zone(px, pages.length), page: px }; });
 		return list;
@@ -75,18 +85,33 @@ class PageManagement_UpdateRange extends PageManagement {
  * Page management that sets a starting tile for rendering.
  * Use this to "page" through groups of tiles.
  */
-class PageManagement_Scroll extends PageManagement_UpdateZones {
+class PageManagement_Scroll extends PageManagement {
+	pageIndex
+	pm
 	/**
 	 * Same as update zones, but also sets the starting tile for rendering.
 	 * Use this to page through groups of tiles in a fixed grid.
 	 * @param {number} pageIndex 0-relative page index.  This is the "center" point.
-	 * @param {number} hotZone size of HOT zone; UNDEFINED makes all pages HOT.
-	 * @param {number} warmZone size of WARM zone; UNDEFINED makes all non-HOT pages WARM.
+	 * @param {PageManagement} pm instance of PageManagement to use for execute().
 	 */
-	constructor(pageIndex, hotZone, warmZone) {
-		super(pageIndex, hotZone, warmZone);
+	constructor(pageIndex, pm) {
+		super();
+		if(pageIndex === undefined || pageIndex === null) throw new Error("pageIndex: must be GE zero");
+		if(pageIndex < 0) throw new Error("pageIndex: must be GE zero");
+		if(!pm) throw new Error("pm: MUST be an instance of PageManagement");
+		if(!(pm instanceof PageManagement)) throw new Error("pm: MUST be an instance of PageManagement");
+		this.pageIndex = pageIndex;
+		this.pm = pm;
 	}
 	get tileStart() { return this.pageIndex; }
+	/**
+	 * Delegate to the backing PageManagement.
+	 * @param {PageContext[]} pages list of pages.
+	 * @returns {{zone: Number, page: PageContext}[]} list of page management information.
+	 */
+	execute(pages) {
+		return this.pm.execute(pages);
+	}
 }
 /**
  * Take the smaller of tileCount and scan.length, starting at pageIndex.
