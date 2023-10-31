@@ -49,7 +49,7 @@ function createPrintIframe(container) {
 }
 function addPrintStyles(doc, sizeX, sizeY) {
 	//console.log("addPrintStyles", sizeX, sizeY);
-	const style = doc.createElement('style');
+	const style = doc.createElement("style");
 	style.textContent = `
 		@page {
 			margin: 0;
@@ -68,7 +68,7 @@ function addPrintStyles(doc, sizeX, sizeY) {
 		}
 	`;
 	doc.head.appendChild(style);
-	doc.body.style.width = '100%';
+	doc.body.style.width = "100%";
 }
 
 export default {
