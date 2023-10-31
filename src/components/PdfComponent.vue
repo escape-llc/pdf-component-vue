@@ -208,9 +208,9 @@ export default {
 		this.handler = new DocumentHandler_pdfjs(this.$emit);
 		this.cache = null;
 		this.intersect = null;
+		this.intersectTracker = null;
 		this.resizer = null;
 		this.resizeTracker = null;
-		this.pageSetIntersect = null;
 		// end
 		this.$watch(
 			() => this.source,
@@ -318,7 +318,8 @@ export default {
 		cleanDocument() {
 			this.intersect?.disconnect();
 			this.intersect = null;
-			this.pageSetIntersect = null;
+			this.intersectTracker?.reset();
+			this.intersectTracker = null;
 			this.resizer?.disconnect();
 			this.resizer = null;
 			this.resizeTracker?.reset();
@@ -513,7 +514,7 @@ export default {
 			if(this.intersect) {
 				//pages.forEach(px => this.intersect.unobserve(px.container));
 				this.intersect.disconnect();
-				this.pageSetIntersect.clear();
+				this.intersectTrackerTracker.reset();
 			}
 		},
 		/**
@@ -523,41 +524,37 @@ export default {
 			if(!this.intersect && this.scrollConfiguration instanceof scroll.ScrollConfiguration) {
 				this.intersect = new IntersectionObserver(entries => {
 					entries.forEach(ex => {
-						const target = this.pageContexts.filter(px => px.container === ex.target);
-						if(target.length) {
-							if(ex.isIntersecting) {
-								this.pageSetIntersect.add(target[0]);
-							}
-							else {
-								this.pageSetIntersect.delete(target[0]);
-							}
+						const target = this.pageContexts.find(px => px.container === ex.target);
+						if(target) {
+							this.intersectTracker.track(target, ex);
 						}
 					});
-					const emit = [];
-					for(let px of this.pageSetIntersect.values()) {
-						emit.push(this.infoFor(px));
-					}
-					this.$emit("visible-pages", emit);
+					this.intersectTracker.trackComplete(this.scrollConfiguration, isect => {
+						// potential race due to setTimeout; SHOULD NOT filter any elements!
+						const available = isect.filter(ix => ix.container);
+						if(available.length) {
+							this.$emit("visible-pages", available.map(ix => this.infoFor(ix)));
+						}
+					});
 				}, {
 					root: this.scrollConfiguration.root,
 					rootMargin: this.scrollConfiguration.rootMargin,
 					thresholds: [0, 0.25, 0.50, 0.75, 1.0]
 				});
-				this.pageSetIntersect = new Set();
+				this.intersectTracker = new scroll.ScrollTracker();
 			}
 		},
 		ensureResize() {
 			if(!this.resizer && this.resizeConfiguration instanceof resize.ResizeConfiguration) {
 				this.resizer = new ResizeObserver(entries => {
 					entries.forEach(ex => {
-						const target = this.pageContexts.filter(px => px.container === ex.target);
-						if(target.length) {
+						const target = this.pageContexts.find(px => px.container === ex.target);
+						if(target) {
 							// track by devicePixelContentBoxSize
 							const dpsize = ex.devicePixelContentBoxSize[0];
-							this.resizeTracker.track(target[0], dpsize);
+							this.resizeTracker.track(target, dpsize);
 						}
 					});
-					// only trigger if size changes by a threshold, e.g. 1 pixel is not enough of a change
 					this.resizeTracker.trackComplete(this.resizeConfiguration, async resize => {
 						// potential race due to setTimeout; SHOULD NOT filter any elements!
 						const available = resize.filter(rx => rx.target.container);
