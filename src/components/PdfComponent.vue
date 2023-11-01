@@ -514,7 +514,7 @@ export default {
 			if(this.intersect) {
 				//pages.forEach(px => this.intersect.unobserve(px.container));
 				this.intersect.disconnect();
-				this.intersectTrackerTracker.reset();
+				this.intersectTracker.reset();
 			}
 		},
 		/**
