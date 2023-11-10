@@ -50,7 +50,7 @@ export default {
 	},
 	data() {
 		return {
-			url: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf",
+			url: "/tracemonkey.pdf",
 			tiles: new TileConfiguration(ROW, 4, 4),
 			errorMessage: null,
 			currentPage: 1,

@@ -64,7 +64,7 @@ export default {
 	},
 	data() {
 		return {
-			url: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf",
+			url: "/tracemonkey.pdf",
 			errorMessage: null,
 			currentPage: 1,
 			sizeMode: HEIGHT,
