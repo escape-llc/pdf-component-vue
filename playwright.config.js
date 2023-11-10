@@ -36,16 +36,19 @@ export default defineConfig({
 		{
 			name: 'chromium',
 			use: { ...devices['Desktop Chrome'] },
+			outputDir: "playwright-capture/chromium",
 		},
 
 		{
 			name: 'firefox',
 			use: { ...devices['Desktop Firefox'] },
+			outputDir: "playwright-capture/firefox",
 		},
 
 		{
 			name: 'webkit',
 			use: { ...devices['Desktop Safari'] },
+			outputDir: "playwright-capture/webkit",
 		},
 
 		/* Test against mobile viewports. */
@@ -66,6 +69,7 @@ export default defineConfig({
 		{
 			name: 'GoogleChrome',
 			use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+			outputDir: "playwright-capture/GoogleChrome",
 		},
 	],
 	/* Run your local dev server before starting the tests */

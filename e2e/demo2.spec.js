@@ -1,9 +1,10 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
+import { delay } from "./util.js";
 
 test.describe.configure({mode:"serial"});
-test.describe("Demo2 Page", () => {
-	test('demo2 page', async ({ page }) => {
+test.describe("Demo2", () => {
+	test('page', async ({ page }, { outputDir }) => {
 		await page.goto('http://localhost:5173/', { waitUntil: "load" });
 	
 		// Click the Demo1 link.
@@ -13,17 +14,17 @@ test.describe("Demo2 Page", () => {
 		await expect(page.locator('div.error')).not.toBeVisible();
 		await expect(page.locator('div#my-pdf')).toBeVisible();
 		await expect(page.locator('div#my-pdf-page-1')).toBeVisible();
-		await new Promise(resolve => { setTimeout(resolve, 1000)});
-		await page.screenshot({ path: 'playwright-capture/demo2-page1.png', fullPage: true });
+		await delay(1000);
+		await page.screenshot({ path: `${outputDir}/demo2-page1.png`, fullPage: true });
 		// click the "next page" button
 		await page.getByRole('button', { name: '>' }).click();
 		await expect(page.locator('div#my-pdf-page-7')).toBeVisible();
-		await new Promise(resolve => { setTimeout(resolve, 1000)});
-		await page.screenshot({ path: 'playwright-capture/demo2-page2.png', fullPage: true });
+		await delay(1000);
+		await page.screenshot({ path: `${outputDir}/demo2-page2.png`, fullPage: true });
 		// click the "next page" button
 		await page.getByRole('button', { name: '>' }).click();
 		await expect(page.locator('div#my-pdf-page-13')).toBeVisible();
-		await new Promise(resolve => { setTimeout(resolve, 1000)});
-		await page.screenshot({ path: 'playwright-capture/demo2-page3.png', fullPage: true });
+		await delay(1000);
+		await page.screenshot({ path: `${outputDir}/demo2-page3.png`, fullPage: true });
 	})
 })
