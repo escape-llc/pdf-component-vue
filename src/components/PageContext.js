@@ -4,6 +4,22 @@ const WIDTH = 0, HEIGHT = 1;
 import { ref } from "vue";
 
 /**
+ * Feature-detect OffscreenCanvas and use it, else DOM element canvas.
+ * @param {Number} width canvas width in px.
+ * @param {Number} height canvas height in px.
+ * @returns {OffscreenCanvas|HTMLCanvasElement} a canvas of some sort.
+ */
+const canvasFactory = (width, height) => {
+	if(typeof globalThis.OffscreenCanvas !== "undefined") {
+		const oc = new globalThis.OffscreenCanvas(width, height);
+		return oc;
+	}
+	const canvas = document.createElement("canvas");
+	canvas.width = width;
+	canvas.height = height;
+	return canvas;
+}
+/**
  * This class represents the current state of the page.
  */
 class PageContext {
@@ -116,22 +132,21 @@ class PageContext {
 		}
 	}
 	/**
-	 * Render to an OffscreenCanvas then use requestAnimationFrame() for a smooth update.
+	 * Render to an (Offscreen)Canvas then use requestAnimationFrame() for a smooth update.
 	 * @param {PageCache} cache Use for page operations.
 	 * @param {Viewport} viewport Use to size everything.
 	 * @returns Promise
 	 */
 	async renderTheCanvas(cache, viewport) {
 		if(!this.canvas) return;
-		const oc = new OffscreenCanvas(viewport.width, viewport.height);
+		const oc = canvasFactory(viewport.width, viewport.height);
 		await cache.renderCanvas(this.pageNumber, viewport, oc);
-		const ibm = oc.transferToImageBitmap();
 		requestAnimationFrame(() => {
 			if(!this.canvas) return;
 			this.canvas.width = viewport.width;
 			this.canvas.height = viewport.height;
 			const ctx = this.canvas.getContext("2d");
-			ctx.drawImage(ibm, 0, 0);
+			ctx.drawImage(oc, 0, 0);
 		});
 	}
 	/**
