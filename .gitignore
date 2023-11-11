@@ -28,5 +28,6 @@ coverage
 *.sw?
 /test-results/
 /playwright-report/
+/playwright-capture/
 /blob-report/
 /playwright/.cache/
