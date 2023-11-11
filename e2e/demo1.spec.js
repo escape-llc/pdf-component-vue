@@ -5,7 +5,7 @@ import { delay } from "./util.js";
 test.describe.configure({mode:"serial"});
 test.describe("Demo1", () => {
 	test("with viewport", async ({ browser }, { outputDir }) => {
-		const context = await browser.newContext({ viewport: { width: 1352, height: 19140 }});
+		const context = await browser.newContext({ viewport: { width: 1280, height: 19132 }});
 		const page = await context.newPage();
 		await page.goto('http://localhost:5173/', { waitUntil: "load" });
 
@@ -16,7 +16,7 @@ test.describe("Demo1", () => {
 		await expect(page.locator('div#my-pdf')).toBeVisible();
 		await expect(page.locator('div#my-pdf-page-1')).toBeVisible();
 		await delay(1000);
-		await page.screenshot({ path: `${outputDir}/demo1.png`, fullPage: true });
+		await page.screenshot({ path: `${outputDir}/demo1.png`, fullPage: true, clip: { x:0,y:0,width:1280,height:21000 } });
 	})
 	test('without viewport', async ({ page }, { outputDir }) => {
 		await page.goto('http://localhost:5173/', { waitUntil: "load" });
