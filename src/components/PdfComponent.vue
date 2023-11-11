@@ -22,7 +22,7 @@
 	</div>
 </template>
 <script>
-import * as pdf from "pdfjs-dist/build/pdf.js";
+import { GlobalWorkerOptions } from "pdfjs-dist/build/pdf.js";
 import { PDFLinkService } from "pdfjs-dist/web/pdf_viewer.js";
 import {
 	COLD, WARM, HOT,
@@ -37,7 +37,7 @@ import * as scroll from "./ScrollConfiguration";
 import * as resize from "./ResizeConfiguration";
 import "../pdf-component-vue.css";
 
-pdf.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
+GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
 
 function createPrintIframe(container) {
 	return new Promise(resolve => {

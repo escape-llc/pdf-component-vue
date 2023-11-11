@@ -1,4 +1,4 @@
-import * as pdfjs from "pdfjs-dist/build/pdf.js";
+import { renderTextLayer, AnnotationLayer } from "pdfjs-dist/build/pdf.js";
 import { WIDTH, HEIGHT } from "./PageContext";
 
 /**
@@ -11,7 +11,7 @@ class PageCache {
 	_imageResourcesPath
 	/**
 	 * Ctor.
-	 * @param {pdfjs.PDFLinkService} linkService Required by annotation rendering.
+	 * @param {pdf.PDFLinkService} linkService Required by annotation rendering.
 	 * @param {String} imageResourcesPath Path to annotation images.
 	 */
 	constructor(linkService, imageResourcesPath) {
@@ -95,7 +95,7 @@ class PageCache {
 			includeMarkedContent: true,
 			disableNormalization: true,
 		});
-		await pdfjs.renderTextLayer({
+		await renderTextLayer({
 			container: el,
 			textContentSource: readableStream,
 			viewport,
@@ -115,7 +115,7 @@ class PageCache {
 			})*/,
 			imageResourcesPath: this._imageResourcesPath,
 		};
-		const anno = new pdfjs.AnnotationLayer(options);
+		const anno = new AnnotationLayer(options);
 		anno.render(options);
 	}
 }

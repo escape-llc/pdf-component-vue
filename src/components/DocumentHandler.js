@@ -1,4 +1,4 @@
-import * as pdf from 'pdfjs-dist/build/pdf.js'
+import { getDocument, PasswordResponses } from 'pdfjs-dist/build/pdf.js'
 
 /**
  * Base class for handlers.  Provides level of abstraction from PDFJS.
@@ -42,12 +42,12 @@ class DocumentHandler_pdfjs extends DocumentHandler {
 		if (source._pdfInfo) {
 			this.#document = source;
 		} else {
-			const documentLoadingTask = pdf.getDocument(source);
+			const documentLoadingTask = getDocument(source);
 			documentLoadingTask.onProgress = (progressParams) => {
 				this.#emit("progress", progressParams);
 			}
 			documentLoadingTask.onPassword = (callback, reason) => {
-				const retry = reason === pdf.PasswordResponses.INCORRECT_PASSWORD;
+				const retry = reason === PasswordResponses.INCORRECT_PASSWORD;
 				this.#emit("password-requested", callback, retry);
 			}
 			this.#document = await documentLoadingTask.promise;

@@ -8,12 +8,12 @@ import { ScrollConfiguration } from "./ScrollConfiguration";
 import { ResizeConfiguration } from "./ResizeConfiguration";
 import { unwrapOutline, unwrapOutlineItem, lookupPage } from "./Utils";
 import PdfComponent from "./PdfComponent.vue";
-import * as pdf from "pdfjs-dist/build/pdf";
+import { version } from "pdfjs-dist/build/pdf.js";
 
 import "../pdf-component-vue.css";
 
 // export the version of PDFJS we are built with
-const PdfjsVersion = pdf.version;
+const PdfjsVersion = version;
 
 export {
 	PdfjsVersion,
