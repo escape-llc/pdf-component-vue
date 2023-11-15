@@ -12,8 +12,6 @@ npm install pdf-component-vue
 ![workflow](https://github.com/escape-llc/pdf-component-vue/actions/workflows/node.js.yml//badge.svg)
 ![codeql](https://github.com/escape-llc/pdf-component-vue/actions/workflows/github-code-scanning/codeql/badge.svg)
 
-> Currently documenting `0.2.0`.
-
 ## Features
 
 Plenty of features to customize to your use case, especially if you want to control resources and DOM size.
