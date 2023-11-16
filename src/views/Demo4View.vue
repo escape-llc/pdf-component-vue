@@ -22,6 +22,7 @@
 				:pageManagement="sidebarPages"
 				:pageContainerClass="pageContainer"
 				:usePageLabels="true"
+				:commandPort="command"
 				canvasClass="page-stack"
 				@loaded="handleLoaded"
 				@load-failed="handleError"
@@ -66,6 +67,7 @@
 import Tree from "vue3-treeview";
 import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateRange } from "../components"
 import { unwrapOutline } from "../components";
+import { PrintDocument, ScrollToPage } from "../components";
 import "vue3-treeview/dist/style.css";
 
 export default {
@@ -159,7 +161,9 @@ export default {
 			this.scrollStop = Math.min(this.pageCount - 1, max + margin);
 		},
 		async handlePrint(ev) {
-			await this.$refs.pdf.print();
+			const print = new PrintDocument();
+			this.command = print;
+			//await this.$refs.pdf.print();
 		},
 		handleClose(ev) {
 			this.source = null;
@@ -217,6 +221,7 @@ export default {
 				if(pageNumber > 0) {
 					this.cacheStartPage = pageNumber;
 				}
+				this.command = new ScrollToPage(pageNumber);
 			}
 		},
 	},
@@ -228,6 +233,7 @@ export default {
 		return {
 			source: null,
 			source2: null,
+			command: null,
 			errorMessage: null,
 			pageCount: undefined,
 			fileName: undefined,

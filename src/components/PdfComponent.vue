@@ -35,41 +35,10 @@ import * as tile from "./Tiles.js";
 import * as page from "./PageManagement";
 import * as scroll from "./ScrollConfiguration";
 import * as resize from "./ResizeConfiguration";
+import * as cmd from "./Commands";
 import "../pdf-component-vue.css";
 
 GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
-
-function createPrintIframe(container) {
-	return new Promise(resolve => {
-		const iframe = document.createElement("iframe");
-		iframe.onload = () => resolve(iframe);
-		iframe.style.display = "none";
-		container.appendChild(iframe);
-	});
-}
-function addPrintStyles(doc, sizeX, sizeY) {
-	//console.log("addPrintStyles", sizeX, sizeY);
-	const style = doc.createElement("style");
-	style.textContent = `
-		@page {
-			margin: 0;
-			size: ${sizeX}pt ${sizeY}pt;
-		}
-		body {
-			margin: 0;
-		}
-		canvas {
-			width: 100%;
-			max-height: 100% !important;
-			height:100%;
-			page-break-after: always;
-			page-break-before: avoid;
-			page-break-inside: avoid;
-		}
-	`;
-	doc.head.appendChild(style);
-	doc.body.style.width = "100%";
-}
 
 export default {
 	name: "PdfComponent",
@@ -78,6 +47,7 @@ export default {
 		"loaded", "load-failed",
 		"rendered", "render-failed",
 		"printed", "print-failed",
+		"command-complete",
 		"visible-pages",
 		"resize-pages",
 		"page-click",
@@ -117,6 +87,10 @@ export default {
 		 * Set this from the @loaded handler, before any DOM elements are created.
 		 */
 		scrollConfiguration: scroll.ScrollConfiguration,
+		/**
+		 * Issue a command to the component.
+		 */
+		commandPort: cmd.Command,
 		/**
 		 * Desired ratio of canvas size to document size.
 		 * @values Number
@@ -230,6 +204,15 @@ export default {
 				await this.renderPages();
 			}
 		);
+		this.$watch(
+			() => this.commandPort,
+			(nv, ov) => {
+				// ensure we execute in a new unit of work
+				setTimeout(async () => {
+					await this.executeCommand(nv);
+				}, 0);
+			}
+		)
 	},
 	mounted() {
 		this.load(this.source)
@@ -242,68 +225,6 @@ export default {
 		this.cleanup();
 	},
 	methods: {
-		/**
-		 * Render the document to a hidden IFRAME and trigger print dialog.
-		 * @param {Number} dpi print DPI; defaults to 300.
-		 * @param {Array|undefined} pageSequence array of (1-relative) page numbers to print. Leave undefined for all pages.
-		 */
-		async print(dpi = 300, pageSequence) {
-			if (!this.handler?.document) {
-				return;
-			}
-			const printUnits = dpi / 72;
-			const styleUnits = 96 / 72;
-			try {
-				const iframe = await createPrintIframe(window.document.body);
-				const closePrint = (ev) => {
-					window.document.body.removeChild(iframe);
-				};
-				iframe.contentWindow.onbeforeunload = closePrint;
-				iframe.contentWindow.onafterprint = closePrint;
-				const pageNums = [];
-				if(pageSequence) {
-					for(const px of pageSequence) {
-						pageNums.push(px);
-					}
-				}
-				else {
-					for(let ix = 1; ix <= this.pageCount; ix++) {
-						pageNums.push(ix);
-					}
-				}
-				await Promise.all(
-					pageNums.map(async (pageNum, ix) => {
-						try {
-							const page = await this.handler.page(pageNum);
-							const viewport = page.getViewport({ scale: 1, rotation: 0, });
-							if (ix === 0) {
-								const sizeX = (viewport.width * printUnits) / styleUnits;
-								const sizeY = (viewport.height * printUnits) / styleUnits;
-								addPrintStyles(iframe.contentWindow.document, sizeX, sizeY);
-							}
-							const canvas = document.createElement("canvas");
-							canvas.width = viewport.width * printUnits;
-							canvas.height = viewport.height * printUnits;
-							await page.render({
-								canvasContext: canvas.getContext("2d"),
-								intent: "print",
-								transform: [printUnits, 0, 0, printUnits, 0, 0],
-								viewport,
-							}).promise;
-							iframe.contentWindow.document.body.appendChild(canvas);
-						}
-						catch(e) {
-							console.error("print failed", e);
-						}
-					})
-				);
-				iframe.contentWindow.print();
-				this.$emit("printed", iframe);
-			}
-			catch(e) {
-				this.$emit("print-failed", e);
-			}
-		},
 		/**
 		 * Clean up resources.
 		 */
@@ -324,6 +245,24 @@ export default {
 			this.resizer = null;
 			this.resizeTracker?.reset();
 			this.resizeTracker = null;
+		},
+		/**
+		 * Manage command execute and emit status.
+		 * @param {Command} exe the command to execute.
+		 */
+		async executeCommand(exe) {
+			console.log("executeCommand", exe);
+			try {
+				if(!this.handler?.document) throw new Error("executeCommand: no document, command not executed");
+				const ctx = new cmd.CommandExecuteContext(this.handler, this.pageContexts);
+				const result = await exe.execute(ctx);
+				console.log("commandComplete", result);
+				this.$emit("command-complete", { command: exe, ok: true, result });
+			}
+			catch(ex) {
+				console.error("commandComplete", ex);
+				this.$emit("command-complete", { command: exe, ok: false, result: ex });
+			}
 		},
 		/**
 		 * Load and initial render of PDF source.

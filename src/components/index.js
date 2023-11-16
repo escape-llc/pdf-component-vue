@@ -6,6 +6,7 @@ import { ROW, COLUMN, TileConfiguration } from "./Tiles";
 import { PageManagement, PageManagement_UpdateZones, PageManagement_UpdateRange, PageManagement_Scroll } from "./PageManagement";
 import { ScrollConfiguration } from "./ScrollConfiguration";
 import { ResizeConfiguration } from "./ResizeConfiguration";
+import { Command, ScrollToPage, PrintDocument } from "./Commands";
 import { unwrapOutline, unwrapOutlineItem, lookupPage } from "./Utils";
 import PdfComponent from "./PdfComponent.vue";
 import { version } from "pdfjs-dist/build/pdf.js";
@@ -23,6 +24,7 @@ export {
 	ROW, COLUMN, TileConfiguration,
 	ScrollConfiguration,
 	ResizeConfiguration,
+	Command, ScrollToPage, PrintDocument,
 	unwrapOutline, unwrapOutlineItem, lookupPage,
 	PageManagement, PageManagement_UpdateZones, PageManagement_UpdateRange, PageManagement_Scroll
 }

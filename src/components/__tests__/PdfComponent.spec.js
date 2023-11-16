@@ -3,7 +3,10 @@ import { mount, flushPromises } from '@vue/test-utils'
 import PdfComponent from '../PdfComponent.vue'
 import * as tiles from "../Tiles"
 import * as pm from "../PageManagement"
+import * as cmd from "../Commands"
 import { HEIGHT } from '../PageContext'
+
+vi.useFakeTimers();
 
 function mountedPromise(options) {
 	return new Promise((resolve, reject) => {
@@ -522,6 +525,37 @@ describe('PdfComponent', () => {
 		await page.trigger("click");
 		expect(wrapper.emitted()).toHaveProperty("page-click");
 	})
+	it("scrollToPage", async () => {
+		const wrapper = await mountedPromise({
+			id: "my-pdf",
+			class: "document-container",
+			sizeMode: HEIGHT,
+			annotationLayer: true,
+			tileConfiguration: new tiles.TileConfiguration(tiles.ROW, 2, 3),
+			canvasClass: "grid-stack",
+			annotationLayerClass: "grid-stack",
+			textLayerClass: "grid-stack",
+			source: PDF
+		});
+		await flushPromises();
+		expect(wrapper.emitted()).toHaveProperty("loaded");
+		expect(wrapper.emitted()).toHaveProperty("rendered");
+		const div = wrapper.get("div");
+		expect(div).not.toBe(undefined);
+		expect(div.element.id).toBe('my-pdf');
+		const scroll = new cmd.ScrollToPage(2);
+		// the JSDOM does not implement Element.scrollIntoView()
+		// so this also tests the command failure path
+		await wrapper.setProps({ commandPort: scroll });
+		// order of these is important!
+		vi.runAllTimers();
+		await flushPromises();
+		expect(wrapper.emitted()).toHaveProperty("command-complete");
+		const data = wrapper.emitted()["command-complete"][0];
+		expect(data[0].command).toEqual(scroll);
+		expect(data[0].ok).toBe(false);
+		expect(data[0].result.message).toBe("el.scrollIntoView is not a function");
+	})
 	it("print", async () => {
 		const wrapper = await mountedPromise({
 			id: "my-pdf",
@@ -540,8 +574,14 @@ describe('PdfComponent', () => {
 		const div = wrapper.get("div");
 		expect(div).not.toBe(undefined);
 		expect(div.element.id).toBe('my-pdf');
-		await wrapper.vm.print();
+		const print = new cmd.PrintDocument();
+		await wrapper.setProps({ commandPort: print });
+		// order of these is important!
+		vi.runAllTimers();
 		await flushPromises();
-		expect(wrapper.emitted()).toHaveProperty("printed");
+		expect(wrapper.emitted()).toHaveProperty("command-complete");
+		const data = wrapper.emitted()["command-complete"][0];
+		expect(data[0].command).toEqual(print);
+		expect(data[0].ok).toBe(true);
 	});
 })
