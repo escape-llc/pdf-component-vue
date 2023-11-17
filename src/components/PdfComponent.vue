@@ -1,7 +1,7 @@
 <template>
 	<div :id="id">
 		<template v-for="page in pages" :key="page.index">
-			<slot name="pre-page" v-bind="infoFor(page)"></slot>
+			<slot name="pre-page" v-bind="page.infoFor(undefined)"></slot>
 			<div
 				:ref="el => { mountContainer(page, el); }"
 				:id="page.id"
@@ -15,9 +15,9 @@
 					<div v-if="textLayer" :ref="el => { mountTextLayer(page, el); }" class="textLayer" style="position:relative" :class="textLayerClass" />
 					<div v-if="annotationLayer" :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" style="position:relative" :class="annotationLayerClass" />
 				</template>
-				<slot name="page-overlay" v-bind="infoFor(page)"></slot>
+				<slot name="page-overlay" v-bind="page.infoFor(undefined)"></slot>
 			</div>
-			<slot name="post-page" v-bind="infoFor(page)"></slot>
+			<slot name="post-page" v-bind="page.infoFor(undefined)"></slot>
 		</template>
 	</div>
 </template>
@@ -46,14 +46,13 @@ export default {
 		"progress", "password-requested",
 		"loaded", "load-failed",
 		"rendered", "render-failed",
-		"printed", "print-failed",
 		"command-complete",
 		"visible-pages",
 		"resize-pages",
 		"page-click",
 		"internal-link-click"
 	],
-	expose: ["print"],
+	expose: [],
 	props: {
 		id: String,
 		sizeMode: {
@@ -206,11 +205,11 @@ export default {
 		);
 		this.$watch(
 			() => this.commandPort,
-			(nv, ov) => {
-				// ensure we execute in a new unit of work
-				setTimeout(async () => {
-					await this.executeCommand(nv);
-				}, 0);
+			(nv, _) => {
+				if(nv) {
+					// ensure we execute in a new unit of work
+					setTimeout(async () => { await this.executeCommand(nv); }, 0);
+				}
 			}
 		)
 	},
@@ -311,7 +310,7 @@ export default {
 					const pages = this.updateState(tiles);
 					await this.domUpdate();
 					await Promise.all(pages.map(async px => { await px.render(this.cache); }));
-					this.$emit("rendered", pages.map(px => this.infoFor(px)));
+					this.$emit("rendered", pages.map(px => px.infoFor(undefined)));
 				}
 				catch(ee) {
 					this.$emit("render-failed", ee);
@@ -408,7 +407,7 @@ export default {
 					await this.domUpdate();
 				}
 				await Promise.all(tiles.map(async tx => { await tx.page.render(this.cache); }));
-				this.$emit("rendered", tiles.map(tx => this.infoFor(tx.page)));
+				this.$emit("rendered", tiles.map(tx => tx.page.infoFor(undefined)));
 			}
 			catch (e) {
 				this.$emit("render-failed", e);
@@ -472,7 +471,7 @@ export default {
 						// potential race due to setTimeout; SHOULD NOT filter any elements!
 						const available = isect.filter(ix => ix.container);
 						if(available.length) {
-							this.$emit("visible-pages", available.map(ix => this.infoFor(ix)));
+							this.$emit("visible-pages", available.map(ix => ix.infoFor(undefined)));
 						}
 					});
 				}, {
@@ -500,7 +499,7 @@ export default {
 						if(available.length) {
 							// prepare "safe" data for $emit
 							const emit = available.map(rx => {
-								return { page: this.infoFor(rx.target), di: rx.di, db: rx.db, upsize: rx.upsize, redrawCanvas: rx.upsize };
+								return { page: rx.target.infoFor(undefined), di: rx.di, db: rx.db, upsize: rx.upsize, redrawCanvas: rx.upsize };
 							});
 							// component owner has opportunity to alter the redrawCanvas flags
 							this.$emit("resize-pages", emit);
@@ -534,26 +533,10 @@ export default {
 		calculatePageClass(page) {
 			if(!this.pageContainerClass) return undefined;
 			if(this.pageContainerClass instanceof Function) {
-				const cx = this.pageContainerClass(this.infoFor(page));
+				const cx = this.pageContainerClass(page.infoFor(undefined));
 				return cx;
 			}
 			return this.pageContainerClass;
-		},
-		/**
-		 * Create a disconnected wrapper object for the page that is "safe" for external callers.
-		 * @param {PageContext} page the source page.
-		 * @param {Event} ev original event, if any.
-		 */
-		infoFor(page, ev) {
-			return {
-				id: page.id,
-				index: page.index,
-				state: page.state,
-				pageNumber: page.pageNumber,
-				gridRow: page.gridRow,
-				gridColumn: page.gridColumn,
-				originalEvent: ev
-			};
 		},
 		/**
 		 * Emit the page-click event.
@@ -561,7 +544,7 @@ export default {
 		 * @param {PageContext} page clicked page.
 		 */
 		handlePageClick(ev, page) {
-			this.$emit("page-click", this.infoFor(page, ev));
+			this.$emit("page-click", page.infoFor(ev));
 		},
 	},
 }

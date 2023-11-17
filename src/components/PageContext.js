@@ -194,6 +194,22 @@ class PageContext {
 		this.state = WARM;
 		this.didRender = false;
 	}
+		/**
+		 * Create a disconnected wrapper object for the page that is "safe" for external callers.
+		 * @param {Event} ev original event, if any.
+		 * @returns {any} untyped info { id, index, state, pageNumber, gridRow, gridColumn, originalEvent? }.
+		 */
+		infoFor(ev) {
+			return {
+				id: this.id,
+				index: this.index,
+				state: this.state,
+				pageNumber: this.pageNumber,
+				gridRow: this.gridRow,
+				gridColumn: this.gridColumn,
+				originalEvent: ev
+			};
+		}
 }
 /**
  * Populate the given array with "empty" pages in COLD zone.
