@@ -32,11 +32,19 @@ class CommandExecuteContext {
 		const page = await this.#handler.page(pageNumber);
 		return page;
 	}
+	info(pageNumber) {
+		const page = this.#pages.find(px => px.pageNumber === pageNumber);
+		if(page) {
+			return page.infoFor(undefined);
+		}
+		return undefined;
+	}
 	container(pageNumber) {
 		const page = this.#pages.find(px => px.pageNumber === pageNumber);
 		if (page) {
 			return page.container;
 		}
+		return undefined;
 	}
 }
 const alignment = ["start", "center", "end", "nearest"];
@@ -129,7 +137,7 @@ class PrintDocument extends Command {
 				pageNums.push(ix);
 			}
 		}
-		await Promise.all(
+		const results = await Promise.all(
 			pageNums.map(async (pageNum, ix) => {
 				try {
 					const page = await ctx.page(pageNum);
@@ -149,14 +157,16 @@ class PrintDocument extends Command {
 						viewport,
 					}).promise;
 					iframe.contentWindow.document.body.appendChild(canvas);
+					return null;
 				}
-				catch (e) {
-					console.error("print failed", e);
+				catch (error) {
+					console.error(`print failed page ${pageNum}`, error);
+					return { pageNum, error };
 				}
 			})
 		);
 		iframe.contentWindow.print();
-		return iframe;
+		return { iframe, errors: results.filter(rx => rx !== null) };
 	}
 }
 
