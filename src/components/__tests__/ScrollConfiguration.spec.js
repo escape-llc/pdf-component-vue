@@ -95,4 +95,40 @@ describe("ScrollTracker", () => {
 		const target = output2[0];
 		expect(target.id).toBe(page2.id);
 	})
+	it("defer", async () => {
+		let counter = 0;
+		function resolve(resize) {
+			counter++;
+			console.log("defer resolved", counter, resize);
+		}
+		const rt = new scroll.ScrollTracker();
+		const config = new scroll.ScrollConfiguration(undefined, "", 100);
+		const entries = [];
+		entries.forEach(ex => {
+			rt.track(ex.page, ex.ex);
+		});
+		// simulate multiple calls before a timeout
+		rt.trackComplete(config, resize => resolve(resize));
+		rt.trackComplete(config, resize => resolve(resize));
+		vi.runAllTimers();
+		expect(counter).toBe(1);
+	})
+	it("reset", async () => {
+		let counter = 0;
+		function resolve(resize) {
+			counter++;
+			console.log("defer resolved", counter, resize);
+		}
+		const rt = new scroll.ScrollTracker();
+		const config = new scroll.ScrollConfiguration(undefined, "", 100);
+		const entries = [];
+		entries.forEach(ex => {
+			rt.track(ex.page, ex.ex);
+		});
+		// simulate reset before a timeout
+		rt.trackComplete(config, resize => resolve(resize));
+		rt.reset();
+		vi.runAllTimers();
+		expect(counter).toBe(0);
+	})
 })
