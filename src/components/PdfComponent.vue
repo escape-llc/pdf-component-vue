@@ -250,16 +250,16 @@ export default {
 		 * @param {Command} exe the command to execute.
 		 */
 		async executeCommand(exe) {
-			console.log("executeCommand", exe);
+			//console.log("executeCommand", exe);
 			try {
 				if(!this.handler?.document) throw new Error("executeCommand: no document, command not executed");
 				const ctx = new cmd.CommandExecuteContext(this.handler, this.pageContexts);
 				const result = await exe.execute(ctx);
-				console.log("commandComplete", result);
+				//console.log("commandComplete", result);
 				this.$emit("command-complete", { command: exe, ok: true, result });
 			}
 			catch(ex) {
-				console.error("commandComplete", ex);
+				//console.error("commandComplete", ex);
 				this.$emit("command-complete", { command: exe, ok: false, result: ex });
 			}
 		},
