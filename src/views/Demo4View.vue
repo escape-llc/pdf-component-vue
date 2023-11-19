@@ -28,6 +28,7 @@
 				@load-failed="handleError"
 				@rendered="handleRendered"
 				@render-failed="handleRenderingFailed"
+				@command-complete="handleCommandComplete"
 				@page-click="handlePageClick"
 				@visible-pages="handleVisiblePages"
 				:source="source">
@@ -67,9 +68,53 @@
 import Tree from "vue3-treeview";
 import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateRange } from "../components"
 import { unwrapOutline } from "../components";
-import { PrintDocument, ScrollToPage } from "../components";
+import { Command, PrintDocument, ScrollToPage } from "../components";
 import "vue3-treeview/dist/style.css";
 
+/**
+ * Example of a custom command.
+ * Unwrap the document outline, then configure it for the tree view of your choice.
+ */
+class OutlineTree extends Command {
+	async execute(ctx) {
+		const outline = await unwrapOutline(ctx.document);
+		console.log("OutlineTree", outline);
+		// convert to format needed for the tree view
+		const nodes = {};
+		const config = {
+			roots: [],
+			padding: 0,
+		};
+		let symx = 1;
+		function processLevel(level, parent) {
+			level.forEach(ox => {
+				const id = `id${symx++}`;
+				const node = {
+					text: ox.outline.title,
+					pageIndex: ox.pageIndex,
+					children: [],
+					state: { disabled:false, hidden:false }
+				};
+				nodes[id] = node;
+				parent.children.push(id);
+				if(ox.items.length) {
+					processLevel(ox.items, node);
+				}
+			});
+		}
+		outline.forEach(ox => {
+			const id = `id${symx++}`;
+			if(ox.error) return;
+			const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[], state: {disabled:false,hidden:false} };
+			nodes[id] = node;
+			config.roots.push(id);
+			if(ox.items.length) {
+				processLevel(ox.items, node);
+			}
+		});
+		return { outline, config, nodes };
+	}
+}
 export default {
 	name: "Demo4View",
 	components: {PdfComponent, Tree},
@@ -79,51 +124,11 @@ export default {
 			this.pageCount = doc.numPages;
 			this.selectedPage = 1;
 			this.scroll = new ScrollConfiguration(this.$refs.sidebar.$el, "64px 0px 0px 64px");
-			doc.getAttachments().then(ax => {
-				console.log("attachments", ax);
-			});
-			unwrapOutline(doc).then(outline => {
-				console.log("unwrapOutline.then", outline);
-				// convert to format needed for the tree view
-				const nodes = {};
-				const config = {
-					roots: [],
-					padding: 0,
-				};
-				let symx = 1;
-				function processLevel(level, parent) {
-					level.forEach(ox => {
-						const id = `id${symx++}`;
-						const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[], state: {disabled:false,hidden:false} };
-						nodes[id] = node;
-						parent.children.push(id);
-						if(ox.items.length) {
-							processLevel(ox.items, node);
-						}
-					});
-				}
-				outline.forEach(ox => {
-					const id = `id${symx++}`;
-					if(ox.error) return;
-					const node = { text: ox.outline.title, pageIndex: ox.pageIndex, children:[], state: {disabled:false,hidden:false} };
-					nodes[id] = node;
-					config.roots.push(id);
-					if(ox.items.length) {
-						processLevel(ox.items, node);
-					}
-				});
-				this.config = config;
-				if(outline.length > 0) {
-					this.outline = nodes;
-				}
-				else {
-					this.outline = undefined;
-				}
-			});
+			this.command = new OutlineTree();
 		},
 		handleError(ev) {
 			console.error("handle.load-error", ev);
-			this.errorMessage = "Load: " + ev.message;
+			this.errorMessage = `Load: ${ev.message}`;
 		},
 		handleRenderedPages(ev) {
 			console.log("pages.rendered", ev);
@@ -133,20 +138,18 @@ export default {
 		},
 		handleRenderingFailed(ev) {
 			console.error("sidebar.render-error", ev);
-			this.errorMessage = "Render Sidebar: " + ev.message;
+			this.errorMessage = `Render Sidebar: ${ev.message}`;
 		},
 		handleRenderingFailedPage(ev) {
 			console.error("page.render-error", ev);
-			this.errorMessage = "Render Page: " + ev.message;
+			this.errorMessage = `Render Page: ${ev.message}`;
 		},
 		handleInternalLink(ev) {
 			console.log("internal-link-click", ev);
 			this.selectedPage = ev.pageNumber;
-			//const id = `#my-pdf-page-${ev.pageNumber}`;
-			//document.location.hash = id;
 			if(ev.pageNumber > 0) {
-					this.cacheStartPage = ev.pageNumber;
-				}
+				this.cacheStartPage = ev.pageNumber;
+			}
 		},
 		handleVisiblePages(ev) {
 			console.log("visible pages", ev);
@@ -163,7 +166,6 @@ export default {
 		async handlePrint(ev) {
 			const print = new PrintDocument();
 			this.command = print;
-			//await this.$refs.pdf.print();
 		},
 		handleClose(ev) {
 			this.source = null;
@@ -200,15 +202,20 @@ export default {
 			}
 			return css.join(" ");
 		},
+		updatePage(pageNumber) {
+			this.selectedPage = pageNumber;
+			if(pageNumber > 0) {
+				this.cacheStartPage = pageNumber;
+			}
+			// sync the sidebar to this page
+			this.command = new ScrollToPage(pageNumber);
+		},
 		handlePageClick(ev) {
 			console.log("handle.pageClick", ev);
 			if(ev.pageNumber === this.selectedPage) {
 			}
 			else {
-				this.selectedPage = ev.pageNumber;
-				if(ev.pageNumber > 0) {
-					this.cacheStartPage = ev.pageNumber;
-				}
+				this.updatePage(ev.pageNumber);
 			}
 		},
 		handleOutlineClick(ev) {
@@ -217,11 +224,25 @@ export default {
 			if(pageNumber === this.selectedPage) {
 			}
 			else {
-				this.selectedPage = pageNumber;
-				if(pageNumber > 0) {
-					this.cacheStartPage = pageNumber;
+				this.updatePage(pageNumber);
+			}
+		},
+		handleCommandComplete(ev) {
+			console.log("handleCommandComplete", ev);
+			if(ev.command instanceof OutlineTree) {
+				if(ev.ok) {
+					// put the command result into reactive state
+					this.config = ev.result.config;
+					if(ev.result.outline.length > 0) {
+						this.outline = ev.result.nodes;
+					}
+					else {
+						this.outline = undefined;
+					}
 				}
-				this.command = new ScrollToPage(pageNumber);
+				else {
+					this.outline = undefined;
+				}
 			}
 		},
 	},
