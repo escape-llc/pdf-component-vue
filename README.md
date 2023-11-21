@@ -9,8 +9,11 @@ npm install pdf-component-vue
 ~~~~~~
 
 [![npm version](https://badge.fury.io/js/pdf-component-vue.svg)](https://badge.fury.io/js/pdf-component-vue)
+[![npm dl](https://img.shields.io/npm/dm/pdf-component-vue)](https://npmjs.com/package/pdf-component-vue)
 ![workflow](https://github.com/escape-llc/pdf-component-vue/actions/workflows/node.js.yml//badge.svg)
+![e2e](https://github.com/escape-llc/pdf-component-vue/actions/workflows/playwright.yml//badge.svg)
 ![codeql](https://github.com/escape-llc/pdf-component-vue/actions/workflows/github-code-scanning/codeql/badge.svg)
+[![license](https://img.shields.io/npm/l/pdf-component-vue)](https://github.com/escape-llc/pdf-component-vue/blob/main/LICENSE)
 
 ## Features
 
@@ -42,6 +45,8 @@ Plenty of features to customize to your use case, especially if you want to cont
   * Offscreen pages may have their elements unmounted to save DOM resources.
 * Just-in-time page rendering while scrolling via `IntersectionObserver`.
 * Re-render page image on size changes via `ResizeObserver`.
+* Interact with the component without having a `ref`.
+  * Everything works with (reactive) props and emits.
 
 ## Demo Pages
 The demo app that is part of the repo presents some common use cases.  Below are sample screen captures.
@@ -74,11 +79,9 @@ You don't require any knowledge of `pdfjs` to use this control.
 
 Uses a current build of PDFJS.
 
-# Slots
+[This link](https://pdfjs.express/blog/how-pdf-js-works) contains an excellent overview of the internals.
 
-Slots provide you places to inject content.  This provides means to display page labels, etc.
-
-# Core Logic
+## Core Logic
 
 Those familiar with `pdfjs` know there are 3 "layers" involved:
 
@@ -243,6 +246,17 @@ The important aspect of this is the `redrawCanvas` flag of each entry, which you
 By default (no event handler) the component requests a `canvas` redraw when upsizing only.
 
 Hot and Warm pages have the special CSS properties updated, and Hot pages with the `redrawCanvas` flag set get the `canvas` redrawn.
+
+# Commanding
+
+Certain operations (like printing) typically require the component to "expose" methods for you to call.  Another scenario is scrolling
+to a specific page, which requires reference to the DOM element.
+
+In order to provide these, and other user-defined operations, there is a general framework for submitting "commands" to the component.
+
+The `commandPort` prop is a reactive way to submit operations that are scheduled (via `setTimeout`) to execute in an organized fashion with access to parts of the component's internal state, e.g. to access `pdfjs` objects or DOM elements.  The execution "context" handles collecting results and/or error information, and reports back via the `command-complete` event.
+
+An example use case for custom commands is "unwrapping" the PDF document outline (if available) to display a Table of Contents in your favorite tree view UI.  See the Faux Viewer demo for details on how to use the `commandPort` with the OOTB and custom commands.
 
 # Thanks
 
