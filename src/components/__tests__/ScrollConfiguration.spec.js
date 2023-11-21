@@ -99,7 +99,6 @@ describe("ScrollTracker", () => {
 		let counter = 0;
 		function resolve(resize) {
 			counter++;
-			console.log("defer resolved", counter, resize);
 		}
 		const rt = new scroll.ScrollTracker();
 		const config = new scroll.ScrollConfiguration(undefined, "", 100);
@@ -117,7 +116,6 @@ describe("ScrollTracker", () => {
 		let counter = 0;
 		function resolve(resize) {
 			counter++;
-			console.log("defer resolved", counter, resize);
 		}
 		const rt = new scroll.ScrollTracker();
 		const config = new scroll.ScrollConfiguration(undefined, "", 100);
