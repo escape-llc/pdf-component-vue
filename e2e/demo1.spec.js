@@ -16,7 +16,7 @@ test.describe("Demo1", () => {
 		await expect(page.locator('div#my-pdf')).toBeVisible();
 		await expect(page.locator('div#my-pdf-page-1')).toBeVisible();
 		await delay(1000);
-		await page.screenshot({ path: `${outputDir}/demo1.png`, fullPage: true, clip: { x:0,y:0,width:1280,height:21000 } });
+		await page.screenshot({ path: `${outputDir}/demo1.png`, fullPage: false, clip: { x:0,y:0,width:1280,height:21000 } });
 	})
 	test.skip('without viewport', async ({ page }, { outputDir }) => {
 		await page.goto('http://localhost:5173/', { waitUntil: "load" });
