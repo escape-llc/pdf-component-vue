@@ -55,8 +55,17 @@ const animate = ["smooth", "instant", "auto"];
 class ScrollToPage extends Command {
 	pageNumber
 	options
+	/**
+	 * Ctor.
+	 * @param {Number} pageNumber 1-relative page number.
+	 * @param {String} behavior options value for scrollIntoView.
+	 * @param {String} block options value for scrollIntoView.
+	 * @param {String} inline  options value for scrollIntoView.
+	 */
 	constructor(pageNumber, behavior = "auto", block = "start", inline = "nearest") {
 		super();
+		if(!Number.isInteger(pageNumber)) throw new Error("pageNumber: must be an integer");
+		if(pageNumber <= 0) throw new Error("pageNumber: must be GT 0");
 		if (!behavior || animate.indexOf(behavior) === -1) throw new Error(`behavior: must be one of: ${animate.join(",")}`);
 		if (!block || alignment.indexOf(block) === -1) throw new Error(`block: must be one of: ${alignment.join(",")}`);
 		if (!inline || alignment.indexOf(inline) === -1) throw new Error(`inline: must be one of: ${alignment.join(",")}`);
