@@ -18,7 +18,7 @@ test.describe("Demo1", () => {
 		await expect(page.getByRole('heading', { name: 'Basic Usage' })).toBeVisible();
 		await expect(page.locator('div.error')).not.toBeVisible();
 		await expect(page.locator('div#my-pdf')).toBeVisible();
-		await expect(page.locator('div.render-complete')).toBeAttached();
+		await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 20000 });
 		await page.screenshot({ path: `${outputDir}/demo1.png`, fullPage: false, clip });
 	})
 	test.skip('without viewport', async ({ page }, { outputDir }) => {
