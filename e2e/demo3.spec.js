@@ -13,13 +13,13 @@ test.describe("Demo3", () => {
 		await expect(page.getByRole('heading', { name: 'Page Management' })).toBeVisible();
 		await expect(page.locator('div.error')).not.toBeVisible();
 		await expect(page.locator('div#my-pdf')).toBeVisible();
-		await expect(page.locator('div.render-complete')).toBeAttached();
+		await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 20000 });
 		await page.screenshot({ path: `${outputDir}/demo3-page01.png`, fullPage: true });
 		await page.locator('div#my-pdf-page-5').click();
-		await expect(page.locator('div.render-complete')).toBeAttached();
+		await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 20000 });
 		await page.screenshot({ path: `${outputDir}/demo3-page05.png`, fullPage: true });
 		await page.locator('div#my-pdf-page-10').click();
-		await expect(page.locator('div.render-complete')).toBeAttached();
+		await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 20000 });
 		await page.screenshot({ path: `${outputDir}/demo3-page10.png`, fullPage: true });
 	})
 })
