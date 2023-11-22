@@ -1,5 +1,6 @@
 <template>
 	<h1>Resize Pages</h1>
+	<div class="render-complete" v-if="renderComplete">Render Complete</div>
 	<div>Use the buttons to resize.  When switching to <b>wide</b>, the <code>canvas</code> is re-rendered at the new size, so it appears sharp.
 		The text and annotation layers are also rescaled.  You can verify this by selecting some text in narrow then resizing to wide.</div>
 	<div>Without this feature, you would get the smaller <code>canvas</code> scaled up, and the other layers would be misaligned.</div>
@@ -21,8 +22,10 @@
 		textLayerClass="page-stack"
 		@loaded="handleLoaded"
 		@load-failed="handleError"
-		@page-rendered="handlePageRendered"
+		@rendered="handlePageRendered"
 		@render-failed="handleRenderingFailed"
+		@resize-pages="handleResizePages"
+		@resize-complete="handleResizeComplete"
 		:source="url">
 		<template #pre-page="slotProps">
 			<div style="text-align:center" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">Page {{slotProps.pageNumber}}</div>
@@ -43,18 +46,30 @@ export default {
 		handleError(ev) {
 			console.error("handle.load-error", ev);
 			this.errorMessage = ev.message;
+			this.renderComplete = true;
 		},
 		handlePageRendered(ev) {
-			console.log("handle.page", ev);
+			console.log("handle.rendered", ev);
+			this.renderComplete = true;
 		},
 		handleRenderingFailed(ev) {
 			console.error("handle.render-error", ev);
 			this.errorMessage = ev.message;
+			this.renderComplete = true;
+		},
+		handleResizeComplete(ev) {
+			console.log("handle.resize-complete", ev);
+			this.renderComplete = true;
+		},
+		handleResizePages(ev) {
+			console.log("handle.resize", ev);
 		},
 		handleWide(ev) {
+			this.renderComplete = false;
 			this.width = "wide";
 		},
 		handleNarrow(ev) {
+			this.renderComplete = false;
 			this.width = "narrow";
 		},
 	},
@@ -64,11 +79,16 @@ export default {
 			errorMessage: null,
 			width: "narrow",
 			resize: ResizeConfiguration.defaultConfiguration(),
+			renderComplete: false,
 		};
 	}
 }
 </script>
 <style scoped>
+.render-complete {
+	display: none;
+	margin: auto;
+}
 .error {
 	color: red;
 	font-style: italic;

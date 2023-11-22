@@ -1,3 +1,32 @@
+<template>
+	<h1>Page Management</h1>
+	<div class="render-complete" v-if="renderComplete">Render Complete</div>
+	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
+	<div style="margin-top:1rem">This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered. The remaining pages are Warm and render as "placeholders".</div>
+	<div style="margin-bottom:1rem">Click on a page frame to change the "currentPage".  In a typical case, the unrendered tiles are not visible to the user (see next demo).</div>
+	<PdfComponent
+		id="my-pdf"
+		class="document-container"
+		:textLayer="false"
+		:annotationLayer="true"
+		:sizeMode="sizeMode"
+		:tileConfiguration="tiles"
+		:pageManagement="pages"
+		:pageContainerClass="pageContainer"
+		canvasClass="page-stack"
+		annotationLayerClass="page-stack"
+		textLayerClass="page-stack"
+		@page-click="handlePageClick"
+		@loaded="handleLoaded"
+		@load-failed="handleError"
+		@rendered="handlePageRendered"
+		@render-failed="handleRenderingFailed"
+		:source="url">
+		<template #pre-page="slotProps">
+			<div :style="{'grid-row': slotProps.gridRow,'grid-column': slotProps.gridColumn}">Page {{slotProps.pageNumber}}</div>
+		</template>
+	</PdfComponent>
+</template>
 <script>
 import { PdfComponent } from "../components"
 import { HEIGHT } from '../components';
@@ -14,13 +43,16 @@ export default {
 		handleError(ev) {
 			console.error("handle.load-error", ev);
 			this.errorMessage = ev.message;
+			this.renderComplete = true;
 		},
 		handlePageRendered(ev) {
-			console.log("handle.page", ev);
+			console.log("handle.render", ev);
+			this.renderComplete = true;
 		},
 		handleRenderingFailed(ev) {
 			console.error("handle.render-error", ev);
 			this.errorMessage = ev.message;
+			this.renderComplete = true;
 		},
 		handlePageClick(ev) {
 			console.log("handle.pageClick", ev);
@@ -30,6 +62,7 @@ export default {
 			else {
 				this.selectedPage = ev.pageNumber;
 				if(ev.pageNumber > 0) {
+					this.renderComplete = false;
 					this.cacheStartPage = ev.pageNumber;
 				}
 			}
@@ -58,39 +91,16 @@ export default {
 			selectedPage: null,
 			// MUST be initialized BEFORE loaded event
 			cacheStartPage: 1,
+			renderComplete: false,
 		};
 	}
 }
 </script>
-<template>
-	<h1>Page Management</h1>
-	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
-	<div style="margin-top:1rem">This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered. The remaining pages are Warm and render as "placeholders".</div>
-	<div style="margin-bottom:1rem">Click on a page frame to change the "currentPage".  In a typical case, the unrendered tiles are not visible to the user (see next demo).</div>
-	<PdfComponent
-		id="my-pdf"
-		class="document-container"
-		:textLayer="false"
-		:annotationLayer="true"
-		:sizeMode="sizeMode"
-		:tileConfiguration="tiles"
-		:pageManagement="pages"
-		:pageContainerClass="pageContainer"
-		canvasClass="page-stack"
-		annotationLayerClass="page-stack"
-		textLayerClass="page-stack"
-		@page-click="handlePageClick"
-		@loaded="handleLoaded"
-		@load-failed="handleError"
-		@rendered="handlePageRendered"
-		@render-failed="handleRenderingFailed"
-		:source="url">
-		<template #pre-page="slotProps">
-			<div :style="{'grid-row': slotProps.gridRow,'grid-column': slotProps.gridColumn}">Page {{slotProps.pageNumber}}</div>
-		</template>
-	</PdfComponent>
-</template>
 <style scoped>
+.render-complete {
+	display: none;
+	margin: auto;
+}
 .error {
 	color: red;
 	font-style: italic;
