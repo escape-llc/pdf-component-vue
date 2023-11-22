@@ -5,9 +5,10 @@
 			<div
 				:ref="el => { mountContainer(page, el); }"
 				:id="page.id"
-				:class=" calculatePageClass(page)"
+				:class="calculatePageClass(page)"
 				:style="{'grid-row': page.gridRow, 'grid-column': page.gridColumn}"
 				:data-state="page.stateReactive"
+				:aria-label="page.pageLabel"
 				@click="handlePageClick($event, page)"
 			>
 				<canvas :ref="el => { mountCanvas(page, el); }" :class="canvasClass" />
@@ -22,8 +23,9 @@
 	</div>
 </template>
 <script>
-import { GlobalWorkerOptions } from "pdfjs-dist/build/pdf.js";
+import { GlobalWorkerOptions } from "pdfjs-dist/build/pdf.min.js";
 import { PDFLinkService } from "pdfjs-dist/web/pdf_viewer.js";
+import { normalizeClass } from "vue";
 import {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
@@ -38,7 +40,7 @@ import * as resize from "./ResizeConfiguration";
 import * as cmd from "./Commands";
 import "../pdf-component-vue.css";
 
-GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.js", import.meta.url);
+GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.js", import.meta.url);
 
 export default {
 	name: "PdfComponent",
@@ -48,7 +50,7 @@ export default {
 		"rendered", "render-failed",
 		"command-complete",
 		"visible-pages",
-		"resize-pages",
+		"resize-pages", "resize-complete",
 		"page-click",
 		"internal-link-click"
 	],
@@ -138,7 +140,7 @@ export default {
 		 * If using a Function, it receives page-info as a parameter.
 		 */
 		pageContainerClass: {
-			type: [String, Function]
+			type: [String, Array, Object, Function]
 		},
 		/**
 		 * CSS for the layer to make it "stack" on the other layers.
@@ -508,6 +510,7 @@ export default {
 								const redraw = emit.find(ex => ex.page.id === rx.target.id);
 								await rx.target.resize(this.cache, redraw ? redraw.redrawCanvas : rx.upsize);
 							}));
+							this.$emit("resize-complete", emit);
 						}
 					});
 				});
@@ -532,11 +535,11 @@ export default {
 		 */
 		calculatePageClass(page) {
 			if(!this.pageContainerClass) return undefined;
-			if(this.pageContainerClass instanceof Function) {
-				const cx = this.pageContainerClass(page.infoFor(undefined));
-				return cx;
-			}
-			return this.pageContainerClass;
+			const pcv = this.pageContainerClass instanceof Function
+				? this.pageContainerClass(page.infoFor(undefined))
+				: this.pageContainerClass;
+			const pcc2 = normalizeClass(pcv);
+			return pcc2;
 		},
 		/**
 		 * Emit the page-click event.
