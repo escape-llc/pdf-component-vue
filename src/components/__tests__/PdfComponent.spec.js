@@ -70,8 +70,8 @@ global.OffscreenCanvas = vi.fn().mockImplementation((width, height) => {
 HTMLCanvasElement.prototype.getContext = (ct) => ({
 	drawImage: (canvas, left, top) => { }
 })
-vi.mock('pdfjs-dist/build/pdf.worker.js', () => vi.fn())
-vi.mock('pdfjs-dist/build/pdf.js', () => ({
+vi.mock('pdfjs-dist/build/pdf.worker.min.js', () => vi.fn())
+vi.mock('pdfjs-dist/build/pdf.min.js', () => ({
 	GlobalWorkerOptions: {
 		workerSrc: undefined
 	},
