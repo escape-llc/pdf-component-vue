@@ -1,3 +1,26 @@
+<template>
+	<h1>Basic Usage</h1>
+	<div class="render-complete" v-if="renderComplete">Render Complete</div>
+	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
+	<PdfComponent
+		id="my-pdf"
+		class="document-container"
+		:textLayer="true"
+		:annotationLayer="true"
+		pageContainerClass="page-container"
+		canvasClass="page-stack"
+		annotationLayerClass="page-stack"
+		textLayerClass="page-stack"
+		@loaded="handleLoaded"
+		@load-failed="handleError"
+		@rendered="handlePageRendered"
+		@render-failed="handleRenderingFailed"
+		:source="url">
+		<template #pre-page="slotProps">
+			<div style="text-align:center" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">Page {{slotProps.pageNumber}}</div>
+		</template>
+	</PdfComponent>
+</template>
 <script>
 import { PdfComponent } from "../components"
 
@@ -13,47 +36,32 @@ export default {
 			this.errorMessage = ev.message;
 		},
 		handlePageRendered(ev) {
-			console.log("handle.page", ev);
+			console.log("handle.rendered", ev);
+			this.renderComplete = true;
 		},
 		handleRenderingFailed(ev) {
 			console.error("handle.render-error", ev);
 			this.errorMessage = ev.message;
+			this.renderComplete = true;
 		},
 	},
 	data() {
 		return {
 			url: "/tracemonkey.pdf",
 			errorMessage: null,
+			renderComplete: false,
 		};
 	}
 }
 </script>
-<template>
-	<h1>Basic Usage</h1>
-	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
-	<PdfComponent
-		id="my-pdf"
-		class="document-container"
-		:textLayer="true"
-		:annotationLayer="true"
-		pageContainerClass="page-container"
-		canvasClass="page-stack"
-		annotationLayerClass="page-stack"
-		textLayerClass="page-stack"
-		@loaded="handleLoaded"
-		@load-failed="handleError"
-		@page-rendered="handlePageRendered"
-		@render-failed="handleRenderingFailed"
-		:source="url">
-		<template #pre-page="slotProps">
-			<div style="text-align:center" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">Page {{slotProps.pageNumber}}</div>
-		</template>
-	</PdfComponent>
-</template>
 <style scoped>
 .error {
 	color: red;
 	font-style: italic;
+}
+.render-complete {
+	display: none;
+	margin: auto;
 }
 /* use grid for sequence of pages */
 /* use a containing element to provide the scrolling */
