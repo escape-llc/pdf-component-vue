@@ -1,4 +1,4 @@
-import { getDocument, PasswordResponses } from 'pdfjs-dist/build/pdf.js'
+import { getDocument, PasswordResponses } from "pdfjs-dist/build/pdf.min.js"
 
 /**
  * Base class for handlers.  Provides level of abstraction from PDFJS.

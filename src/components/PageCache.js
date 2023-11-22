@@ -1,4 +1,4 @@
-import { renderTextLayer, AnnotationLayer } from "pdfjs-dist/build/pdf.js";
+import { renderTextLayer, AnnotationLayer } from "pdfjs-dist/build/pdf.min.js";
 import { WIDTH, HEIGHT } from "./PageContext";
 
 /**

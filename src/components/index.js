@@ -9,7 +9,7 @@ import { ResizeConfiguration } from "./ResizeConfiguration";
 import { Command, ScrollToPage, PrintDocument } from "./Commands";
 import { unwrapOutline, unwrapOutlineItem, lookupPage } from "./Utils";
 import PdfComponent from "./PdfComponent.vue";
-import { version } from "pdfjs-dist/build/pdf.js";
+import { version } from "pdfjs-dist/build/pdf.min.js";
 
 import "../pdf-component-vue.css";
 
