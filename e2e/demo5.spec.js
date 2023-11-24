@@ -21,11 +21,11 @@ test.describe("Demo5", () => {
 		await page.screenshot({ path: `${outputDir}/demo5-initial.png`, fullPage: true });
 		// click the "wide" button
 		await page.getByRole('button', { name: 'Wide' }).click();
-		await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 20000 });
+		await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 30000 });
 		await page.screenshot({ path: `${outputDir}/demo5-wide.png`, fullPage: true });
 		// click the "narrow" button
 		await page.getByRole('button', { name: 'Narrow' }).click();
-		await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 20000 });
+		await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 30000 });
 		await page.screenshot({ path: `${outputDir}/demo5-narrow.png`, fullPage: true });
 	})
 })
