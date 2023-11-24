@@ -1,5 +1,5 @@
 import { renderTextLayer, AnnotationLayer } from "pdfjs-dist/build/pdf.min.js";
-import { WIDTH, HEIGHT } from "./PageContext";
+import { WIDTH, HEIGHT, SCALE } from "./PageContext";
 
 /**
  * Isolate all the PDFJS specific page logic in one place.
@@ -59,9 +59,10 @@ class PageCache {
 	 * @param {Number} width container width.
 	 * @param {Number} height container height.
 	 * @param {Number} rotation document-level rotation.
+	 * @param {Number|undefined} scale document-level scale; only used in SCALE mode.
 	 * @returns new instance.
 	 */
-	viewport(pageNumber, mode, width, height, rotation) {
+	viewport(pageNumber, mode, width, height, rotation, scale) {
 		if(!this._map.has(pageNumber)) throw new Error(`viewport: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
 		const pageRotation = entry.rotation + rotation;
@@ -77,6 +78,10 @@ class PageCache {
 				const scaleh = height / pageHeight;
 				const viewporth = entry.page.getViewport({ scale: scaleh, rotation });
 				return viewporth;
+			case SCALE:
+				if(!scale || !Number.parseFloat(scale) || Number.isNaN(scale)) throw new Error(`viewport: SCALE mode requires '${scale}' is a Number`);
+				const viewports = entry.page.getViewport({ scale, rotation });
+				return viewports;
 		}
 		throw new Error(`viewport: ${mode}: unknown mode`);
 	}
