@@ -200,12 +200,13 @@ describe('PageContext', () => {
 		const cache = {
 			called: false,
 			reset() { this.called = false; },
-			viewport(pageNumber, sizeMode, width, height, rotation) {
+			viewport(pageNumber, sizeMode, width, height, rotation, scale) {
 				expect(pageNumber).toBe(page.pageNumber);
 				expect(sizeMode).toBe(page.sizeMode);
 				expect(width).toBe(container.clientWidth);
 				expect(height).toBe(container.clientHeight);
 				expect(rotation).toBe(0);
+				expect(scale).toBe(undefined);
 				return viewport;
 			},
 			renderCanvas() { this.called = true; },
@@ -227,6 +228,7 @@ describe('PageContext', () => {
 		expect(page.state).toBe(pc.HOT);
 		await page.render(cache);
 		expect(page.didRender).toBe(true);
+		expect(page.scaleFactor).toBe(1);
 		expect(canvas.width).toBe(viewport.width);
 		expect(canvas.height).toBe(viewport.height);
 		expect(divAnno.called).toBe(true);
@@ -246,6 +248,7 @@ describe('PageContext', () => {
 		expect(page.didRender).toBe(false);
 		await page.render(cache);
 		expect(page.didRender).toBe(true);
+		expect(page.scaleFactor).toBe(1);
 		expect(canvas.width).toBe(viewport.width);
 		expect(canvas.height).toBe(viewport.height);
 		expect(divAnno.called).toBe(false);
