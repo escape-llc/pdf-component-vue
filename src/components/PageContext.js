@@ -1,5 +1,5 @@
 const COLD = 0, WARM = 1, HOT = 2;
-const WIDTH = 0, HEIGHT = 1;
+const WIDTH = 0, HEIGHT = 1, SCALE = 2;
 
 import { ref } from "vue";
 
@@ -23,19 +23,20 @@ const canvasFactory = (width, height) => {
  * This class represents the current state of the page.
  */
 class PageContext {
+	sizeMode = WIDTH
 	id
+	index
+	pageNumber
+	pageLabel
+	stateReactive = ref(COLD)
+	gridRow
+	gridColumn
+	rotation
+	scaleFactor
 	container = null
 	canvas = null
 	divText = null
 	divAnno = null
-	stateReactive = ref(COLD)
-	sizeMode = WIDTH
-	index
-	pageNumber
-	pageLabel
-	gridRow
-	gridColumn
-	rotation
 	didRender = false
 	/**
 	 * Ctor.
@@ -106,6 +107,7 @@ class PageContext {
 		if(!this.container) return;
 		if(this.didRender) return;
 		const viewport = this.containerViewport(cache);
+		this.scaleFactor = viewport.scale;
 		if(this.canvas) {
 			this.canvas.width = viewport.width;
 			this.canvas.height = viewport.height;
@@ -160,6 +162,7 @@ class PageContext {
 		if(!this.container) return;
 		if(!this.didRender) return;
 		const viewport = this.containerViewport(cache);
+		this.scaleFactor = viewport.scale;
 		if(this.state === HOT) {
 			if(this.canvas && draw === true) {
 				await this.renderTheCanvas(cache, viewport);
@@ -197,7 +200,7 @@ class PageContext {
 		/**
 		 * Create a disconnected wrapper object for the page that is "safe" for external callers.
 		 * @param {Event} ev original event, if any.
-		 * @returns {any} untyped info { id, index, state, pageNumber, gridRow, gridColumn, originalEvent? }.
+		 * @returns {any} untyped info { id, index, state, pageNumber, gridRow, gridColumn, scale, originalEvent? }.
 		 */
 		infoFor(ev) {
 			return {
@@ -207,6 +210,7 @@ class PageContext {
 				pageNumber: this.pageNumber,
 				gridRow: this.gridRow,
 				gridColumn: this.gridColumn,
+				scale: this.scaleFactor,
 				originalEvent: ev
 			};
 		}
@@ -245,7 +249,7 @@ const pageZone = (pageIndex, currentPageIndex, pageCount, hotzone, warmzone) => 
 
 export {
 	COLD, WARM, HOT,
-	WIDTH, HEIGHT,
+	WIDTH, HEIGHT, SCALE,
 	PageContext,
 	materializePages, pageZone
 }
