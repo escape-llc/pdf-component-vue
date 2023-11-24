@@ -1,6 +1,6 @@
 <template>
 	<template v-if="!source">
-		<h1>Load Your Own PDF</h1>
+		<h1>Faux Viewer</h1>
 		<input type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
 		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.  Page thumbnails on the left use Scroll Management to minimize pages rendered.</div>
 		<div>For extra credit, document outline (if present) is displayed on the right, courtesy of <a href="https://github.com/N00ts/vue3-treeview">vue3-treeview</a>.</div>

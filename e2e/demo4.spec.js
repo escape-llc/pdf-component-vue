@@ -9,7 +9,7 @@ test.describe("Demo4", () => {
 		// Click the Demo1 link.
 		await page.getByRole('link', { name: 'Faux Viewer' }).click();
 	
-		await expect(page.getByRole('heading', { name: 'Load Your Own PDF' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Faux Viewer' })).toBeVisible();
 		await expect(page.locator('div.error')).not.toBeVisible();
 		await page.screenshot({ path: `${outputDir}/demo4.png`, fullPage: true });
 	})

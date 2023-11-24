@@ -1,5 +1,5 @@
 <template>
-	<h1>Resize Pages</h1>
+	<h1>Resize</h1>
 	<div class="render-complete" v-if="renderComplete">Render Complete</div>
 	<div>Use the buttons to resize.  When switching to <b>wide</b>, the <code>canvas</code> is re-rendered at the new size, so it appears sharp.
 		The text and annotation layers are also rescaled.  You can verify this by selecting some text in narrow then resizing to wide.</div>
@@ -104,7 +104,7 @@ export default {
 	margin-bottom: 2rem;
 	box-sizing: border-box;
 	height: auto;
-	transition: width .1s ease-in-out, height .1s ease-in-out;
+	/*transition: width .1s ease-in-out, height .1s ease-in-out;*/
 }
 .document-narrow {
 	width: 40vw;
