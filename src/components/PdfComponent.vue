@@ -510,7 +510,17 @@ export default {
 								const redraw = emit.find(ex => ex.page.id === rx.target.id);
 								await rx.target.resize(this.cache, redraw ? redraw.redrawCanvas : rx.upsize);
 							}));
-							this.$emit("resize-complete", emit);
+							// recalc with new scale
+							const emit2 = available.map(rx => {
+								const match = emit.find(ex => ex.page.id === rx.target.id);
+								return {
+									page: rx.target.infoFor(undefined),
+									di: rx.di, db: rx.db,
+									upsize: match ? match.upsize : rx.upsize,
+									redrawCanvas: match ? match.redrawCanvas : rx.redrawCanvas
+								};
+							});
+							this.$emit("resize-complete", emit2);
 						}
 					});
 				});
