@@ -70,13 +70,13 @@ export default {
 		},
 		handleWide(ev) {
 			this.renderComplete = false;
-			this.width = "wide";
 			this.command = "wide";
+			this.width = "wide";
 		},
 		handleNarrow(ev) {
 			this.renderComplete = false;
-			this.width = "narrow";
 			this.command = "narrow";
+			this.width = "narrow";
 		},
 	},
 	data() {
@@ -93,7 +93,7 @@ export default {
 </script>
 <style scoped>
 .render-complete {
-	display: none;
+/*	display: none;*/
 	margin: auto;
 }
 .error {
