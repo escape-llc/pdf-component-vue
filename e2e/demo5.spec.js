@@ -17,22 +17,20 @@ test.describe("Demo5", () => {
 		await expect(page.getByRole('heading', { name: 'Resize' })).toBeVisible();
 		await expect(page.locator('div.error')).not.toBeVisible();
 		await expect(page.locator('div#my-pdf')).toBeVisible();
-		await page.locator('div.render-complete').waitFor({ state: "attached", timeout: 30000 });
+		await page.locator("#demo5-complete-loaded").waitFor({ state: "attached", timeout: 30000 });
 		//await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 30000 });
-		await page.screenshot({ path: `${outputDir}/demo5-initial.png`, fullPage: true });
+		await page.screenshot({ path: `${outputDir}/demo5-01-loaded.png`, fullPage: true });
 		// click the "wide" button
 		await page.getByRole('button', { name: 'Wide' }).click();
-		await page.locator('div.render-complete').waitFor({ state: "detached", timeout: 30000 });
-		await page.locator('div.render-complete').waitFor({ state: "attached", timeout: 30000 });
+		await page.locator("#demo5-complete-wide").waitFor({ state: "attached", timeout: 30000 });
 		//await expect(page.locator('div.render-complete')).not.toBeAttached({ timeout: 30000 });
 		//await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 60000 });
-		await page.screenshot({ path: `${outputDir}/demo5-wide.png`, fullPage: true });
+		await page.screenshot({ path: `${outputDir}/demo5-02-wide.png`, fullPage: true });
 		// click the "narrow" button
 		await page.getByRole('button', { name: 'Narrow' }).click();
-		await page.locator('div.render-complete').waitFor({ state: "detached", timeout: 30000 });
-		await page.locator('div.render-complete').waitFor({ state: "attached", timeout: 30000 });
+		await page.locator("#demo5-complete-narrow").waitFor({ state: "attached", timeout: 30000 });
 		//await expect(page.locator('div.render-complete')).not.toBeAttached({ timeout: 30000 });
 		//await expect(page.locator('div.render-complete')).toBeAttached({ timeout: 60000 });
-		await page.screenshot({ path: `${outputDir}/demo5-narrow.png`, fullPage: true });
+		await page.screenshot({ path: `${outputDir}/demo5-03-narrow.png`, fullPage: true });
 	})
 })

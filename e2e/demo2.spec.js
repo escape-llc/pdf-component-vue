@@ -14,16 +14,16 @@ test.describe("Demo2", () => {
 		await expect(page.locator('div.error')).not.toBeVisible();
 		await expect(page.locator('div#my-pdf')).toBeVisible();
 		await expect(page.locator('div.render-complete')).toBeAttached();
-		await page.screenshot({ path: `${outputDir}/demo2-page1.png`, fullPage: true });
+		await page.screenshot({ path: `${outputDir}/demo2-01-page1.png`, fullPage: true });
 		// click the "next page" button
 		await page.getByRole('button', { name: '>' }).click();
 		await expect(page.locator('div#my-pdf-page-7')).toBeVisible();
 		await expect(page.locator('div.render-complete')).toBeAttached();
-		await page.screenshot({ path: `${outputDir}/demo2-page2.png`, fullPage: true });
+		await page.screenshot({ path: `${outputDir}/demo2-02-page2.png`, fullPage: true });
 		// click the "next page" button
 		await page.getByRole('button', { name: '>' }).click();
 		await expect(page.locator('div#my-pdf-page-13')).toBeVisible();
 		await expect(page.locator('div.render-complete')).toBeAttached();
-		await page.screenshot({ path: `${outputDir}/demo2-page3.png`, fullPage: true });
+		await page.screenshot({ path: `${outputDir}/demo2-03-page3.png`, fullPage: true });
 	})
 })

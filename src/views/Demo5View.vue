@@ -1,6 +1,10 @@
 <template>
 	<h1>Resize</h1>
-	<div class="render-complete" v-if="renderComplete">Render Complete</div>
+	<template v-if="renderComplete">
+		<div v-if="command === 'narrow'" id="demo5-complete-narrow" class="render-complete">Render Complete Narrow</div>
+		<div v-else-if="command === 'wide'" id="demo5-complete-wide" class="render-complete">Render Complete Wide</div>
+		<div v-else class="render-complete" id="demo5-complete-loaded">Render Complete Loaded</div>
+	</template>
 	<div>Use the buttons to resize.  When switching to <b>wide</b>, the <code>canvas</code> is re-rendered at the new size, so it appears sharp.
 		The text and annotation layers are also rescaled.  You can verify this by selecting some text in narrow then resizing to wide.</div>
 	<div>Without this feature, you would get the smaller <code>canvas</code> scaled up, and the other layers would be misaligned.</div>
@@ -67,10 +71,12 @@ export default {
 		handleWide(ev) {
 			this.renderComplete = false;
 			this.width = "wide";
+			this.command = "wide";
 		},
 		handleNarrow(ev) {
 			this.renderComplete = false;
 			this.width = "narrow";
+			this.command = "narrow";
 		},
 	},
 	data() {
@@ -80,6 +86,7 @@ export default {
 			width: "narrow",
 			resize: ResizeConfiguration.defaultConfiguration(),
 			renderComplete: false,
+			command: null,
 		};
 	}
 }
