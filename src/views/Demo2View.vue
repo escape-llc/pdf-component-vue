@@ -112,6 +112,7 @@ export default {
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
 	height: 100%;
+	contain: content;
 }
 :deep(.page-stack) {
 	grid-area: 1 / 1 / 1 / 1 !important;

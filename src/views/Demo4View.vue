@@ -347,6 +347,7 @@ export default {
 	width:100%;
 	transition: box-shadow .5s ease-in;
 	scroll-snap-stop: start;
+	contain: content;
 }
 :deep(.page-container2) {
 	display: grid;
@@ -358,6 +359,7 @@ export default {
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
 	height: 100%;
+	contain: content;
 }
 /* stacks the page layers in the grid cell */
 :deep(.page-stack) {
