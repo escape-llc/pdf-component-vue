@@ -216,6 +216,9 @@ export default {
 		)
 	},
 	mounted() {
+		if(this.handler === null) {
+			this.handler = new DocumentHandler_pdfjs(this.$emit);
+		}
 		this.load(this.source)
 			.then(_ => { });
 	},
@@ -318,7 +321,7 @@ export default {
 					this.$emit("render-failed", ee);
 				}
 			} catch (e) {
-				this.handler.destroy();
+				this.handler?.destroy();
 				this.pageCount = null;
 				this.pages = [];
 				this.pageContexts = [];
@@ -490,8 +493,8 @@ export default {
 					entries.forEach(ex => {
 						const target = this.pageContexts.find(px => px.container === ex.target);
 						if(target) {
-							// track by devicePixelContentBoxSize
-							const dpsize = ex.devicePixelContentBoxSize[0];
+							// track by devicePixelContentBoxSize or contentBoxSize(webkit)
+							const dpsize = "devicePixelContentBoxSize" in ex ? ex.devicePixelContentBoxSize[0] : ex.contentBoxSize[0];
 							this.resizeTracker.track(target, dpsize);
 						}
 					});
