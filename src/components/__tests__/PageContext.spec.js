@@ -163,16 +163,17 @@ describe('PageContext', () => {
 		const container = {
 			clientWidth: 1000,
 			clientHeight: 1000,
+			getBoundingClientRect: ()=> ({ width: 1000, height: 1000 }),
 			style: {
 				setProperty(name, value) {
 					if(name === "--scale-factor") {
 						expect(value).toBe(viewport.scale);
 					}
 					else if(name === "--viewport-width") {
-						expect(value).toBe(viewport.width);
+						expect(value).toBe(Math.floor(viewport.width));
 					}
 					else if(name === "--viewport-height") {
-						expect(value).toBe(viewport.height);
+						expect(value).toBe(Math.floor(viewport.height));
 					}
 				}
 			}

@@ -93,10 +93,8 @@ class PageContext {
 	 * @returns viewport
 	 */
 	containerViewport(cache) {
-		const viewport = cache.viewport(this.pageNumber, this.sizeMode, this.container.clientWidth, this.container.clientHeight, this.rotation || 0);
-		this.container.style.setProperty("--scale-factor", viewport.scale);
-		this.container.style.setProperty("--viewport-width", Math.floor(viewport.width));
-		this.container.style.setProperty("--viewport-height", Math.floor(viewport.height));
+		const bcr = this.container.getBoundingClientRect();
+		const viewport = cache.viewport(this.pageNumber, this.sizeMode, bcr.width, bcr.height, this.rotation || 0);
 		return viewport;
 	}
 	/**
@@ -106,20 +104,14 @@ class PageContext {
 	async render(cache) {
 		if(!this.container) return;
 		if(this.didRender) return;
-		const viewport = this.containerViewport(cache);
-		this.scaleFactor = viewport.scale;
-		if(this.canvas) {
-			this.canvas.width = viewport.width;
-			this.canvas.height = viewport.height;
-		}
 		this.didRender = true;
-		if(this.state !== HOT) {
-			// the cause of this is fixed, deprecate
-			if(this.divText || this.divAnno) console.error("OMFG", this.id, this.state);
-			this.divText?.replaceChildren();
-			this.divAnno?.replaceChildren();
-		}
-		else {
+		const viewport = this.containerViewport(cache);
+		await this.updateViewportStyle(viewport, true);
+		/*if(this.canvas) {
+			this.canvas.width = Math.floor(viewport.width);
+			this.canvas.height = Math.floor(viewport.height);
+		}*/
+		if(this.state === HOT) {
 			if(this.canvas) {
 				await this.renderTheCanvas(cache, viewport);
 			}
@@ -134,21 +126,49 @@ class PageContext {
 		}
 	}
 	/**
-	 * Render to an (Offscreen)Canvas then use requestAnimationFrame() for a smooth update.
+	 * Render to a local Canvas then use (unsynchronized) requestAnimationFrame() for a smooth update.
 	 * @param {PageCache} cache Use for page operations.
 	 * @param {Viewport} viewport Use to size everything.
 	 * @returns Promise
 	 */
 	async renderTheCanvas(cache, viewport) {
 		if(!this.canvas) return;
-		const oc = canvasFactory(viewport.width, viewport.height);
-		await cache.renderCanvas(this.pageNumber, viewport, oc);
+		const vw = Math.floor(viewport.width);
+		const vh = Math.floor(viewport.height);
+		const local = canvasFactory(vw, vh);
+		await cache.renderCanvas(this.pageNumber, viewport, local);
 		requestAnimationFrame(() => {
 			if(!this.canvas) return;
-			this.canvas.width = viewport.width;
-			this.canvas.height = viewport.height;
+			this.canvas.width = vw;
+			this.canvas.height = vh;
 			const ctx = this.canvas.getContext("2d");
-			ctx.drawImage(oc, 0, 0);
+			ctx.drawImage(local, 0, 0);
+		});
+	}
+	/**
+	 * Use (synchronized) requestAnimationFrame() to perform the CSS style and canvas updates.
+	 * @param {Viewport} viewport the viewport to use.
+	 * @param {*} uc true: resize canvas; false: do not.
+	 * @returns Promise that resolves when the rAF() callback completes.
+	 */
+	async updateViewportStyle(viewport, uc) {
+		return new Promise(resolve => {
+			this.scaleFactor = viewport.scale;
+			requestAnimationFrame(() => {
+				const vw = Math.floor(viewport.width);
+				const vh = Math.floor(viewport.height);
+				if(this.container) {
+					this.container.style.setProperty("--scale-factor", viewport.scale);
+					this.container.style.setProperty("--viewport-width", vw);
+					this.container.style.setProperty("--viewport-height", vh);
+				}
+				if(this.canvas && uc) {
+					// modifying dimensions clears the contents
+					this.canvas.width = vw;
+					this.canvas.height = vh;
+				}
+				resolve();
+			});
 		});
 	}
 	/**
@@ -162,7 +182,7 @@ class PageContext {
 		if(!this.container) return;
 		if(!this.didRender) return;
 		const viewport = this.containerViewport(cache);
-		this.scaleFactor = viewport.scale;
+		await this.updateViewportStyle(viewport, false);
 		if(this.state === HOT) {
 			if(this.canvas && draw === true) {
 				await this.renderTheCanvas(cache, viewport);

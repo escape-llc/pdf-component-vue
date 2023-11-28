@@ -26,7 +26,7 @@ function mountedPromise(options) {
 /**
  * This version throws the given error from the $emit(loaded).
  * NOTE: this generates Vue Warning in the console: Unhandled error during execution of component event handler.
- * Doesn't make sense because the component DOES catch that error (it is NOT unhandled) and emit the correct event.
+ * However, the component DOES catch that error (it is NOT unhandled) and emit the correct event.
  * @param {any} options create options.
  * @param {*} ex the error to raise.
  * @returns new Promise<Wrapper,Error>.
@@ -37,7 +37,7 @@ function mountedPromiseLoadedError(options, ex) {
 				props: {
 					...options,
 					onLoaded: () => {
-						//resolve(wrapper);
+						// simulate an error in user's handler
 						throw ex;
 					},
 					"onLoad-failed": ee => {
@@ -48,6 +48,7 @@ function mountedPromiseLoadedError(options, ex) {
 	});
 }
 
+const PDF = "http://localhost:5173/tracemonkey.pdf";
 const PAGE_WIDTH = 680;
 const PAGE_HEIGHT = 890;
 const PAGE_COUNT = 6;
@@ -100,9 +101,11 @@ vi.mock('pdfjs-dist/build/pdf.min.js', () => ({
 		}),
 	}),
 }))
-
+/**
+ * NOTE: in order to pump out all the rAF callbacks and Promises, requires extra machinations:
+ * await flushPromises(), vi.runAllTimers(), await flushPromises()
+ */
 describe('PdfComponent', () => {
-	const PDF = "http://localhost:5173/tracemonkey.pdf";
 -	it('source.prop', async () => {
 		const wrapper = await mountedPromise({
 			id: "my-pdf",
@@ -113,6 +116,8 @@ describe('PdfComponent', () => {
 			textLayerClass: "grid-stack",
 			source: PDF
 		});
+		await flushPromises();
+		vi.runAllTimers();
 		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
@@ -176,6 +181,8 @@ describe('PdfComponent', () => {
 		});
 		await wrapper.setProps({source: PDF});
 		await flushPromises();
+		vi.runAllTimers();
+		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
 		const div = wrapper.get("div");
@@ -197,6 +204,8 @@ describe('PdfComponent', () => {
 			textLayerClass: "grid-stack",
 			source: PDF
 		});
+		await flushPromises();
+		vi.runAllTimers();
 		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
@@ -244,6 +253,8 @@ describe('PdfComponent', () => {
 			source: PDF
 		});
 		await flushPromises();
+		vi.runAllTimers();
+		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
 		const div = wrapper.get("div");
@@ -271,6 +282,8 @@ describe('PdfComponent', () => {
 			textLayerClass: "grid-stack",
 			source: PDF
 		});
+		await flushPromises();
+		vi.runAllTimers();
 		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
@@ -303,6 +316,8 @@ describe('PdfComponent', () => {
 			pageManagement: new pm.PageManagement_UpdateRange(0, 1),
 			source: PDF
 		});
+		await flushPromises();
+		vi.runAllTimers();
 		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
@@ -373,6 +388,8 @@ describe('PdfComponent', () => {
 			source: PDF
 		});
 		await flushPromises();
+		vi.runAllTimers();
+		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
 		const div = wrapper.get("div");
@@ -419,6 +436,8 @@ describe('PdfComponent', () => {
 			textLayerClass: "grid-stack",
 			source: PDF
 		});
+		await flushPromises();
+		vi.runAllTimers();
 		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
@@ -469,6 +488,8 @@ describe('PdfComponent', () => {
 			source: PDF
 		});
 		await flushPromises();
+		vi.runAllTimers();
+		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
 		const div = wrapper.get("div");
@@ -515,6 +536,8 @@ describe('PdfComponent', () => {
 			source: PDF
 		});
 		await flushPromises();
+		vi.runAllTimers();
+		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
 		const div = wrapper.get("div");
@@ -537,6 +560,8 @@ describe('PdfComponent', () => {
 			textLayerClass: "grid-stack",
 			source: PDF
 		});
+		await flushPromises();
+		vi.runAllTimers();
 		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
@@ -568,6 +593,8 @@ describe('PdfComponent', () => {
 			textLayerClass: "grid-stack",
 			source: PDF
 		});
+		await flushPromises();
+		vi.runAllTimers();
 		await flushPromises();
 		expect(wrapper.emitted()).toHaveProperty("loaded");
 		expect(wrapper.emitted()).toHaveProperty("rendered");
