@@ -22,12 +22,10 @@ test.describe("Demo5", () => {
 		await page.screenshot({ path: `${outputDir}/demo5-01-loaded.png`, fullPage: true });
 		// click the "wide" button
 		await page.getByRole('button', { name: 'Wide' }).click();
-		//await page.locator("div#demo5-complete-wide").waitFor({ state: "attached", timeout: 30000 });
 		await expect(page.locator("div#demo5-complete-wide")).toBeVisible({ timeout: 60000 });
 		await page.screenshot({ path: `${outputDir}/demo5-02-wide.png`, fullPage: true });
 		// click the "narrow" button
 		await page.getByRole('button', { name: 'Narrow' }).click();
-		//await page.locator("div#demo5-complete-narrow").waitFor({ state: "attached", timeout: 30000 });
 		await expect(page.locator("div#demo5-complete-narrow")).toBeVisible({ timeout: 60000 });
 		await page.screenshot({ path: `${outputDir}/demo5-03-narrow.png`, fullPage: true });
 	})
