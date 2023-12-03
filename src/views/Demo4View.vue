@@ -33,7 +33,7 @@
 				@visible-pages="handleVisiblePages"
 				:source="source">
 				<template #pre-page="slotProps">
-					<div style="text-align:center;font-weight:bold;" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel}}</div>
+					<div class="page-number" :style="{ 'grid-row': slotProps.gridRow, 'grid-column': slotProps.gridColumn }">{{slotProps.pageLabel ?? `Page ${slotProps.pageNumber}`}}</div>
 				</template>
 			</PdfComponent>
 		</div>
@@ -208,7 +208,7 @@ export default {
 				this.cacheStartPage = pageNumber;
 			}
 			// sync the sidebar to this page
-			this.command = new ScrollToPage(pageNumber);
+			this.command = new ScrollToPage(pageNumber, "smooth", "nearest");
 		},
 		handlePageClick(ev) {
 			console.log("handle.pageClick", ev);
@@ -294,7 +294,6 @@ export default {
 	padding-left:1rem;
 	padding-right:1rem;
 	background: gray;
-	scroll-snap-type: y proximity;
 }
 .page-view {
 	flex-grow: 1;
@@ -316,7 +315,7 @@ export default {
 	display: grid;
 	grid-template-columns: 1fr;
 	grid-template-rows: 1fr;
-	row-gap: .5rem;
+	row-gap: .25rem;
 	margin: auto;
 	margin-bottom: 2rem;
 	box-sizing: border-box;
@@ -360,6 +359,11 @@ export default {
 	overflow: hidden;
 	height: 100%;
 	contain: content;
+}
+:deep(.page-number) {
+	text-align:center;
+	font-weight:bold;
+	margin-top:.25rem;	
 }
 /* stacks the page layers in the grid cell */
 :deep(.page-stack) {
