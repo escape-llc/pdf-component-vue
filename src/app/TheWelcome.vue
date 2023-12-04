@@ -8,6 +8,7 @@ import SupportIcon from './icons/IconSupport.vue'
 import { PdfjsVersion } from "../components";
 const pdfjs = PdfjsVersion
 const version = __APP_VERSION__
+const dev = !import.meta.env.PROD;
 </script>
 
 <template>
@@ -20,7 +21,8 @@ const version = __APP_VERSION__
 		<code style="margin-top:.5rem">npm install pdf-component-vue</code>
 		<br/>
 		<a style="display:inline-block;margin-top:.5rem" href="https://badge.fury.io/js/pdf-component-vue">
-			<img src="https://badge.fury.io/js/pdf-component-vue.svg" alt="npm version" height="24">
+			<img v-if="!dev" src="https://badge.fury.io/js/pdf-component-vue.svg" alt="npm version" height="24">
+			<div v-else>Placeholder for NPM version</div>
 		</a>
 		<br/>
 		This project is hosted on <a href="https://github.com/escape-llc/pdf-component-vue">github</a>.
@@ -55,7 +57,8 @@ const version = __APP_VERSION__
 		<a href="https://mozilla.github.io/pdf.js/" target="_blank" rel="noopener">pdfjs-dist</a>.
 		<br/>
 		<a style="display:inline-block;margin-top:.5rem" href="https://badge.fury.io/js/pdfjs-dist">
-			<img src="https://badge.fury.io/js/pdfjs-dist.svg" alt="npm version" height="24">
+			<img v-if="!dev" src="https://badge.fury.io/js/pdfjs-dist.svg" alt="npm version" height="24">
+			<div v-else>Placeholder for PDFJS</div>
 		</a>
 	</WelcomeItem>
 
@@ -87,7 +90,8 @@ const version = __APP_VERSION__
 		As an open source provider, eScape relies on community backing for its sustainability. You can help!
 		<br/>
 		<a style="display:inline-block;margin-top:.5rem" href="https://www.paypal.com/donate/?hosted_button_id=G8P9TW4QT6C3U" target="_blank" rel="noopener">
-			<img alt="Donating" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" style="max-width:128px"/>
+			<img v-if="!dev" alt="Donating" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" style="max-width:128px"/>
+			<div v-else>Placeholder for Donating</div>
 		</a>
 	</WelcomeItem>
 </template>
