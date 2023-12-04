@@ -16,8 +16,8 @@ test.describe("Demo4", () => {
 	
 		await expect(page.getByRole('heading', { name: 'Faux Viewer' })).toBeVisible();
 		await page.screenshot({ path: `${outputDir}/demo4-01-start.png`, fullPage: true });
-		await page.click('input[type="file"]');
-		await page.locator('input[type="file"]').setInputFiles(inputFile);
+		await page.click('input#demo4-input');
+		await page.locator('input#demo4-input').setInputFiles(inputFile);
 		await expect(page.locator("div#demo4-complete-loaded")).toBeAttached({ timeout: 30000 });
 		await expect(page.locator('div.error')).not.toBeVisible();
 		await page.screenshot({ path: `${outputDir}/demo4-02-loaded.png`, fullPage: true });
