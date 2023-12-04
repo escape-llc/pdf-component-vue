@@ -28,9 +28,9 @@
 	</PdfComponent>
 </template>
 <script>
-import { PdfComponent } from "../components"
-import { HEIGHT } from '../components';
-import { ROW, TileConfiguration, PageManagement_UpdateZones } from '../components';
+import { PdfComponent } from "../../components"
+import { HEIGHT } from '../../components';
+import { ROW, TileConfiguration, PageManagement_UpdateZones } from '../../components';
 
 export default {
 	name: "Demo3View",

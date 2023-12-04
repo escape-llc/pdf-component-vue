@@ -41,6 +41,8 @@ const version = __APP_VERSION__
 		<a href="https://vitejs.dev/guide/features.html" target="_blank" rel="noopener">Vite</a> for development and bundling.
 		<br/>
 		We use <a href="https://vitest.dev/">vitest</a> for unit tests and test coverage.
+		<br/>
+		We use <a href="https://playwright.dev/">playwright</a> for end-to-end tests across multiple browsers.
 	</WelcomeItem>
 
 	<WelcomeItem>

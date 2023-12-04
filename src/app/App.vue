@@ -1,6 +1,6 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import { PdfjsVersion } from "./components"
+import { PdfjsVersion } from "../components"
 const version = PdfjsVersion
 const pversion = __APP_VERSION__
 </script>
@@ -14,6 +14,9 @@ const pversion = __APP_VERSION__
 			<RouterLink to="/demo3">Page Management</RouterLink>
 			<RouterLink to="/demo4">Faux Viewer</RouterLink>
 			<RouterLink to="/demo5">Resize</RouterLink>
+			<!--
+			<RouterLink to="/demo6">Composition</RouterLink>
+			-->
 		</nav>
 	</header>
 	<div>

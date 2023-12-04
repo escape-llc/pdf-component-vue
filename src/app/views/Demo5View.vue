@@ -37,8 +37,8 @@
 	</PdfComponent>
 </template>
 <script>
-import { PdfComponent } from "../components";
-import { ResizeConfiguration } from "../components";
+import { PdfComponent } from "../../components";
+import { ResizeConfiguration } from "../../components";
 
 export default {
 	name: "Demo1View",
@@ -93,7 +93,7 @@ export default {
 </script>
 <style scoped>
 .render-complete {
-/*	display: none;*/
+	display: none;
 	margin: auto;
 }
 .error {
