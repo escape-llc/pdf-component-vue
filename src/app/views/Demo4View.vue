@@ -5,15 +5,21 @@
 		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.  Page thumbnails on the left use Scroll Management to minimize pages rendered.</div>
 		<div>For extra credit, document outline (if present) is displayed on the right, courtesy of <a href="https://github.com/N00ts/vue3-treeview">vue3-treeview</a>.</div>
 	</template>
+	<template v-if="renderComplete">
+		<div v-if="command === 'narrow'" id="demo4-complete-x" class="render-complete">Render Complete Narrow</div>
+		<div v-else-if="commandIsScroll" id="demo4-complete-gotopage" class="render-complete">Render Complete Goto Page</div>
+		<div v-else class="render-complete" id="demo4-complete-loaded">Render Complete Loaded</div>
+	</template>
 	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
 	<h2 v-if="fileName" class="document-banner">
 		<div>{{fileName}}<button class="button" style="margin-left:1rem" @click="handlePrint">Print</button>
 		<button class="button" style="margin-left:.25rem" @click="handleClose">Open</button>
+		<button v-if="renderComplete" id="demo4-goto-page" class="button" style="margin-left:.25rem" @click="handleGotoPage(14)">Goto Page 14</button>
 		</div>
 		<div class="document-banner-page">{{ pageCount }} Page(s)</div>
 	</h2>
 	<div class="main-container">
-		<div ref="sidebar" class="sidebar">
+		<div v-if="source" ref="sidebar" class="sidebar">
 			<PdfComponent
 				ref="pdf"
 				id="pdf-sidebar"
@@ -129,20 +135,24 @@ export default {
 		handleError(ev) {
 			console.error("handle.load-error", ev);
 			this.errorMessage = `Load: ${ev.message}`;
+			this.renderComplete = true;
 		},
 		handleRenderedPages(ev) {
 			console.log("pages.rendered", ev);
 		},
 		handleRendered(ev) {
 			console.log("sidebar.rendered", ev);
+			this.renderComplete = true;
 		},
 		handleRenderingFailed(ev) {
 			console.error("sidebar.render-error", ev);
 			this.errorMessage = `Render Sidebar: ${ev.message}`;
+			this.renderComplete = true;
 		},
 		handleRenderingFailedPage(ev) {
 			console.error("page.render-error", ev);
 			this.errorMessage = `Render Page: ${ev.message}`;
+			this.renderComplete = true;
 		},
 		handleInternalLink(ev) {
 			console.log("internal-link-click", ev);
@@ -173,7 +183,7 @@ export default {
 			this.cacheStartPage = 1;
 		},
 		handleInput(ev) {
-			console.log("handle.input", ev);
+			this.renderComplete = false;
 			const file = ev.target.files[0];
 			//Step 1: Read the file using file reader
 			const fileReader = new FileReader();
@@ -188,6 +198,10 @@ export default {
 				// this makes a copy, which is necessary
 				capture.source2 = new Uint8Array(u8a);
 				capture.fileName = file.name;
+			};
+			fileReader.onerror = function(ee) {
+				capture.errorMessage = `Load failed ${file.name}`;
+				capture.renderComplete = true;
 			};
 			//Step 2:Read the file as ArrayBuffer
 			fileReader.readAsArrayBuffer(file);
@@ -207,6 +221,7 @@ export default {
 			if(pageNumber > 0) {
 				this.cacheStartPage = pageNumber;
 			}
+			this.renderComplete = false;
 			// sync the sidebar to this page
 			this.command = new ScrollToPage(pageNumber, "smooth", "nearest");
 		},
@@ -245,8 +260,13 @@ export default {
 				}
 			}
 		},
+		handleGotoPage(page) {
+			this.renderComplete = false;
+			this.updatePage(page);
+		},
 	},
 	computed: {
+		commandIsScroll() {return this.command instanceof ScrollToPage; },
 		pages() { return new PageManagement_Scroll(this.cacheStartPage - 1, new PageManagement_UpdateRange(this.cacheStartPage - 1, this.cacheStartPage - 1)); },
 		sidebarPages() { return new PageManagement_UpdateRange(this.scrollStart, this.scrollStop); }
 	},
@@ -256,6 +276,7 @@ export default {
 			source2: null,
 			command: null,
 			errorMessage: null,
+			renderComplete: false,
 			pageCount: undefined,
 			fileName: undefined,
 			selectedPage: null,
@@ -272,6 +293,10 @@ export default {
 }
 </script>
 <style scoped>
+.render-complete {
+	display: none;
+	margin: auto;
+}
 .error {
 	color: red;
 	font-style: italic;
