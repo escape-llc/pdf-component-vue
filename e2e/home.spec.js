@@ -10,7 +10,7 @@ test.describe("Home", () => {
 	test('Content', async ({ page }, { outputDir }) => {
 		await page.goto('http://localhost:5173/');
 		// we land on the home page so no link to check
-		// Expects page to have a heading with the name of Installation.
+		// Check the headings
 		await expect(page.getByRole('heading', { name: 'Documentation' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Tooling' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'PDFJS' })).toBeVisible();

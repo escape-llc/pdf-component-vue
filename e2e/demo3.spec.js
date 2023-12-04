@@ -6,8 +6,6 @@ test.describe.configure({mode:"serial"});
 test.describe("Demo3", () => {
 	test('page', async ({ page }, { outputDir }) => {
 		await page.goto('http://localhost:5173/', { waitUntil: "load" });
-	
-		// Click the Demo1 link.
 		await page.getByRole('link', { name: 'Page Management' }).click();
 	
 		await expect(page.getByRole('heading', { name: 'Page Management' })).toBeVisible();

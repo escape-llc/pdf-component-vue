@@ -23,7 +23,6 @@ test.describe("Demo1", () => {
 	})
 	test.skip('without viewport', async ({ page }, { outputDir }) => {
 		await page.goto('http://localhost:5173/', { waitUntil: "load" });
-
 		await page.getByRole('link', { name: 'Basic' }).click();
 
 		await expect(page.getByRole('heading', { name: 'Basic Usage' })).toBeVisible();

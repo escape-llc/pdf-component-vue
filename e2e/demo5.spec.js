@@ -10,8 +10,6 @@ test.describe("Demo5", () => {
 		const context = await browser.newContext({ deviceScaleFactor: 1 });
 		const page = await context.newPage();
 		await page.goto('http://localhost:5173/', { waitUntil: "load" });
-	
-		// Click the Demo5 link.
 		await page.getByRole('link', { name: 'Resize' }).click();
 	
 		await expect(page.getByRole('heading', { name: 'Resize' })).toBeVisible();
