@@ -66,7 +66,7 @@ class ResizeTracker extends Trigger {
 				const di = value.inlineSize - dpsize.inlineSize;
 				if(Math.abs(db) > config.deltaBlock || Math.abs(di) > config.deltaInline) {
 					// schedule a resize
-					resize.push({ target: key, db, di, upsize: db > 0 && di > 0 });
+					resize.push({ target: key, db, di, upsize: db > 0 || di > 0 });
 					// new cached size
 					this.lastKnown.set(key, value);
 				}
