@@ -3,11 +3,12 @@ import { RouterLink, RouterView } from 'vue-router'
 import { PdfjsVersion } from "../components"
 const version = PdfjsVersion
 const pversion = __APP_VERSION__
+const dpi = (window.devicePixelRatio || 1).toFixed(2)
 </script>
 <template>
 	<header style="margin-bottom:.25rem;margin-top:.25rem">
 		<nav>
-			<div style="font-weight:bold;margin-right:1rem">DEV {{ pversion }} (pdfjs {{ version }})</div>
+			<div style="font-weight:bold;margin-right:1rem">DEV {{ pversion }} (pdfjs {{ version }}) DPI {{ dpi }}</div>
 			<RouterLink to="/">Home</RouterLink>
 			<RouterLink to="/demo1">Basic</RouterLink>
 			<RouterLink to="/demo2">Navigation</RouterLink>
