@@ -10,7 +10,7 @@
 		id="my-pdf"
 		class="document-container"
 		:textLayer="false"
-		:annotationLayer="true"
+		:annotationLayer="false"
 		:sizeMode="sizeMode"
 		:tileConfiguration="tiles"
 		:pageManagement="pages"
