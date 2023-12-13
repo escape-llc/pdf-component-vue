@@ -17,15 +17,15 @@ npm install pdf-component-vue
 
 ## Features
 
-Plenty of features to customize to your use case, especially if you want to control resources and DOM size.
+A growing feature list to accommodate your use cases, especially if you want to control resources and DOM size.
 
 * Based on v3 `pdfjs-dist`.
-* Tailored for `grid` or `flex` treatment.
+* Tailored for `grid` treatment.
   * Control CSS classes for all major layout elements.
   * Control row and column numbering of page cells.
 * Use `slot` for content injection.
-  * Include arbitrary content before/after page cell, e.g. page number.
-  * Include arbitrary content in the page cell.
+  * Arbitrary content before/after page cell, e.g. page number.
+  * Arbitrary content in the page cell.
 * Lots of `$emit` for flexibility on the consumer.
   * Pass through of key `pdfjs` events.
   * Navigation: PDF Link and Page cell clicks.
@@ -35,18 +35,23 @@ Plenty of features to customize to your use case, especially if you want to cont
 * "Smart" auto-sizing based on containing element.
   * Specify "width" or "height" mode.
   * Use CSS to size page cells.
-* Display PDF layers: page image, text, annotation.
+* Display PDF layers: canvas, text, annotation.
 * Render via `OffscreenCanvas` and `requestAnimationFrame` for smooth updates.
+* DPI-aware: automatically scales up canvas to avoid blurriness.
 * Integrated support for PDF page labels; show up in `slotProps`.
 * Utility functions to work with PDF Outline, e.g. Table of Contents.
   * Does the dirty work of "resolving" page numbers from the arcane `dest` field.
   * Take the result and plug into your favorite Tree View!
 * "Smart" page management to control resource consumption.
   * Offscreen pages may have their elements unmounted to save DOM resources.
+  * Placeholder pages do not use a `canvas` to save even more resources.
 * Just-in-time page rendering while scrolling via `IntersectionObserver`.
-* Re-render page image on size changes via `ResizeObserver`.
+* Re-render PDF layers on size changes via `ResizeObserver`.
 * Interact with the component without having a `ref`.
   * Everything works with (reactive) props and emits.
+* Commanding support.
+  * OOTB commands for print and go to page.
+  * Framework for making your own custom commands.
 
 ## Demo Pages
 The demo app that is part of the repo presents some common use cases.  Below are sample screen captures.
@@ -83,22 +88,25 @@ Uses a current build of PDFJS.
 
 ## Core Logic
 
-Those familiar with `pdfjs` know there are 3 "layers" involved:
+Those familiar with `pdfjs` know there are multiple "layers" involved:
 
-* `canvas` layer containing the page image
+* `canvas` layer with page image
+* `svg` alternate layer with page image (not currently supported)
 * `text` layer containing "searchable" PDF text
 * `annotation` layer with the PDF annotations
+* `xfa` layer with XFA form layout (not currently supported)
 
 There is also lots of bookkeeping to keep everything consistent:
 
 * Interaction between DOM elements and `pdfjs`
   * Graphic, text, and annotation layers.
+  * DPI-awareness.
 * Mounting and unmounting while live.
   * DOM elements require bookkeeping while mounted and the zone changes.
 * Re-render on size changes.
   * Each rendering is fixed to the container's current size.
 * "Bake in" the required CSS (via `style`) to make the layers render correctly.
-  * The 3 layers must be "stacked" correctly for visual presentation.
+  * The layers must be "stacked" correctly for visual presentation.
 
 # Page Events
 
@@ -141,18 +149,16 @@ When the grid has `auto` for the major dimension, you may use any number of page
 
 When the grid is finite, that number of tiles (maximum) is always generated.
 
-## Display Modes
+## Display Options
 
 Using the grid system, you have options for layout:
 
 * Continuous - one continuous row/column of pages.  The number of tiles "visible" depends on the height of the stack currently presenting.  Use `WIDTH` mode (default) and a one-column grid (see below).
-* Tileset (n-up) - display a number of tiles in a grid pattern.  Use `HEIGHT` mode and explicit grid rows and columns (see below).
-
-> These are informal based on your CSS and not an actual "mode" of the component.
+* Tileset (n-up) - display a (finite) number of tiles in a grid pattern.  Use `HEIGHT` mode and explicit grid rows and columns (see below).
 
 # Page Management
 
-Because documents may be gigantic, only *some of the pages* should be rendered at any point.
+Because documents may be gigantic, and high-DPI devices require larger rendering, only *some of the pages* should be rendered at any point.
 
 Page management is divided into these "zones":
 
@@ -198,15 +204,15 @@ If you are in a "scrolling" scenario (e.g. a 1-column grid) then for the best co
 
 ## Very Large Documents
 
-So why have 3 zones?  Consider a document with 1000 pages.  The number of DOM elements for just placeholders
-for every page may be too large for the user's device, so it is desirable to keep this to a reasonable number, say 100.
+So why have 3 zones?  Consider a document with 1000 pages viewed on a high-DPI mobile device.  The number of DOM elements for just placeholders
+for every page may be too large for the user's device, so it is desirable to keep this to a reasonable number.
 
-What this means is that for the 1000 page document, only 100 "pages" are represented in the DOM at any point (Hot + Warm), providing enough
+What this means is that for the 1000 page document, only N "pages" are represented in the DOM at any point (Hot + Warm), providing enough
 elements for scrolling to work.
 
 # Scrolling
 
-In the Continuous mode, it is important to host the component directly inside the element that provides scrolling, e.g. a `div` with `overflow` management so it has scroll bar(s).  This element is used with an `IntersectionObserver` to determine what tiles are visible (see below).
+With the Continuous layout option, it is important to host the component directly inside the element that provides scrolling, e.g. a `div` with `overflow` management so it has scroll bar(s).  This element is used with an `IntersectionObserver` to determine what tiles are visible (see below).
 
 The most common case is row-major-auto 1-column grid in `WIDTH` size mode (see below); the document container's width is used as the rendering width, and the height is calulated from that using the page's aspect ratio.  The height should be `auto` in this case.  The parent element of the document container will scroll (subject to CSS) vertically.
 
@@ -220,7 +226,7 @@ Activate Scroll Management by supplying a value to the `scrollConfiguration` pro
 
 If your use case includes resizing of pages, e.g. because the window size changes on a desktop platform, you will run into several issues:
 
-* The `canvas` image does not automatically redraw itself at the new size.
+* The `canvas` does not automatically redraw itself at the new size.
   * You get a rescaled version of the image from the original size you rendered at.
   * Most noticeable when going from smaller to larger size (blur).
 * The text and annotation layers do not rescale themselves to the new size.
