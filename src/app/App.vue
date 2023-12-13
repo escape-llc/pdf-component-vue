@@ -8,7 +8,11 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 <template>
 	<header style="margin-bottom:.25rem;margin-top:.25rem">
 		<nav>
-			<div style="font-weight:bold;margin-right:1rem">DEV {{ pversion }} (pdfjs {{ version }}) DPI {{ dpi }}</div>
+			<div style="font-weight:bold;margin-right:1rem">
+				<span class="badge" style="margin-right:.25rem">DEV {{ pversion }}</span>
+				<span class="badge" style="margin-right:.25rem">pdfjs {{ version }}</span>
+				<span class="badge">DPR {{ dpi }}</span>
+			</div>
 			<RouterLink to="/">Home</RouterLink>
 			<RouterLink to="/demo1">Basic</RouterLink>
 			<RouterLink to="/demo2">Navigation</RouterLink>
@@ -25,6 +29,15 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 	</div>
 </template>
 <style scoped>
+.badge {
+	background-color: grey;
+	color: white;
+	padding: .1rem .2rem;
+	text-align: center;
+	border-width: 1px;
+	border-radius: .2rem;
+	border-color: aliceblue;
+}
 header {
 	line-height: 1.5;
 }
