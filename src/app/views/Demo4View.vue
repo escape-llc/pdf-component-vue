@@ -57,6 +57,7 @@
 				annotationLayerClass="page-stack"
 				textLayerClass="page-stack"
 				@load-failed="handleError"
+				@rendered="handleRenderedPages"
 				@render-failed="handleRenderingFailedPage"
 				@internal-link-click="handleInternalLink"
 				:source="source2">
@@ -138,7 +139,7 @@ export default {
 			this.renderComplete = true;
 		},
 		handleRenderedPages(ev) {
-			console.log("pages.rendered", ev);
+			console.log("page.rendered", ev);
 		},
 		handleRendered(ev) {
 			console.log("sidebar.rendered", ev);

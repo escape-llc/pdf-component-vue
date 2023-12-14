@@ -111,7 +111,7 @@ export default {
 	margin-bottom: 2rem;
 	box-sizing: border-box;
 	height: auto;
-	/*transition: width .1s ease-in-out, height .1s ease-in-out;*/
+	transition: width .1s ease-in-out, height .1s ease-in-out;
 }
 .document-narrow {
 	width: 40vw;
