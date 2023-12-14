@@ -1,8 +1,11 @@
 import { vi, describe, it, expect } from "vitest"
+import { flushPromises } from '@vue/test-utils'
 
 import * as pc from "../PageContext"
 import * as dh from "../DocumentHandler"
 import { PageCache } from "../PageCache"
+
+vi.useFakeTimers();
 
 global.OffscreenCanvas = vi.fn().mockImplementation((width, height) => {
 	return {
@@ -153,6 +156,10 @@ describe('PageContext', () => {
 		expect(page.container).toStrictEqual(null);
 		expect(page.didRender).toBe(false);
 	});
+	/**
+	 * Render now requires the "promise/timer" incantation, because it uses
+	 * promises and requestAnimationFrame().
+	 */
 	it("render", async () => {
 		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
 		const viewport = {
@@ -167,7 +174,7 @@ describe('PageContext', () => {
 			style: {
 				setProperty(name, value) {
 					if(name === "--scale-factor") {
-						expect(value).toBe(viewport.scale);
+						expect(value).toBe(viewport.scale.toFixed(4));
 					}
 					else if(name === "--viewport-width") {
 						expect(value).toBe(Math.floor(viewport.width));
@@ -191,33 +198,47 @@ describe('PageContext', () => {
 		const divText = {
 			called: false,
 			reset() { this.called = false; },
-			replaceChildren() { this.called = true; }
+			replaceChildren(...children) { this.called = true; },
+			setAttribute(attr, value) { },
+			getAttribute(attr) { return "position: relative"; },
 		};
 		const divAnno = {
 			called: false,
 			reset() { this.called = false; },
-			replaceChildren() { this.called = true; }
+			replaceChildren(...children) { this.called = true; },
+			setAttribute(attr, value) { },
+			getAttribute(attr) { return "position: relative"; },
 		};
 		const cache = {
 			called: false,
 			reset() { this.called = false; },
+			dimensions(pageNumber) {
+				return { width: 612, height:792 };
+			},
 			viewport(pageNumber, sizeMode, width, height, rotation, scale) {
 				expect(pageNumber).toBe(page.pageNumber);
-				expect(sizeMode).toBe(page.sizeMode);
-				expect(width).toBe(container.clientWidth);
-				expect(height).toBe(container.clientHeight);
+				if(sizeMode === page.sizeMode) {
+					expect(width).toBe(container.clientWidth);
+					expect(height).toBe(container.clientHeight);
+					expect(scale).toBe(undefined);
+				}
+				else {
+					expect(sizeMode).toBe(pc.SCALE);
+					expect(width).toBe(undefined);
+					expect(height).toBe(undefined);
+					expect(scale).toBe(1);
+				}
 				expect(rotation).toBe(0);
-				expect(scale).toBe(undefined);
 				return viewport;
 			},
 			renderCanvas() { this.called = true; },
 			renderTextLayer(pageNumber, viewport, el) {
 				expect(pageNumber).toBe(page.pageNumber);
-				expect(el).toBe(divText);
+				expect(el).not.toBe(divText);
 			},
 			renderAnnotationLayer(pageNumber, viewport, el) {
 				expect(pageNumber).toBe(page.pageNumber);
-				expect(el).toBe(divAnno);
+				expect(el).not.toBe(divAnno);
 			},
 		};
 		page.mountTextLayer(divText);
@@ -228,6 +249,9 @@ describe('PageContext', () => {
 		expect(page.didRender).toBe(false);
 		expect(page.state).toBe(pc.HOT);
 		await page.render(cache);
+		await flushPromises();
+		vi.runAllTimers();
+		await flushPromises();
 		expect(page.didRender).toBe(true);
 		expect(page.scaleFactor).toBe(1);
 		expect(canvas.width).toBe(viewport.width);
@@ -248,6 +272,9 @@ describe('PageContext', () => {
 		expect(page.state).toBe(pc.WARM);
 		expect(page.didRender).toBe(false);
 		await page.render(cache);
+		await flushPromises();
+		vi.runAllTimers();
+		await flushPromises();
 		expect(page.didRender).toBe(true);
 		expect(page.scaleFactor).toBe(1);
 		expect(canvas.width).toBe(viewport.width);
@@ -307,7 +334,7 @@ describe("PageCache", () => {
 			view: [0,0,680,790],
 		});
 		expect(cache.has(99)).toBe(true);
-		expect(() => { const xxx = cache.viewport(99, 999); }).toThrowError("viewport: 999: unknown mode");
+		expect(() => { const xxx = cache.viewport(99, 999); }).toThrowError("scaleFor: 999: unknown mode");
 		cache.evict(99);
 		expect(cache.has(99)).toBe(false);
 	});

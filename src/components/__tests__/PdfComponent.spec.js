@@ -328,11 +328,23 @@ describe('PdfComponent', () => {
 		function checkPage(div, ix) {
 			expect(div).not.toBe(undefined);
 			expect(div.element.id).toBe(`my-pdf-page-${ix}`);
-			const canvas = div.get("canvas");
-			expect(canvas).not.toBe(undefined);
-			expect(canvas.element.classList.contains("grid-stack")).toBe(true);
-			expect(canvas.attributes("width")).toBe(PAGE_WIDTH.toString());
-			expect(canvas.attributes("height")).toBe(PAGE_HEIGHT.toString());
+			const state = div.element.getAttribute("data-state");
+			if(state === "2") {
+				// page canvas
+				const canvas = div.get("canvas");
+				expect(canvas).not.toBe(undefined);
+				expect(canvas.element.classList.contains("grid-stack")).toBe(true);
+				expect(canvas.attributes("width")).toBe(PAGE_WIDTH.toString());
+				expect(canvas.attributes("height")).toBe(PAGE_HEIGHT.toString());
+			}
+			else {
+				// placeholder div
+				const phd = div.get("div > :first-child");
+				expect(phd).not.toBe(undefined);
+				expect(phd.element.classList.contains("grid-stack")).toBe(true);
+				expect(phd.element.classList.contains("textLayer")).toBe(false);
+				expect(phd.element.classList.contains("annotationLayer")).toBe(false);
+			}
 		}
 		function checkTextLayer(div, ix) {
 			const layer = div.get("div.textLayer");
