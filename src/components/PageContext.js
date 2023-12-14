@@ -31,7 +31,7 @@ class PageContext {
 	stateReactive = ref(COLD)
 	gridRow
 	gridColumn
-	rotation
+	rotation = 0
 	scaleFactor
 	container = null
 	canvas = null
@@ -98,6 +98,74 @@ class PageContext {
 		return viewport;
 	}
 	/**
+	 * Execute the rendering pipeline.
+	 * Stage 1 awaits all the actions.
+	 * Stage 2 calls requestAnimationFrame() and runs all the animate actions, passing each one the resolved Promise array.
+	 * The call to rAF() is NOT awaited.
+	 * @param {Function[]} actions list of compute Promises (async).
+	 * @param {Function[]} animate list of requestAnimationFrame actions.
+	 * @returns {Promise} the continuation of executing requestAnimationFrame() returns the resolved Promise array.
+	 */
+	async pipeline(actions, animate) {
+		return Promise.all(actions.map(async ax => await ax())).then(results => {
+			requestAnimationFrame(() => {
+				animate.forEach(ax => { ax(results); });
+			});
+			return results;
+		});
+	}
+	/**
+	 * Set the special CSS properties required by PDFJS and the component.
+	 * @param {HTMLDivElement} container page container DOM element.
+	 * @param {Number} scale Master scale factor.
+	 * @param {Number} vw viewport width PX.
+	 * @param {Number} vh viewport height PX.
+	 * @param {Number} pw PDFJS page width PX.
+	 * @param {Number} ph PDFJS page height PX.
+	 */
+	setContainerProperties(container, scale, vw, vh, pw, ph) {
+		container.style.setProperty("--scale-factor", scale.toFixed(4));
+		container.style.setProperty("--viewport-width", vw);
+		container.style.setProperty("--viewport-height", vh);
+		container.style.setProperty("--page-width", pw);
+		container.style.setProperty("--page-height", ph);
+	}
+	/**
+	 * Size and render the canvas from the local canvas.
+	 * @param {HTMLCanvasElement} canvas Target canvas element.
+	 * @param {OffscreenCanvas|HTMLCanvasElement} local Source canvas.
+	 * @param {Number} width canvas width PX.
+	 * @param {Number} height canvas height PX.
+	 */
+	renderLocal(canvas, local, width, height) {
+		canvas.width = width;
+		canvas.height = height;
+		const ctx = this.canvas.getContext("2d");
+		ctx.drawImage(local, 0, 0);
+	}
+	renderDivLayer(layer, div) {
+		layer.setAttribute("style", div.getAttribute("style"));
+		layer.setAttribute("data-main-rotation", div.getAttribute("data-main-rotation"));
+		layer.replaceChildren(...div.children);
+	}
+	/**
+	 * Perform all the arithmetic for rendering.
+	 * @param {PageCache} cache use for page operations.
+	 * @param {*} ratio DPI ratio.
+	 * @returns {{ viewport, viewport2, scale, vw, vh, vwr, vhr, width, height }} results.
+	 */
+	renderPrepare(cache, ratio) {
+		const viewport = this.containerViewport(cache);
+		const viewport2 = cache.viewport(this.pageNumber, SCALE, undefined, undefined, this.rotation, viewport.scale);
+		const vw = Math.floor(viewport.width);
+		const vh = Math.floor(viewport.height);
+		const vwr = Math.floor(viewport2.width*ratio);
+		const vhr = Math.floor(viewport2.height*ratio);
+		const scale = viewport.scale;
+		const { width, height } = cache.dimensions(this.pageNumber, this.rotation);
+		return { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height };
+	}
+	/**
 	 * Perform a full render of page contents; sets didRender flag.
 	 * @param {PageCache} cache use for page operations.
 	 */
@@ -105,89 +173,110 @@ class PageContext {
 		if(!this.container) return;
 		if(this.didRender) return;
 		this.didRender = true;
-		const viewport = this.containerViewport(cache);
-		await this.updateViewportStyle(viewport, true);
-		/*if(this.canvas) {
-			this.canvas.width = Math.floor(viewport.width);
-			this.canvas.height = Math.floor(viewport.height);
-		}*/
+		const ratio = window.devicePixelRatio || 1;
+		const actions = [];
+		const animate = [];
+		const { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height } = this.renderPrepare(cache, ratio);
+		actions.push(async () => {
+			this.scaleFactor = scale;
+			const local = this.canvas;
+			if(local && (this.state === WARM || local.width !== vw || local.height !== vh)) {
+				// MUST do this early so it appears before the drawing starts
+				// modifying dimensions clears the contents
+				local.width = vw;
+				local.height = vh;
+			}
+			return Promise.resolve(viewport);
+		});
+		animate.push(results => {
+			if(!this.container) return;
+			this.setContainerProperties(this.container, scale, vw, vh, width, height);
+		});
 		if(this.state === HOT) {
 			if(this.canvas) {
-				await this.renderTheCanvas(cache, viewport);
+				actions.push(async () => {
+					const local = canvasFactory(vwr, vhr);
+					await cache.renderCanvas(this.pageNumber, viewport2, local, ratio);
+					return local;
+				});
+				animate.push(results => {
+					if(!this.canvas) return;
+					this.renderLocal(this.canvas, results[1], vwr, vhr);
+				});
+			}
+			else {
+				actions.push(() => Promise.resolve(null));
 			}
 			if(this.divText) {
-				this.divText.replaceChildren();
-				await cache.renderTextLayer(this.pageNumber, viewport, this.divText);
+				actions.push(async () => {
+					const div = document.createElement("div");
+					await cache.renderTextLayer(this.pageNumber, viewport, div);
+					return div;
+				});
+				animate.push(results => {
+					if(!this.divText) return;
+					this.renderDivLayer(this.divText, results[2]);
+				});
+			}
+			else {
+				actions.push(() => Promise.resolve(null));
 			}
 			if(this.divAnno) {
-				this.divAnno.replaceChildren();
-				await cache.renderAnnotationLayer(this.pageNumber, viewport, this.divAnno);
+				actions.push(async () => {
+					const div = document.createElement("div");
+					await cache.renderAnnotationLayer(this.pageNumber, viewport, div);
+					return div;
+				});
+				animate.push(results => {
+					if(!this.divAnno) return;
+					this.renderDivLayer(this.divAnno, results[3]);
+				});
+			}
+			else {
+				actions.push(() => Promise.resolve(null));
 			}
 		}
-	}
-	/**
-	 * Render to a local Canvas then use (unsynchronized) requestAnimationFrame() for a smooth update.
-	 * @param {PageCache} cache Use for page operations.
-	 * @param {Viewport} viewport Use to size everything.
-	 * @returns Promise
-	 */
-	async renderTheCanvas(cache, viewport) {
-		if(!this.canvas) return;
-		const vw = Math.floor(viewport.width);
-		const vh = Math.floor(viewport.height);
-		const local = canvasFactory(vw, vh);
-		await cache.renderCanvas(this.pageNumber, viewport, local);
-		requestAnimationFrame(() => {
-			if(!this.canvas) return;
-			this.canvas.width = vw;
-			this.canvas.height = vh;
-			const ctx = this.canvas.getContext("2d");
-			ctx.drawImage(local, 0, 0);
-		});
-	}
-	/**
-	 * Use (synchronized) requestAnimationFrame() to perform the CSS style and canvas updates.
-	 * @param {Viewport} viewport the viewport to use.
-	 * @param {*} uc true: resize canvas; false: do not.
-	 * @returns Promise that resolves when the rAF() callback completes.
-	 */
-	async updateViewportStyle(viewport, uc) {
-		return new Promise(resolve => {
-			this.scaleFactor = viewport.scale;
-			requestAnimationFrame(() => {
-				const vw = Math.floor(viewport.width);
-				const vh = Math.floor(viewport.height);
-				if(this.container) {
-					this.container.style.setProperty("--scale-factor", viewport.scale);
-					this.container.style.setProperty("--viewport-width", vw);
-					this.container.style.setProperty("--viewport-height", vh);
-				}
-				if(this.canvas && uc) {
-					// modifying dimensions clears the contents
-					this.canvas.width = vw;
-					this.canvas.height = vh;
-				}
-				resolve();
-			});
-		});
+		const results = await this.pipeline(actions, animate);
+		//console.log("render.pipeline is done", this.pageNumber/*, results*/);
 	}
 	/**
 	 * Perform the resize pass.
 	 * Only performs if didRender is TRUE.
 	 * @param {PageCache} cache Use for page operations.
 	 * @param {Boolean} draw true: redraw canvas; false: update CSS only.
-	 * @returns Promise
 	 */
 	async resize(cache, draw) {
 		if(!this.container) return;
 		if(!this.didRender) return;
-		const viewport = this.containerViewport(cache);
-		await this.updateViewportStyle(viewport, false);
+		const ratio = window.devicePixelRatio || 1;
+		const actions = [];
+		const animate = [];
+		const { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height } = this.renderPrepare(cache, ratio);
+		actions.push(async () => {
+			this.scaleFactor = scale;
+			return Promise.resolve(viewport);
+		});
+		animate.push(results => {
+			if(!this.container) return;
+			this.setContainerProperties(this.container, scale, vw, vh, width, height);
+		});
 		if(this.state === HOT) {
 			if(this.canvas && draw === true) {
-				await this.renderTheCanvas(cache, viewport);
+				actions.push(async () => {
+					const local = canvasFactory(vwr, vhr);
+					await cache.renderCanvas(this.pageNumber, viewport2, local, ratio);
+					return local;
+				});
+				if(this.canvas) {
+					animate.push(results => {
+						if(!this.canvas) return;
+						this.renderLocal(this.canvas, results[1], vwr, vhr);
+					});
+				}
 			}
 		}
+		const results = await this.pipeline(actions, animate);
+		//console.log("resize.pipeline is done", this.pageNumber/*, results*/);
 	}
 	/**
 	 * Switch to the HOT state.
@@ -195,7 +284,7 @@ class PageContext {
 	 * @param {Number} rotation document-level rotation.
 	 */
 	hot(rotation) {
-		this.rotation = rotation;
+		this.rotation = rotation || 0;
 		this.state = HOT;
 		this.didRender = false;
 	}
@@ -213,7 +302,7 @@ class PageContext {
 	 * @param {Number} rotation document-level rotation.
 	 */
 	warm(rotation) {
-		this.rotation = rotation;
+		this.rotation = rotation || 0;
 		this.state = WARM;
 		this.didRender = false;
 	}
@@ -231,6 +320,7 @@ class PageContext {
 				gridRow: this.gridRow,
 				gridColumn: this.gridColumn,
 				scale: this.scaleFactor,
+				rotation: this.rotation,
 				originalEvent: ev
 			};
 		}
