@@ -53,6 +53,42 @@ class PageCache {
 		return this._map.has(pageNumber);
 	}
 	/**
+	 * Calculate the scale for given size mode.
+	 * @param {any} entry cache entry.
+	 * @param {Number} mode size mode.
+	 * @param {Number} width container width.
+	 * @param {Number} height container height.
+	 * @param {Number} rotation document-level rotation; MUST be multiple of 90.
+	 * @param {Number|undefined} scale document-level scale; only used in SCALE mode.
+	 * @returns the scale factor for viewport.
+	 */
+	scaleFor(entry, mode, width, height, rotation, scale) {
+		const pageRotation = entry.rotation + rotation;
+		switch(mode) {
+			case WIDTH:
+				const pageWidth = (pageRotation / 90) % 2 ? entry.height : entry.width;
+				const scalew = width / pageWidth;
+				return scalew;
+			case HEIGHT:
+				const pageHeight = (pageRotation / 90) % 2 ? entry.width : entry.height;
+				const scaleh = height / pageHeight;
+				return scaleh;
+			case SCALE:
+				if(!scale || !Number.parseFloat(scale) || Number.isNaN(scale)) throw new Error(`viewport: SCALE mode requires '${scale}' is a Number`);
+				return scale;
+		}
+		throw new Error(`scaleFor: ${mode}: unknown mode`);
+	}
+	dimensions(pageNumber, rotation) {
+		if(!this._map.has(pageNumber)) throw new Error(`viewport: page ${pageNumber} not in cache`);
+		const entry = this._map.get(pageNumber);
+		const pageRotation = entry.rotation + rotation;
+		return {
+			width: (pageRotation / 90) % 2 ? entry.height : entry.width,
+			height: (pageRotation / 90) % 2 ? entry.width : entry.height
+		};
+	}
+	/**
 	 * Compute the active viewport for the page and given parameters.
 	 * @param {Number} pageNumber 1-relative page number.
 	 * @param {Number} mode size mode WIDTH,HEIGHT.
@@ -65,32 +101,18 @@ class PageCache {
 	viewport(pageNumber, mode, width, height, rotation, scale) {
 		if(!this._map.has(pageNumber)) throw new Error(`viewport: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
-		const pageRotation = entry.rotation + rotation;
-		switch(mode) {
-			case WIDTH:
-				const pageWidth = (pageRotation / 90) % 2 ? entry.height : entry.width;
-				const scalew = width / pageWidth;
-				// TODO can use pdf.PageViewport() that's what getViewport() returns
-				const viewportw = entry.page.getViewport({ scale: scalew, rotation });
-				return viewportw;
-			case HEIGHT:
-				const pageHeight = (pageRotation / 90) % 2 ? entry.width : entry.height;
-				const scaleh = height / pageHeight;
-				const viewporth = entry.page.getViewport({ scale: scaleh, rotation });
-				return viewporth;
-			case SCALE:
-				if(!scale || !Number.parseFloat(scale) || Number.isNaN(scale)) throw new Error(`viewport: SCALE mode requires '${scale}' is a Number`);
-				const viewports = entry.page.getViewport({ scale, rotation });
-				return viewports;
-		}
-		throw new Error(`viewport: ${mode}: unknown mode`);
+		const vscale = this.scaleFor(entry, mode, width, height, rotation, scale);
+		const viewporth = entry.page.getViewport({ scale: vscale, rotation });
+		return viewporth;
 	}
-	async renderCanvas(pageNumber, viewport, canvas) {
+	async renderCanvas(pageNumber, viewport, canvas, ratio) {
 		if(!this._map.has(pageNumber)) throw new Error(`renderCanvas: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
+		const transform = [ratio, 0, 0, ratio, 0, 0];
 		await entry.page.render({
 			canvasContext: canvas.getContext('2d'),
 			viewport,
+			transform
 		}).promise
 	}
 	async renderTextLayer(pageNumber, viewport, el) {
