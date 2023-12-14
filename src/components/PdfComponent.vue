@@ -11,10 +11,16 @@
 				:aria-label="page.pageLabel"
 				@click="handlePageClick($event, page)"
 			>
-				<canvas :ref="el => { mountCanvas(page, el); }" :class="canvasClass" />
 				<template v-if="page.stateReactive === 2">
-					<div v-if="textLayer" :ref="el => { mountTextLayer(page, el); }" class="textLayer" style="position:relative" :class="textLayerClass" />
-					<div v-if="annotationLayer" :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" style="position:relative" :class="annotationLayerClass" />
+					<canvas :ref="el => { mountCanvas(page, el); }" :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)" />
+				</template>
+				<template v-else>
+					<div :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)">&#8203;</div>
+				</template>
+				<template v-if="page.stateReactive === 2">
+					<!-- style is managed by PDFJS -->
+					<div v-if="textLayer" :ref="el => { mountTextLayer(page, el); }" class="textLayer" :class="textLayerClass" />
+					<div v-if="annotationLayer" :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" :class="annotationLayerClass" />
 				</template>
 				<slot name="page-overlay" v-bind="page.infoFor(undefined)"></slot>
 			</div>
@@ -289,7 +295,7 @@ export default {
 				this.pageCount = document.numPages;
 				this.pageContexts = [];
 				materializePages(this.sizeMode, this.id, this.pageCount, this.pageContexts);
-				if(this.usePageLabels) {
+				if(this.usePageLabels && this.handler) {
 					const labels = await this.handler.pageLabels();
 					if(labels) {
 						// assign the page labels to the pages
