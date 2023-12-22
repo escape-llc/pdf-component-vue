@@ -6,13 +6,13 @@ const pversion = __APP_VERSION__
 const dpi = (window.devicePixelRatio || 1).toFixed(2)
 </script>
 <template>
-	<header style="margin-bottom:.25rem;margin-top:.25rem">
+	<header>
+		<div style="font-weight:bold;margin-right:1rem">
+			<span class="badge" style="margin-right:.25rem">DEV {{ pversion }}</span>
+			<span class="badge" style="margin-right:.25rem">pdfjs {{ version }}</span>
+			<span class="badge">DPR {{ dpi }}</span>
+		</div>
 		<nav>
-			<div style="font-weight:bold;margin-right:1rem">
-				<span class="badge" style="margin-right:.25rem">DEV {{ pversion }}</span>
-				<span class="badge" style="margin-right:.25rem">pdfjs {{ version }}</span>
-				<span class="badge">DPR {{ dpi }}</span>
-			</div>
 			<RouterLink to="/">Home</RouterLink>
 			<RouterLink to="/demo1">Basic</RouterLink>
 			<RouterLink to="/demo2">Navigation</RouterLink>
@@ -37,14 +37,17 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 	border-width: 1px;
 	border-radius: .2rem;
 	border-color: aliceblue;
+	font-size: smaller;
 }
 header {
-	line-height: 1.5;
+	display:flex;
+	margin-bottom:.25rem;
+	margin-top:.25rem;
+	justify-content: center;
 }
 nav {
 	display:flex;
 	flex-direction: row;
-	width: 100%;
 	font-size: 16px;
 	align-items: center;
 	justify-content: center;
