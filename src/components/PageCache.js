@@ -60,7 +60,7 @@ class PageCache {
 	 * @param {Number} height container height.
 	 * @param {Number} rotation document-level rotation; MUST be multiple of 90.
 	 * @param {Number|undefined} scale document-level scale; only used in SCALE mode.
-	 * @returns the scale factor for viewport.
+	 * @returns {Number} the scale factor for viewport.
 	 */
 	scaleFor(entry, mode, width, height, rotation, scale) {
 		const pageRotation = entry.rotation + rotation;
@@ -79,14 +79,20 @@ class PageCache {
 		}
 		throw new Error(`scaleFor: ${mode}: unknown mode`);
 	}
+	/**
+	 * Calculate page dimensions based on rotation.
+	 * @param {Number} pageNumber 1-relative page number.
+	 * @param {Number} rotation Must be multiple of 90.
+	 * @returns {{width: Number,height: Number,aspectRatio: Number}}
+	 */
 	dimensions(pageNumber, rotation) {
 		if(!this._map.has(pageNumber)) throw new Error(`viewport: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
 		const pageRotation = entry.rotation + rotation;
-		return {
-			width: (pageRotation / 90) % 2 ? entry.height : entry.width,
-			height: (pageRotation / 90) % 2 ? entry.width : entry.height
-		};
+		const width = (pageRotation / 90) % 2 ? entry.height : entry.width;
+		const height= (pageRotation / 90) % 2 ? entry.width : entry.height;
+		const aspectRatio = width / height;
+		return { width, height, aspectRatio };
 	}
 	/**
 	 * Compute the active viewport for the page and given parameters.
@@ -102,8 +108,8 @@ class PageCache {
 		if(!this._map.has(pageNumber)) throw new Error(`viewport: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
 		const vscale = this.scaleFor(entry, mode, width, height, rotation, scale);
-		const viewporth = entry.page.getViewport({ scale: vscale, rotation });
-		return viewporth;
+		const vp = entry.page.getViewport({ scale: vscale, rotation });
+		return vp;
 	}
 	async renderCanvas(pageNumber, viewport, canvas, ratio) {
 		if(!this._map.has(pageNumber)) throw new Error(`renderCanvas: page ${pageNumber} not in cache`);
