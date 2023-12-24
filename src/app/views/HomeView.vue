@@ -3,7 +3,7 @@ import TheWelcome from '../TheWelcome.vue'
 </script>
 
 <template>
-	<main style="margin-left:2rem;margin-right:2rem">
+	<main>
 		<TheWelcome />
 	</main>
 </template>

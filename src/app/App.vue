@@ -7,11 +7,6 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 </script>
 <template>
 	<header>
-		<div style="font-weight:bold;margin-right:1rem">
-			<span class="badge" style="margin-right:.25rem">DEV {{ pversion }}</span>
-			<span class="badge" style="margin-right:.25rem">pdfjs {{ version }}</span>
-			<span class="badge">DPR {{ dpi }}</span>
-		</div>
 		<nav>
 			<RouterLink to="/">Home</RouterLink>
 			<RouterLink to="/demo1">Basic</RouterLink>
@@ -23,34 +18,42 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 			<RouterLink to="/demo6">Composition</RouterLink>
 			-->
 		</nav>
+		<div style="margin-left:1rem">
+			<div class="badge" style="margin-right:.25rem">dev {{ pversion }}</div>
+			<div class="badge" style="margin-right:.25rem">pdfjs {{ version }}</div>
+			<div class="badge">dpr {{ dpi }}</div>
+		</div>
 	</header>
-	<div>
+	<div style="margin-top:2rem">
 		<RouterView />
 	</div>
 </template>
 <style scoped>
 .badge {
+	display: inline-block;
 	background-color: grey;
-	color: white;
+	color: black;
 	padding: .1rem .2rem;
 	text-align: center;
-	border-width: 1px;
 	border-radius: .2rem;
-	border-color: aliceblue;
 	font-size: smaller;
 }
 header {
+	position: fixed;
+	top: 0;
+	left: 2px;
 	display:flex;
-	margin-bottom:.25rem;
-	margin-top:.25rem;
-	justify-content: center;
+	flex-direction: row;
+	padding: .25rem;
+	margin-left: .25rem;
 }
 nav {
-	display:flex;
+	display: flex;
 	flex-direction: row;
 	font-size: 16px;
 	align-items: center;
 	justify-content: center;
+	flex-grow: 1;
 }
 nav a.router-link-exact-active {
 	color: var(--color-text);
