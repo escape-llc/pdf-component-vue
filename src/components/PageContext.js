@@ -33,6 +33,7 @@ class PageContext {
 	gridColumn
 	rotation = 0
 	scaleFactor
+	aspectRatioReactive = ref(undefined)
 	container = null
 	canvas = null
 	divText = null
@@ -56,6 +57,8 @@ class PageContext {
 	is(state) { return state === this.state; }
 	get state() { return this.stateReactive.value; }
 	set state(vx) { this.stateReactive.value = vx; }
+	get aspectRatio() { return this.aspectRatioReactive ? this.aspectRatioReactive.value : undefined; }
+	set aspectRatio(vx) { this.aspectRatioReactive.value = vx; }
 	/**
 	 * Initialize the grid coordinates.
 	 * @param {Number} row 1-relative grid row.
@@ -86,22 +89,20 @@ class PageContext {
 		this.divAnno = el;
 	}
 	/**
-	 * Compute the viewport and set the special CSS properties.
-	 * --scale-factor   Used by PDFJS
-	 * --viewport-xxx   Made available for client CSS rules
+	 * Compute the viewport.
 	 * @param {PageCache} cache Use for page operations.
 	 * @returns viewport
 	 */
 	containerViewport(cache) {
 		const bcr = this.container.getBoundingClientRect();
-		const viewport = cache.viewport(this.pageNumber, this.sizeMode, bcr.width, bcr.height, this.rotation || 0);
+		const viewport = cache.viewport(this.pageNumber, this.sizeMode, bcr.width, bcr.height, this.rotation);
 		return viewport;
 	}
 	/**
 	 * Execute the rendering pipeline.
 	 * Stage 1 awaits all the actions.
 	 * Stage 2 calls requestAnimationFrame() and runs all the animate actions, passing each one the resolved Promise array.
-	 * The call to rAF() is NOT awaited.
+	 * The call to rAF() is NOT synchronized.
 	 * @param {Function[]} actions list of compute Promises (async).
 	 * @param {Function[]} animate list of requestAnimationFrame actions.
 	 * @returns {Promise} the continuation of executing requestAnimationFrame() returns the resolved Promise array.
@@ -143,6 +144,11 @@ class PageContext {
 		const ctx = this.canvas.getContext("2d");
 		ctx.drawImage(local, 0, 0);
 	}
+	/**
+	 * Transfer "work" from the pdfjs element to the template element.
+	 * @param {HTMLDivElement} layer Template element.
+	 * @param {HTMLDivElement} div Source element.
+	 */
 	renderDivLayer(layer, div) {
 		layer.setAttribute("style", div.getAttribute("style"));
 		layer.setAttribute("data-main-rotation", div.getAttribute("data-main-rotation"));
@@ -151,8 +157,8 @@ class PageContext {
 	/**
 	 * Perform all the arithmetic for rendering.
 	 * @param {PageCache} cache use for page operations.
-	 * @param {*} ratio DPI ratio.
-	 * @returns {{ viewport, viewport2, scale, vw, vh, vwr, vhr, width, height }} results.
+	 * @param {Number} ratio DPI ratio.
+	 * @returns {{ viewport, viewport2, scale, vw, vh, vwr, vhr, width, height, aspectRatio }} results.
 	 */
 	renderPrepare(cache, ratio) {
 		const viewport = this.containerViewport(cache);
@@ -162,8 +168,8 @@ class PageContext {
 		const vwr = Math.floor(viewport2.width*ratio);
 		const vhr = Math.floor(viewport2.height*ratio);
 		const scale = viewport.scale;
-		const { width, height } = cache.dimensions(this.pageNumber, this.rotation);
-		return { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height };
+		const { width, height, aspectRatio } = cache.dimensions(this.pageNumber, this.rotation);
+		return { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height, aspectRatio };
 	}
 	/**
 	 * Perform a full render of page contents; sets didRender flag.
@@ -176,9 +182,10 @@ class PageContext {
 		const ratio = window.devicePixelRatio || 1;
 		const actions = [];
 		const animate = [];
-		const { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height } = this.renderPrepare(cache, ratio);
+		const { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height, aspectRatio } = this.renderPrepare(cache, ratio);
 		actions.push(async () => {
 			this.scaleFactor = scale;
+			this.aspectRatio = aspectRatio;
 			const local = this.canvas;
 			if(local && (this.state === WARM || local.width !== vw || local.height !== vh)) {
 				// MUST do this early so it appears before the drawing starts
@@ -240,6 +247,25 @@ class PageContext {
 		//console.log("render.pipeline is done", this.pageNumber/*, results*/);
 	}
 	/**
+	 * Calculate viewport and set CSS variables.
+	 * Caller SHOULD be in requestAnimationFrame() for best results.
+	 * @param {PageCache} cache Use for viewport.
+	 * @param {Number} width Target width.
+	 * @param {Number} height Target height.
+	 * @returns {void}
+	 */
+	resizeSync(cache, width, height) {
+		if(!this.container) return;
+		if(!this.didRender) return;
+		const viewport = cache.viewport(this.pageNumber, this.sizeMode, width, height, this.rotation);
+		const vw = Math.floor(viewport.width);
+		const vh = Math.floor(viewport.height);
+		//console.log("resizeSync", this.pageNumber, viewport.scale, vw, vh);
+		this.container.style.setProperty("--scale-factor", viewport.scale.toFixed(4));
+		this.container.style.setProperty("--viewport-width", vw);
+		this.container.style.setProperty("--viewport-height", vh);
+	}
+	/**
 	 * Perform the resize pass.
 	 * Only performs if didRender is TRUE.
 	 * @param {PageCache} cache Use for page operations.
@@ -251,9 +277,10 @@ class PageContext {
 		const ratio = window.devicePixelRatio || 1;
 		const actions = [];
 		const animate = [];
-		const { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height } = this.renderPrepare(cache, ratio);
+		const { viewport, viewport2, scale, vw, vh, vwr, vhr, width, height, aspectRatio } = this.renderPrepare(cache, ratio);
 		actions.push(async () => {
 			this.scaleFactor = scale;
+			this.aspectRatio = aspectRatio;
 			return Promise.resolve(viewport);
 		});
 		animate.push(results => {
@@ -321,6 +348,7 @@ class PageContext {
 				gridColumn: this.gridColumn,
 				scale: this.scaleFactor,
 				rotation: this.rotation,
+				aspectRatio: this.aspectRatio,
 				originalEvent: ev
 			};
 		}
