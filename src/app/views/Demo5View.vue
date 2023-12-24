@@ -5,9 +5,11 @@
 		<div v-else-if="command === 'wide'" id="demo5-complete-wide" class="render-complete">Render Complete Wide</div>
 		<div v-else class="render-complete" id="demo5-complete-loaded">Render Complete Loaded</div>
 	</template>
-	<div>Use the buttons to resize.  When switching to <b>wide</b>, the <code>canvas</code> is re-rendered at the new size, so it appears sharp.
+	<div>Use the buttons to resize.  The first time <b>wide</b> is clicked, the <code>canvas</code> re-renders at the new size, so it appears sharp.
 		The text and annotation layers are also rescaled.  You can verify this by selecting some text in narrow then resizing to wide.</div>
 	<div>Without this feature, you would get the smaller <code>canvas</code> scaled up, and the other layers would be misaligned.</div>
+	<div>Dynamic CSS rescaling is also enabled; the <kbd>ResizeObserver</kbd>callbacks triggered by the <kbd>width</kbd> transition updates only visible elements.
+		Without this feature, you would get unstyled content during the transition, before the trigger redraws.</div>
 	<div class="button-container">
 		<button class="button" :disabled="width !== 'wide'" @click="handleNarrow">Narrow</button>
 		<button class="button" :disabled="width === 'wide'" @click="handleWide">Wide</button>
@@ -38,7 +40,7 @@
 </template>
 <script>
 import { PdfComponent } from "../../components";
-import { ResizeConfiguration } from "../../components";
+import { ResizeConfiguration, ResizeDynamicConfiguration } from "../../components";
 
 export default {
 	name: "Demo1View",
@@ -46,6 +48,7 @@ export default {
 	methods: {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
+			this.resize = this.calcResize;
 		},
 		handleError(ev) {
 			console.error("handle.load-error", ev);
@@ -62,11 +65,11 @@ export default {
 			this.renderComplete = true;
 		},
 		handleResizeComplete(ev) {
-			console.log("handle.resize-complete", ev);
+			console.log("handle.resize-complete", this.command, ev);
 			this.renderComplete = true;
 		},
 		handleResizePages(ev) {
-			console.log("handle.resize", ev);
+			console.log("handle.resize", this.command, ev);
 		},
 		handleWide(ev) {
 			this.renderComplete = false;
@@ -79,11 +82,17 @@ export default {
 			this.width = "narrow";
 		},
 	},
+	computed: {
+		// IMPORTANT to use the correct element for scrolling!
+		// in this case we are using the viewport (NULL)
+		calcResize() { return this.dynamicRescale ? ResizeDynamicConfiguration.defaultConfiguration(null, "64px 0px 0px 64px") : ResizeConfiguration.defaultConfiguration(); },
+	},
 	data() {
 		return {
 			url: "/tracemonkey.pdf",
 			errorMessage: null,
 			width: "narrow",
+			dynamicRescale: true,
 			resize: ResizeConfiguration.defaultConfiguration(),
 			renderComplete: false,
 			command: null,
