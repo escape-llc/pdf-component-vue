@@ -6,7 +6,7 @@
 				:ref="el => { mountContainer(page, el); }"
 				:id="page.id"
 				:class="calculatePageClass(page)"
-				:style="{'grid-row': page.gridRow, 'grid-column': page.gridColumn}"
+				:style="{'grid-row': page.gridRow, 'grid-column': page.gridColumn, 'aspect-ratio': page.aspectRatioReactive }"
 				:data-state="page.stateReactive"
 				:aria-label="page.pageLabel"
 				@click="handlePageClick($event, page)"
@@ -18,7 +18,7 @@
 					<div :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)">&#8203;</div>
 				</template>
 				<template v-if="page.stateReactive === 2">
-					<!-- style is managed by PDFJS -->
+					<!-- style attribute is managed with PDFJS -->
 					<div v-if="textLayer" :ref="el => { mountTextLayer(page, el); }" class="textLayer" :class="textLayerClass" />
 					<div v-if="annotationLayer" :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" :class="annotationLayerClass" />
 				</template>
@@ -192,6 +192,8 @@ export default {
 		this.intersectTracker = null;
 		this.resizer = null;
 		this.resizeTracker = null;
+		this.resizeIntersect = null;
+		this.resizeTrackerActive = null;
 		// end
 		this.$watch(
 			() => this.source,
@@ -449,17 +451,16 @@ export default {
 			if(this.resizer) {
 				pages.forEach(px => this.resizer.observe(px.container));
 			}
+			if(this.resizeIntersect) {
+				pages.forEach(px => this.resizeIntersect.observe(px.container));
+			}
 		},
 		/**
 		 * Handle outgoing DOM elements.
 		 * @param {PageContext[]} pages list of PageContext.
 		 */
 		domDisconnect(pages) {
-			if(this.resizer) {
-				//pages.forEach(px => this.resizer.unobserve(px.container));
-				this.resizer.disconnect();
-				this.resizeTracker.reset();
-			}
+			this.disconnectResize();
 			if(this.intersect) {
 				//pages.forEach(px => this.intersect.unobserve(px.container));
 				this.intersect.disconnect();
@@ -493,8 +494,30 @@ export default {
 				this.intersectTracker = new scroll.ScrollTracker();
 			}
 		},
+		/**
+		 * Ensure the ResizeObserver and its optional IntersectionObserver are activated if requested.
+		 */
 		ensureResize() {
 			if(!this.resizer && this.resizeConfiguration instanceof resize.ResizeConfiguration) {
+				if(this.resizeConfiguration instanceof resize.ResizeDynamicConfiguration) {
+					this.resizeIntersect = new IntersectionObserver(entries => {
+						entries.forEach(ex => {
+							const target = this.pageContexts.find(px => px.container === ex.target);
+							if(target) {
+								if(ex.isIntersecting) {
+									this.resizeTrackerActive.add(target);
+								}
+								else {
+									this.resizeTrackerActive.delete(target);
+								}
+							}
+						});
+					},{
+						root: this.resizeConfiguration.root,
+						rootMargin: this.resizeConfiguration.rootMargin,
+						thresholds: [0, 0.25, 0.50, 0.75, 1.0]
+					});
+				}
 				this.resizer = new ResizeObserver(entries => {
 					entries.forEach(ex => {
 						const target = this.pageContexts.find(px => px.container === ex.target);
@@ -504,6 +527,18 @@ export default {
 							this.resizeTracker.track(target, dpsize);
 						}
 					});
+					if(this.resizeIntersect) {
+						requestAnimationFrame(() => {
+							for(let [key,value] of this.resizeTracker.active) {
+								if(this.resizeTrackerActive.has(key)) {
+									const delta = this.resizeTracker.delta(key);
+									if(delta !== null && Math.abs(delta.db) !== 0 || Math.abs(delta.di) !== 0) {
+										key.resizeSync(this.cache, value.inlineSize, value.blockSize);
+									}
+								}
+							}
+						});
+					}
 					this.resizeTracker.trackComplete(this.resizeConfiguration, async resize => {
 						// potential race due to setTimeout; SHOULD NOT filter any elements!
 						const available = resize.filter(rx => rx.target.container);
@@ -534,6 +569,21 @@ export default {
 					});
 				});
 				this.resizeTracker = new resize.ResizeTracker();
+				if(this.resizeIntersect) {
+					this.resizeTrackerActive = new Set();
+				}
+			}
+		},
+		disconnectResize() {
+			if(this.resizeIntersect) {
+				//pages.forEach(px => this.resizeIntersect.unobserve(px.container));
+				this.resizeIntersect.disconnect();
+				this.resizeTrackerActive = null;
+			}
+			if(this.resizer) {
+				//pages.forEach(px => this.resizer.unobserve(px.container));
+				this.resizer.disconnect();
+				this.resizeTracker.reset();
 			}
 		},
 		mountContainer(page, el) {
