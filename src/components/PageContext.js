@@ -1,5 +1,6 @@
 const COLD = 0, WARM = 1, HOT = 2;
 const WIDTH = 0, HEIGHT = 1, SCALE = 2;
+const CANVAS = 0, SVG = 1;
 
 import { ref } from "vue";
 
@@ -23,6 +24,7 @@ const canvasFactory = (width, height) => {
  * This class represents the current state of the page.
  */
 class PageContext {
+	renderMode = CANVAS
 	sizeMode = WIDTH
 	id
 	index
@@ -41,13 +43,15 @@ class PageContext {
 	didRender = false
 	/**
 	 * Ctor.
+	 * @param {Number} rm render mode CANVAS,SVG.
 	 * @param {Number} sm size mode WIDTH,HEIGHT.
 	 * @param {String} id page container ID.
 	 * @param {Number} index 0-relative index.
 	 * @param {Number} pageNumber 1-relative page number.
 	 * @param {String} pageLabel string version of page number, e.g. "iii".
 	 */
-	constructor(sm, id, index, pageNumber, pageLabel) {
+	constructor(rm, sm, id, index, pageNumber, pageLabel) {
+		this.renderMode = rm;
 		this.sizeMode = sm;
 		this.id = id;
 		this.index = index;
@@ -154,6 +158,13 @@ class PageContext {
 		layer.setAttribute("data-main-rotation", div.getAttribute("data-main-rotation"));
 		layer.replaceChildren(...div.children);
 	}
+	renderSvgLayer(layer, svg) {
+		for(let attr of svg.attributes) {
+			layer.setAttribute(attr.name, attr.value);
+		}
+		layer.setAttribute("data-main-rotation", svg.getAttribute("data-main-rotation"));
+		layer.replaceChildren(...svg.children);
+	}
 	/**
 	 * Perform all the arithmetic for rendering.
 	 * @param {PageCache} cache use for page operations.
@@ -187,11 +198,24 @@ class PageContext {
 			this.scaleFactor = scale;
 			this.aspectRatio = aspectRatio;
 			const local = this.canvas;
-			if(local && (this.state === WARM || local.width !== vw || local.height !== vh)) {
-				// MUST do this early so it appears before the drawing starts
-				// modifying dimensions clears the contents
-				local.width = vw;
-				local.height = vh;
+			// TODO canvas only?
+			if(this.renderMode === CANVAS) {
+				if(local && (this.state === WARM || local.width !== vw || local.height !== vh)) {
+					// MUST do this early so it appears (correctly sized) before the drawing starts
+					// modifying dimensions clears the contents
+					local.width = vw;
+					local.height = vh;
+				}
+			}
+			else if(this.renderMode === SVG) {
+				if(local) {
+					// MUST do this early so it appears (correctly sized) before the drawing starts
+					local.setAttribute("width", `${vw}px`);
+					local.setAttribute("height", `${vh}px`);
+				}
+			}
+			else {
+				console.error(`render: page ${this.pageNumber}: unknown renderMode`, this.renderMode);
 			}
 			return Promise.resolve(viewport);
 		});
@@ -201,15 +225,30 @@ class PageContext {
 		});
 		if(this.state === HOT) {
 			if(this.canvas) {
-				actions.push(async () => {
-					const local = canvasFactory(vwr, vhr);
-					await cache.renderCanvas(this.pageNumber, viewport2, local, ratio);
-					return local;
-				});
-				animate.push(results => {
-					if(!this.canvas) return;
-					this.renderLocal(this.canvas, results[1], vwr, vhr);
-				});
+				if(this.renderMode === CANVAS) {
+					actions.push(async () => {
+						const local = canvasFactory(vwr, vhr);
+						await cache.renderCanvas(this.pageNumber, viewport2, local, ratio);
+						return local;
+					});
+					animate.push(results => {
+						if(!this.canvas) return;
+						this.renderLocal(this.canvas, results[1], vwr, vhr);
+					});
+				}
+				else if(this.renderMode === SVG) {
+					actions.push(async () => {
+						const svg = await cache.renderSvg(this.pageNumber);
+						return svg;
+					});
+					animate.push(results => {
+						if(!this.canvas) return;
+						this.renderSvgLayer(this.canvas, results[1]);
+					});
+				}
+				else {
+					console.error(`render: page ${this.pageNumber}: unknown renderMode`, this.renderMode);
+				}
 			}
 			else {
 				actions.push(() => Promise.resolve(null));
@@ -288,18 +327,26 @@ class PageContext {
 			this.setContainerProperties(this.container, scale, vw, vh, width, height);
 		});
 		if(this.state === HOT) {
-			if(this.canvas && draw === true) {
-				actions.push(async () => {
-					const local = canvasFactory(vwr, vhr);
-					await cache.renderCanvas(this.pageNumber, viewport2, local, ratio);
-					return local;
-				});
-				if(this.canvas) {
-					animate.push(results => {
-						if(!this.canvas) return;
-						this.renderLocal(this.canvas, results[1], vwr, vhr);
+			if(this.renderMode === CANVAS) {
+				if(this.canvas && draw === true) {
+					actions.push(async () => {
+						const local = canvasFactory(vwr, vhr);
+						await cache.renderCanvas(this.pageNumber, viewport2, local, ratio);
+						return local;
 					});
+					if(this.canvas) {
+						animate.push(results => {
+							if(!this.canvas) return;
+							this.renderLocal(this.canvas, results[1], vwr, vhr);
+						});
+					}
 				}
+			}
+			else if(this.renderMode === SVG) {
+				// SVG is scale-invariant no redraws ever!
+			}
+			else {
+				console.error(`resize: page ${this.pageNumber}: unknown renderMode`, this.renderMode);
 			}
 		}
 		const results = await this.pipeline(actions, animate);
@@ -355,15 +402,16 @@ class PageContext {
 }
 /**
  * Populate the given array with "empty" pages in COLD zone.
+ * @param {Number} renderMode the render mode.
  * @param {Number} sizeMode the size mode.
  * @param {String} id bsae element id.
  * @param {Number} numPages number of pages to generate.
  * @param {Array} list output array.
  */
-const materializePages = (sizeMode, id, numPages, list) => {
+const materializePages = (renderMode, sizeMode, id, numPages, list) => {
 	for(let ix = 0; ix < numPages; ix++) {
 		const page = ix + 1;
-		list.push(new PageContext(sizeMode, `${id}-page-${page}`, ix, page, page.toString()));
+		list.push(new PageContext(renderMode, sizeMode, `${id}-page-${page}`, ix, page, page.toString()));
 	}
 }
 /**
@@ -388,6 +436,7 @@ const pageZone = (pageIndex, currentPageIndex, pageCount, hotzone, warmzone) => 
 export {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT, SCALE,
+	CANVAS, SVG,
 	PageContext,
 	materializePages, pageZone
 }
