@@ -1,6 +1,6 @@
 {
 	"name": "pdf-component-vue",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"private": false,
 	"license": "Apache-2.0",
 	"description": "PDF Rendering component for Vue 3 applications",
@@ -51,12 +51,12 @@
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.40.1",
-		"@types/node": "^20.10.4",
+		"@types/node": "^20.10.5",
 		"@vitejs/plugin-vue": "^4.5.2",
-		"@vitest/coverage-v8": "^1.0.4",
+		"@vitest/coverage-v8": "^1.1.0",
 		"@vue/test-utils": "^2.4.3",
 		"jsdom": "^22.1.0",
 		"vite": "^4.5.1",
-		"vitest": "^1.0.4"
+		"vitest": "^1.1.0"
 	}
 }
