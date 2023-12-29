@@ -90,7 +90,14 @@ vi.mock('pdfjs-dist/build/pdf.min.js', () => ({
 				getViewport: () => ({
 					width: PAGE_WIDTH,
 					height: PAGE_HEIGHT,
-					scale: 1
+					scale: 1,
+					clone(options) {
+						return {
+							width: PAGE_WIDTH,
+							height: PAGE_HEIGHT,
+							scale: 1,
+						};
+					},
 				}),
 				streamTextContent: (options) => ({}),
 				getAnnotations: () => Promise.resolve([]),

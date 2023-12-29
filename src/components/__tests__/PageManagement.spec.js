@@ -31,7 +31,7 @@ describe("PageManagement_UpdateZones", () => {
 		const warm = undefined;
 		const current = 0;
 		const list = [];
-		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
+		pc.materializePages(pc.CANVAS, pc.WIDTH, "pdf", pagecount, list);
 		const state = new pm.PageManagement_UpdateZones(current, hot, warm);
 		const output = state.execute(list);
 		expect(output.length).toBe(pagecount);
@@ -52,7 +52,7 @@ describe("PageManagement_UpdateZones", () => {
 		const current = 0;
 		const tilect = undefined;
 		const list = [];
-		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
+		pc.materializePages(pc.CANVAS, pc.WIDTH, "pdf", pagecount, list);
 		const state = new pm.PageManagement_UpdateZones(current, hot, warm);
 		const output = state.execute(list);
 		expect(output.length).toBe(pagecount);
@@ -75,7 +75,7 @@ describe("PageManagement_UpdateZones", () => {
 		const current = 0;
 		const tilect = 4;
 		const list = [];
-		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
+		pc.materializePages(pc.CANVAS, pc.WIDTH, "pdf", pagecount, list);
 		expect(list.length).toBe(pagecount);
 		const state = new pm.PageManagement_UpdateZones(current, hot, warm);
 		const output = state.execute(list);
@@ -110,7 +110,7 @@ describe("PageManagement_UpdateRange", () => {
 		const start = 0;
 		const stop = 7;
 		const list = [];
-		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
+		pc.materializePages(pc.CANVAS, pc.WIDTH, "pdf", pagecount, list);
 		const state = new pm.PageManagement_UpdateRange(start, stop);
 		expect(state.tileStart).toBe(0);
 		const output = state.execute(list);
@@ -130,7 +130,7 @@ describe("PageManagement_UpdateRange", () => {
 		const start = 0;
 		const stop = 7;
 		const list = [];
-		pc.materializePages(pc.WIDTH, "pdf", pagecount, list);
+		pc.materializePages(pc.CANVAS, pc.WIDTH, "pdf", pagecount, list);
 		const state = new pm.PageManagement_UpdateRange(start, stop);
 		const output = state.execute(list);
 		expect(output.length).toBe(pagecount);

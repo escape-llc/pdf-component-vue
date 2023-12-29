@@ -100,7 +100,7 @@ describe("pageZone", () => {
 })
 describe('PageContext', () => {
 	it('initial state', () => {
-		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		const page = new pc.PageContext(pc.CANVAS, pc.WIDTH, "page-1", 0, 1, "1");
 		expect(page.id).toBe("page-1");
 		expect(page.index).toBe(0);
 		expect(page.pageNumber).toBe(1);
@@ -109,7 +109,7 @@ describe('PageContext', () => {
 		expect(page.is(pc.COLD)).toBe(true);
 	});
 	it("zones", () => {
-		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		const page = new pc.PageContext(pc.CANVAS, pc.WIDTH, "page-1", 0, 1, "1");
 		page.hot(0);
 		expect(page.state).toBe(pc.HOT);
 		expect(page.is(pc.HOT)).toBe(true);
@@ -131,13 +131,13 @@ describe('PageContext', () => {
 		expect(page.rotation).toBe(undefined);
 	});
 	it("grid", () => {
-		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		const page = new pc.PageContext(pc.CANVAS, pc.WIDTH, "page-1", 0, 1, "1");
 		page.grid(1,1);
 		expect(page.gridRow).toBe(1);
 		expect(page.gridColumn).toBe(1);
 	});
 	it("mount*", () => {
-		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		const page = new pc.PageContext(pc.CANVAS, pc.WIDTH, "page-1", 0, 1, "1");
 		const el = {};
 		expect(page.container).toBe(null);
 		expect(page.canvas).toBe(null);
@@ -161,7 +161,7 @@ describe('PageContext', () => {
 	 * promises and requestAnimationFrame().
 	 */
 	it("render", async () => {
-		const page = new pc.PageContext(pc.WIDTH, "page-1", 0, 1, "1");
+		const page = new pc.PageContext(pc.CANVAS, pc.WIDTH, "page-1", 0, 1, "1");
 		const viewport = {
 			scale: 1,
 			width: 780,
@@ -285,7 +285,7 @@ describe('PageContext', () => {
 	});
 	it("materialize pages", () => {
 		const list = [];
-		pc.materializePages(pc.WIDTH, "pdf", 5, list);
+		pc.materializePages(pc.CANVAS, pc.WIDTH, "pdf", 5, list);
 		expect(list.length).toBe(5);
 		function verify(lx, ix) {
 			expect(lx.id).toBe(`pdf-page-${lx.pageNumber}`);
