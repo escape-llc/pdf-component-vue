@@ -12,7 +12,8 @@
 				@click="handlePageClick($event, page)"
 			>
 				<template v-if="page.stateReactive === 2">
-					<canvas :ref="el => { mountCanvas(page, el); }" :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)" />
+					<canvas v-if="renderMode === 0" :ref="el => { mountCanvas(page, el); }" :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)" />
+					<svg v-else-if="renderMode === 1" :ref="el => { mountCanvas(page, el); }" :class="canvasClass" style="background-color: white; width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)"></svg>
 				</template>
 				<template v-else>
 					<div :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)">&#8203;</div>
@@ -35,6 +36,7 @@ import { normalizeClass } from "vue";
 import {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT,
+	CANVAS, SVG,
 	materializePages,
 } from "./PageContext.js";
 import { DocumentHandler_pdfjs } from "./DocumentHandler.js";
@@ -63,6 +65,16 @@ export default {
 	expose: [],
 	props: {
 		id: String,
+		renderMode: {
+			type: Number,
+			default: CANVAS,
+			validator(value) {
+				if (value !== CANVAS && value !== SVG) {
+					throw new Error("renderMode must be 0 (CANVAS) or 1 (SVG)");
+				}
+				return true;
+			},
+		},
 		sizeMode: {
 			type: Number,
 			default: WIDTH,
@@ -102,7 +114,15 @@ export default {
 		 * Desired ratio of canvas size to document size.
 		 * @values Number
 		 */
-		scale: Number,
+		scale: {
+			type: Number,
+			default: undefined,
+			validator(value) {
+				if(value === undefined) return true;
+				if(value < 0) throw new Error("Scale must be GT 0 or undefined");
+				return true;
+			}
+		},
 		/**
 		 * Document-level rotation.
 		 * Each page MAY be rotated independently; it is combined with this value.
@@ -296,7 +316,7 @@ export default {
 				}
 				this.pageCount = document.numPages;
 				this.pageContexts = [];
-				materializePages(this.sizeMode, this.id, this.pageCount, this.pageContexts);
+				materializePages(this.renderMode, this.sizeMode, this.id, this.pageCount, this.pageContexts);
 				if(this.usePageLabels && this.handler) {
 					const labels = await this.handler.pageLabels();
 					if(labels) {
@@ -322,8 +342,22 @@ export default {
 					await this.transition(tiles);
 					const pages = this.updateState(tiles);
 					await this.domUpdate();
-					await Promise.all(pages.map(async px => { await px.render(this.cache); }));
-					this.$emit("rendered", pages.map(px => px.infoFor(undefined)));
+					const errors = [];
+					await Promise.all(pages.map(async px => {
+						try {
+							await px.render(this.cache);
+						}
+						catch(ee) {
+							errors.push({ page: px, ee });
+						}
+					}));
+					//errors.length && console.error("load.render.errors", errors);
+					this.$emit("rendered", pages.map(px => {
+						const obx = px.infoFor(undefined);
+						const target = errors.find(ex => ex.page === px);
+						obx.error = target ? target.ee : undefined;
+						return obx;
+					}));
 				}
 				catch(ee) {
 					this.$emit("render-failed", ee);
@@ -419,11 +453,25 @@ export default {
 					const pages = this.updateState(tiles);
 					await this.domUpdate();
 				}
-				await Promise.all(tiles.map(async tx => { await tx.page.render(this.cache); }));
-				this.$emit("rendered", tiles.map(tx => tx.page.infoFor(undefined)));
+				const errors = [];
+				await Promise.all(tiles.map(async px => {
+					try {
+						await px.page.render(this.cache);
+					}
+					catch(ee) {
+						errors.push({ page: px.page, ee });
+					}
+				}));
+				//errors.length && console.error("render.errors", errors);
+				this.$emit("rendered", tiles.map(px => {
+					const obx = px.page.infoFor(undefined);
+					const target = errors.find(ex => ex.page === px.page);
+					obx.error = target ? target.ee : undefined;
+					return obx;
+				}));
 			}
-			catch (e) {
-				this.$emit("render-failed", e);
+			catch (ee) {
+				this.$emit("render-failed", ee);
 			}
 			finally {
 				this.rendering = false;
