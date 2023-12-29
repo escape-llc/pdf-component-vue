@@ -14,8 +14,9 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 			<RouterLink to="/demo3">Page Management</RouterLink>
 			<RouterLink to="/demo4">Faux Viewer</RouterLink>
 			<RouterLink to="/demo5">Resize</RouterLink>
+			<RouterLink to="/demosvg">SVG</RouterLink>
 			<!--
-			<RouterLink to="/demo6">Composition</RouterLink>
+			<RouterLink to="/democomposition">Composition</RouterLink>
 			-->
 		</nav>
 		<div style="margin-left:1rem">
@@ -40,6 +41,8 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 }
 header {
 	position: fixed;
+	z-index: 500;
+	background-color: silver;
 	top: 0;
 	left: 2px;
 	display:flex;
