@@ -46,6 +46,8 @@ import * as page from "./PageManagement";
 import * as scroll from "./ScrollConfiguration";
 import * as resize from "./ResizeConfiguration";
 import * as cmd from "./Commands";
+import { ResizePlugin } from "./ResizePlugin";
+import { ScrollPlugin } from "./ScrollPlugin";
 import "../pdf-component-vue.css";
 
 GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.js", import.meta.url);
@@ -205,15 +207,10 @@ export default {
 	},
 	created() {
 		// cannot be wrapped!
+		this.pluginList = [new ScrollPlugin(), new ResizePlugin()];
 		this.pageContexts = [];
 		this.handler = new DocumentHandler_pdfjs(this.$emit);
 		this.cache = null;
-		this.intersect = null;
-		this.intersectTracker = null;
-		this.resizer = null;
-		this.resizeTracker = null;
-		this.resizeIntersect = null;
-		this.resizeTrackerActive = null;
 		// end
 		this.$watch(
 			() => this.source,
@@ -263,20 +260,13 @@ export default {
 		cleanup() {
 			this.handler?.destroy();
 			this.handler = null;
-			this.cleanDocument();
+			this.cleanDocument("cleanup");
 		},
 		/**
 		 * Reset the state associated with a new document loading.
 		 */
-		cleanDocument() {
-			this.intersect?.disconnect();
-			this.intersect = null;
-			this.intersectTracker?.reset();
-			this.intersectTracker = null;
-			this.resizer?.disconnect();
-			this.resizer = null;
-			this.resizeTracker?.reset();
-			this.resizeTracker = null;
+		cleanDocument(event) {
+			this.pluginList.forEach(pi => { pi.stop({ event }); });
 		},
 		/**
 		 * Manage command execute and emit status.
@@ -308,7 +298,7 @@ export default {
 			}
 			this.rendering = true;
 			try {
-				this.cleanDocument();
+				this.cleanDocument("loaded");
 				const document = await this.handler.load(source);
 				this.cache = new PageCache(this.linkService, this.imageResourcesPath);
 				if(document.numPages <= 0) {
@@ -328,6 +318,15 @@ export default {
 						}
 					}
 				}
+				this.pluginList.forEach(pi => {
+					pi.start({
+						event: "loaded",
+						pageContexts: this.pageContexts,
+						$emit: this.$emit,
+						scrollConfiguration: this.scrollConfiguration,
+						resizeConfiguration: this.resizeConfiguration,
+					});
+				});
 				this.$emit("loaded", document);
 				try {
 					// load start page to get some info for placeholder tiles
@@ -367,6 +366,16 @@ export default {
 				this.pageCount = null;
 				this.pages = [];
 				this.pageContexts = [];
+				this.pluginList.forEach(pi => {
+					pi.stop({
+						event: "load-failed",
+						error: e,
+						pageContexts: this.pageContexts,
+						$emit: this.$emit,
+						scrollConfiguration: this.scrollConfiguration,
+						resizeConfiguration: this.resizeConfiguration,
+					});
+				});
 				this.$emit("load-failed", e);
 			}
 			finally {
@@ -491,148 +500,32 @@ export default {
 		 * @param {PageContext[]} pages list of PageContext.
 		 */
 		 domConnect(pages) {
-			this.ensureIntersection();
-			if(this.intersect) {
-				pages.forEach(px => this.intersect.observe(px.container));
-			}
-			this.ensureResize();
-			if(this.resizer) {
-				pages.forEach(px => this.resizer.observe(px.container));
-			}
-			if(this.resizeIntersect) {
-				pages.forEach(px => this.resizeIntersect.observe(px.container));
-			}
+			this.pluginList.forEach(pi => {
+				pi.connect({
+					pages,
+					pageContexts: this.pageContexts,
+					cache: this.cache,
+					$emit: this.$emit,
+					scrollConfiguration: this.scrollConfiguration,
+					resizeConfiguration: this.resizeConfiguration,
+				});
+			});
 		},
 		/**
 		 * Handle outgoing DOM elements.
 		 * @param {PageContext[]} pages list of PageContext.
 		 */
 		domDisconnect(pages) {
-			this.disconnectResize();
-			if(this.intersect) {
-				//pages.forEach(px => this.intersect.unobserve(px.container));
-				this.intersect.disconnect();
-				this.intersectTracker.reset();
-			}
-		},
-		/**
-		 * Ensure the IntersectionObserver is activated if requested.
-		 */
-		ensureIntersection() {
-			if(!this.intersect && this.scrollConfiguration instanceof scroll.ScrollConfiguration) {
-				this.intersect = new IntersectionObserver(entries => {
-					entries.forEach(ex => {
-						const target = this.pageContexts.find(px => px.container === ex.target);
-						if(target) {
-							this.intersectTracker.track(target, ex);
-						}
-					});
-					this.intersectTracker.trackComplete(this.scrollConfiguration, isect => {
-						// potential race due to setTimeout; SHOULD NOT filter any elements!
-						const available = isect.filter(ix => ix.container);
-						if(available.length) {
-							this.$emit("visible-pages", available.map(ix => ix.infoFor(undefined)));
-						}
-					});
-				}, {
-					root: this.scrollConfiguration.root,
-					rootMargin: this.scrollConfiguration.rootMargin,
-					thresholds: [0, 0.25, 0.50, 0.75, 1.0]
+			this.pluginList.forEach(pi => {
+				pi.disconnect({
+					pages,
+					pageContexts: this.pageContexts,
+					cache: this.cache,
+					$emit: this.$emit,
+					scrollConfiguration: this.scrollConfiguration,
+					resizeConfiguration: this.resizeConfiguration,
 				});
-				this.intersectTracker = new scroll.ScrollTracker();
-			}
-		},
-		/**
-		 * Ensure the ResizeObserver and its optional IntersectionObserver are activated if requested.
-		 */
-		ensureResize() {
-			if(!this.resizer && this.resizeConfiguration instanceof resize.ResizeConfiguration) {
-				if(this.resizeConfiguration instanceof resize.ResizeDynamicConfiguration) {
-					this.resizeIntersect = new IntersectionObserver(entries => {
-						entries.forEach(ex => {
-							const target = this.pageContexts.find(px => px.container === ex.target);
-							if(target) {
-								if(ex.isIntersecting) {
-									this.resizeTrackerActive.add(target);
-								}
-								else {
-									this.resizeTrackerActive.delete(target);
-								}
-							}
-						});
-					},{
-						root: this.resizeConfiguration.root,
-						rootMargin: this.resizeConfiguration.rootMargin,
-						thresholds: [0, 0.25, 0.50, 0.75, 1.0]
-					});
-				}
-				this.resizer = new ResizeObserver(entries => {
-					entries.forEach(ex => {
-						const target = this.pageContexts.find(px => px.container === ex.target);
-						if(target) {
-							// track by devicePixelContentBoxSize or contentBoxSize(webkit)
-							const dpsize = "devicePixelContentBoxSize" in ex ? ex.devicePixelContentBoxSize[0] : ex.contentBoxSize[0];
-							this.resizeTracker.track(target, dpsize);
-						}
-					});
-					if(this.resizeIntersect) {
-						requestAnimationFrame(() => {
-							for(let [key,value] of this.resizeTracker.active) {
-								if(this.resizeTrackerActive.has(key)) {
-									const delta = this.resizeTracker.delta(key);
-									if(delta !== null && Math.abs(delta.db) !== 0 || Math.abs(delta.di) !== 0) {
-										key.resizeSync(this.cache, value.inlineSize, value.blockSize);
-									}
-								}
-							}
-						});
-					}
-					this.resizeTracker.trackComplete(this.resizeConfiguration, async resize => {
-						// potential race due to setTimeout; SHOULD NOT filter any elements!
-						const available = resize.filter(rx => rx.target.container);
-						if(available.length) {
-							// prepare "safe" data for $emit
-							const emit = available.map(rx => {
-								return { page: rx.target.infoFor(undefined), di: rx.di, db: rx.db, upsize: rx.upsize, redrawCanvas: rx.upsize };
-							});
-							// component owner has opportunity to alter the redrawCanvas flags
-							this.$emit("resize-pages", emit);
-							await Promise.all(available.map(async rx => {
-								// redraw according redrawCanvas flag
-								const redraw = emit.find(ex => ex.page.id === rx.target.id);
-								await rx.target.resize(this.cache, redraw ? redraw.redrawCanvas : rx.upsize);
-							}));
-							// recalc with new scale
-							const emit2 = available.map(rx => {
-								const match = emit.find(ex => ex.page.id === rx.target.id);
-								return {
-									page: rx.target.infoFor(undefined),
-									di: rx.di, db: rx.db,
-									upsize: match ? match.upsize : rx.upsize,
-									redrawCanvas: match ? match.redrawCanvas : rx.redrawCanvas
-								};
-							});
-							this.$emit("resize-complete", emit2);
-						}
-					});
-				});
-				this.resizeTracker = new resize.ResizeTracker();
-				if(this.resizeIntersect) {
-					this.resizeTrackerActive = new Set();
-				}
-			}
-		},
-		disconnectResize() {
-			if(this.resizeIntersect) {
-				//pages.forEach(px => this.resizeIntersect.unobserve(px.container));
-				this.resizeIntersect.disconnect();
-				this.resizeTrackerActive = null;
-			}
-			if(this.resizer) {
-				//pages.forEach(px => this.resizer.unobserve(px.container));
-				this.resizer.disconnect();
-				this.resizeTracker.reset();
-			}
+			});
 		},
 		mountContainer(page, el) {
 			page.mountContainer(el);
