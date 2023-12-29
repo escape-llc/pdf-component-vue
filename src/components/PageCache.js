@@ -1,4 +1,4 @@
-import { renderTextLayer, AnnotationLayer } from "pdfjs-dist/build/pdf.min.js";
+import { renderTextLayer, AnnotationLayer, SVGGraphics } from "pdfjs-dist/build/pdf.min.js";
 import { WIDTH, HEIGHT, SCALE } from "./PageContext";
 
 /**
@@ -47,7 +47,7 @@ class PageCache {
 	/**
 	 * Query the cache for the existence given page number.
 	 * @param {Number} pageNumber 1-relative page number.
-	 * @returns true: present; false: not present.
+	 * @returns {Boolean} true: present; false: not present.
 	 */
 	has(pageNumber) {
 		return this._map.has(pageNumber);
@@ -111,6 +111,13 @@ class PageCache {
 		const vp = entry.page.getViewport({ scale: vscale, rotation });
 		return vp;
 	}
+	/**
+	 * Render page on given canvas viewport and ratio.
+	 * @param {Number} pageNumber 1-relative page number.
+	 * @param {pdf.Viewport} viewport target viewport.
+	 * @param {HTMLCanvasElement|OffscreenCanvas} canvas target canvas.
+	 * @param {Number} ratio device pixel ratio.  applied as additional "transform" on render.
+	 */
 	async renderCanvas(pageNumber, viewport, canvas, ratio) {
 		if(!this._map.has(pageNumber)) throw new Error(`renderCanvas: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
@@ -120,6 +127,24 @@ class PageCache {
 			viewport,
 			transform
 		}).promise
+	}
+	/**
+	 * Render page to SVG and return the created element.
+	 * @param {Number} pageNumber 1-relative page number.
+	 * @returns {SVGElement} composed page.
+	 */
+	async renderSvg(pageNumber) {
+		if(!this._map.has(pageNumber)) throw new Error(`renderSvg: page ${pageNumber} not in cache`);
+		const entry = this._map.get(pageNumber);
+		const operatorList = await entry.page.getOperatorList();
+		const viewport = entry.page.getViewport({
+			scale: 1,
+		});
+		const svg = await new SVGGraphics(
+			entry.page.commonObjs,
+			entry.page.objs
+		).getSVG(operatorList, viewport);
+		return svg;
 	}
 	async renderTextLayer(pageNumber, viewport, el) {
 		if(!this._map.has(pageNumber)) throw new Error(`renderTextLayer: page ${pageNumber} not in cache`);
@@ -143,9 +168,9 @@ class PageCache {
 			linkService: this._linkService,
 			page: entry.page,
 			renderInteractiveForms: false,
-			viewport: viewport/*.clone({
+			viewport: viewport.clone({
 				dontFlip: true,
-			})*/,
+			}),
 			imageResourcesPath: this._imageResourcesPath,
 		};
 		const anno = new AnnotationLayer(options);
