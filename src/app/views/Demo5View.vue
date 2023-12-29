@@ -1,15 +1,17 @@
 <template>
-	<h1>Resize</h1>
-	<template v-if="renderComplete">
-		<div v-if="command === 'narrow'" id="demo5-complete-narrow" class="render-complete">Render Complete Narrow</div>
-		<div v-else-if="command === 'wide'" id="demo5-complete-wide" class="render-complete">Render Complete Wide</div>
-		<div v-else class="render-complete" id="demo5-complete-loaded">Render Complete Loaded</div>
-	</template>
-	<div>Use the buttons to resize.  The first time <b>wide</b> is clicked, the <code>canvas</code> re-renders at the new size, so it appears sharp.
-		The text and annotation layers are also rescaled.  You can verify this by selecting some text in narrow then resizing to wide.</div>
-	<div>Without this feature, you would get the smaller <code>canvas</code> scaled up, and the other layers would be misaligned.</div>
-	<div>Dynamic CSS rescaling is also enabled; the <kbd>ResizeObserver</kbd>callbacks triggered by the <kbd>width</kbd> transition updates only visible elements.
-		Without this feature, you would get unstyled content during the transition, before the trigger redraws.</div>
+	<div style="margin-left:5rem;margin-right:5rem;">
+		<h1>Resize</h1>
+		<template v-if="renderComplete">
+			<div v-if="command === 'narrow'" id="demo5-complete-narrow" class="render-complete">Render Complete Narrow</div>
+			<div v-else-if="command === 'wide'" id="demo5-complete-wide" class="render-complete">Render Complete Wide</div>
+			<div v-else class="render-complete" id="demo5-complete-loaded">Render Complete Loaded</div>
+		</template>
+		<div>Use the buttons to resize.  The first time <b>wide</b> is clicked, the <code>canvas</code> re-renders at the new size, so it appears sharp.
+			The text and annotation layers are also rescaled.  You can verify this by selecting some text in narrow then resizing to wide.</div>
+		<div>Without this feature, you would get the smaller <code>canvas</code> scaled up, and the other layers would be misaligned.</div>
+		<div>Dynamic CSS rescaling is also enabled; the <kbd>ResizeObserver</kbd>callbacks triggered by the <kbd>width</kbd> transition updates only visible elements.
+			Without this feature, you would get unstyled content during the transition, before the trigger redraws.</div>
+	</div>
 	<div class="button-container">
 		<button class="button" :disabled="width !== 'wide'" @click="handleNarrow">Narrow</button>
 		<button class="button" :disabled="width === 'wide'" @click="handleWide">Wide</button>
