@@ -5,6 +5,7 @@ class Command {
 	/**
 	 * Execute the command.
 	 * MAY return a promise.
+	 * @abstract
 	 * @param {CommandExecuteContext} ctx command context.
 	 */
 	async execute(ctx) {
@@ -28,10 +29,20 @@ class CommandExecuteContext {
 	}
 	get document() { return this.#handler.document; }
 	get pageCount() { return this.#handler.document.numPages; }
+	/**
+	 * Return the page container DOM element.
+	 * @param {Number} pageNumber 1-relative page number.
+	 * @returns {pdfjs.PDFPageProxy|undefined} the element.
+	 */
 	async page(pageNumber) {
 		const page = await this.#handler.page(pageNumber);
 		return page;
 	}
+	/**
+	 * Return the page info.
+	 * @param {Number} pageNumber 1-relative page number.
+	 * @returns page info or undefined.
+	 */
 	info(pageNumber) {
 		const page = this.#pages.find(px => px.pageNumber === pageNumber);
 		if(page) {
@@ -39,6 +50,11 @@ class CommandExecuteContext {
 		}
 		return undefined;
 	}
+	/**
+	 * Return the page container DOM element.
+	 * @param {Number} pageNumber 1-relative page number.
+	 * @returns {HTMLDivElement|undefined} the element.
+	 */
 	container(pageNumber) {
 		const page = this.#pages.find(px => px.pageNumber === pageNumber);
 		if (page) {
@@ -117,7 +133,7 @@ class PrintDocument extends Command {
 	pageSequence
 	dpi
 	/**
-	 * 
+	 * ctor.
 	 * @param {Number[]|undefined} pageSequence list of page numbers or undefined for all pages.
 	 * @param {Number} dpi DPI to print at; default is 300.
 	 */
