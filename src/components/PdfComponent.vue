@@ -263,10 +263,25 @@ export default {
 			this.cleanDocument("cleanup");
 		},
 		/**
+		 * Invoke the Plugin callbacks with error control so one Plugin cannot "crash" the dispatch loop.
+		 * @param {String} tag use for error message.
+		 * @param {Function} picallback Plugin callback; not NULL.
+		 */
+		pluginInvoke(tag, picallback) {
+			this.pluginList.forEach(pi => {
+				try {
+					picallback(pi);
+				}
+				catch(ee) {
+					console.error(`${tag}: plugin failed`, ee, pi);
+				}
+			});
+		},
+		/**
 		 * Reset the state associated with a new document loading.
 		 */
 		cleanDocument(event) {
-			this.pluginList.forEach(pi => { pi.stop({ event }); });
+			this.pluginInvoke("stop", pi => pi.stop({ event }));
 		},
 		/**
 		 * Manage command execute and emit status.
@@ -318,15 +333,14 @@ export default {
 						}
 					}
 				}
-				this.pluginList.forEach(pi => {
-					pi.start({
-						event: "loaded",
-						pageContexts: this.pageContexts,
-						$emit: this.$emit,
-						scrollConfiguration: this.scrollConfiguration,
-						resizeConfiguration: this.resizeConfiguration,
-					});
-				});
+				const pictx = {
+					event: "loaded",
+					pageContexts: this.pageContexts,
+					$emit: this.$emit,
+					scrollConfiguration: this.scrollConfiguration,
+					resizeConfiguration: this.resizeConfiguration,
+				};
+				this.pluginInvoke("start", pi => { pi.start(pictx); });
 				this.$emit("loaded", document);
 				try {
 					// load start page to get some info for placeholder tiles
@@ -366,16 +380,15 @@ export default {
 				this.pageCount = null;
 				this.pages = [];
 				this.pageContexts = [];
-				this.pluginList.forEach(pi => {
-					pi.stop({
-						event: "load-failed",
-						error: e,
-						pageContexts: this.pageContexts,
-						$emit: this.$emit,
-						scrollConfiguration: this.scrollConfiguration,
-						resizeConfiguration: this.resizeConfiguration,
-					});
-				});
+				const pictx = {
+					event: "load-failed",
+					error: e,
+					pageContexts: this.pageContexts,
+					$emit: this.$emit,
+					scrollConfiguration: this.scrollConfiguration,
+					resizeConfiguration: this.resizeConfiguration,
+				};
+				this.pluginInvoke("stop", pi => { pi.stop(pictx); });
 				this.$emit("load-failed", e);
 			}
 			finally {
@@ -500,32 +513,30 @@ export default {
 		 * @param {PageContext[]} pages list of PageContext.
 		 */
 		 domConnect(pages) {
-			this.pluginList.forEach(pi => {
-				pi.connect({
-					pages,
-					pageContexts: this.pageContexts,
-					cache: this.cache,
-					$emit: this.$emit,
-					scrollConfiguration: this.scrollConfiguration,
-					resizeConfiguration: this.resizeConfiguration,
-				});
-			});
+			const pictx = {
+				pages,
+				pageContexts: this.pageContexts,
+				cache: this.cache,
+				$emit: this.$emit,
+				scrollConfiguration: this.scrollConfiguration,
+				resizeConfiguration: this.resizeConfiguration,
+			};
+			this.pluginInvoke("connect", pi => { pi.connect(pictx); });
 		},
 		/**
 		 * Handle outgoing DOM elements.
 		 * @param {PageContext[]} pages list of PageContext.
 		 */
 		domDisconnect(pages) {
-			this.pluginList.forEach(pi => {
-				pi.disconnect({
-					pages,
-					pageContexts: this.pageContexts,
-					cache: this.cache,
-					$emit: this.$emit,
-					scrollConfiguration: this.scrollConfiguration,
-					resizeConfiguration: this.resizeConfiguration,
-				});
-			});
+			const pictx = {
+				pages,
+				pageContexts: this.pageContexts,
+				cache: this.cache,
+				$emit: this.$emit,
+				scrollConfiguration: this.scrollConfiguration,
+				resizeConfiguration: this.resizeConfiguration,
+			};
+			this.pluginInvoke("disconnect", pi => { pi.disconnect(pictx); });
 		},
 		mountContainer(page, el) {
 			page.mountContainer(el);
