@@ -158,6 +158,11 @@ class PageContext {
 		layer.setAttribute("data-main-rotation", div.getAttribute("data-main-rotation"));
 		layer.replaceChildren(...div.children);
 	}
+	/**
+	 * Transfer "work" from the pdfjs element to the template element.
+	 * @param {SVGElement} layer Template element.
+	 * @param {SVGElement} svg Source element.
+	 */
 	renderSvgLayer(layer, svg) {
 		for(let attr of svg.attributes) {
 			layer.setAttribute(attr.name, attr.value);
@@ -380,25 +385,25 @@ class PageContext {
 		this.state = WARM;
 		this.didRender = false;
 	}
-		/**
-		 * Create a disconnected wrapper object for the page that is "safe" for external callers.
-		 * @param {Event} ev original event, if any.
-		 * @returns {any} untyped info { id, index, state, pageNumber, gridRow, gridColumn, scale, originalEvent? }.
-		 */
-		infoFor(ev) {
-			return {
-				id: this.id,
-				index: this.index,
-				state: this.state,
-				pageNumber: this.pageNumber,
-				gridRow: this.gridRow,
-				gridColumn: this.gridColumn,
-				scale: this.scaleFactor,
-				rotation: this.rotation,
-				aspectRatio: this.aspectRatio,
-				originalEvent: ev
-			};
-		}
+	/**
+	 * Create a disconnected wrapper object for the page that is "safe" for external callers.
+	 * @param {Event} ev original event, if any.
+	 * @returns {any} untyped info { id, index, state, pageNumber, gridRow, gridColumn, scale, originalEvent? }.
+	 */
+	infoFor(ev) {
+		return {
+			id: this.id,
+			index: this.index,
+			state: this.state,
+			pageNumber: this.pageNumber,
+			gridRow: this.gridRow,
+			gridColumn: this.gridColumn,
+			scale: this.scaleFactor,
+			rotation: this.rotation,
+			aspectRatio: this.aspectRatio,
+			originalEvent: ev
+		};
+	}
 }
 /**
  * Populate the given array with "empty" pages in COLD zone.
