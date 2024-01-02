@@ -1,6 +1,6 @@
 # Vue 3 PDF Component
 
-`pdf-component-vue` is an up-to-date PDFJS-based Vue JS component, primarily for rendering tiles (i.e. PDF pages) in a `grid` or `flex` layout.
+`pdf-component-vue` is an up-to-date PDFJS-based Vue JS component, primarily for rendering tiles (i.e. PDF pages) in a `grid` layout.
 
 It is not a (full-blown) viewer, but could be used to make one.
 
@@ -74,7 +74,8 @@ we found this short list of reasons for proceeding:
 
 * Built with an old-old-old (`2.x`) version of `pdfjs`
 * Built for Vue 2
-* Lacking layout control
+* Do not leverage Vue's DOM management via reactivity and the component's `template`
+* Lack layout control
 
 ## PDFJS
 
@@ -82,16 +83,21 @@ This assumes you may know a little about how `pdfjs` works; there is lots of glo
 
 You don't require any knowledge of `pdfjs` to use this control.
 
-Uses a current build of PDFJS.
+Uses the current build of `pdfjs` v3.
 
 [This link](https://pdfjs.express/blog/how-pdf-js-works) contains an excellent overview of the internals.
+
+### PDFJS 4
+
+There were some changes to how `pdfjs` is packaged, so we are not currently able to package that version with the component.
 
 ## Core Logic
 
 Those familiar with `pdfjs` know there are multiple "layers" involved:
 
-* `canvas` layer with page image
-* `svg` alternate layer with page image (not currently supported)
+* layer with page image
+  * use `canvas` or `svg` render mode
+  * `svg` rendering has known deficiencies; use at your own risk
 * `text` layer containing "searchable" PDF text
 * `annotation` layer with the PDF annotations
 * `xfa` layer with XFA form layout (not currently supported)
@@ -105,6 +111,7 @@ There is also lots of bookkeeping to keep everything consistent:
   * DOM elements require bookkeeping while mounted and the zone changes.
 * Re-render on size changes.
   * Each rendering is fixed to the container's current size.
+  * `canvas` rendering is especially affected by resizing.
 * "Bake in" the required CSS (via `style`) to make the layers render correctly.
   * The layers must be "stacked" correctly for visual presentation.
 
@@ -160,7 +167,7 @@ Using the grid system, you have options for layout:
 
 Because documents may be gigantic, and high-DPI devices require larger rendering, only *some of the pages* should be rendered at any point.
 
-Page management is divided into these "zones":
+Page management divides pages into "zones":
 
 * Hot - fully materialized to the DOM.
 * Warm - "placeholder" pages primarily to make scrolling happen, and provide (correctly sized) space until pages go Hot.
@@ -168,7 +175,7 @@ Page management is divided into these "zones":
 
 > The default settings make all pages `hot`, so the entire document is rendered upon loading.  This may not be appropriate for your use case.
 
-The zones center around the `page` indicated by Page Management (zero by default).  The Hot zone directly impacts resource consumption, because the `canvas` etc. are rendered from `pdfjs`.  This is sized to provide a smooth UX while scrolling (i.e. moving the `page` a small amount).
+The zones may center around the `page` indicated by Page Management (zero by default).  The Hot zone directly impacts resource consumption, because the `canvas` etc. are rendered from `pdfjs`.  This is sized to provide a smooth UX while scrolling (i.e. moving the `page` a small amount).
 
 Each time the `pageManagement` prop changes, the zones are recalculated, and pages transition between zones as detected.  In particular, pages becoming `hot` are rendered, and previously `hot` pages get layers (text, annotation) unmounted (if enabled).
 
