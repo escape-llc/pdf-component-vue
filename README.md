@@ -57,13 +57,13 @@ A growing feature list to accommodate your use cases, especially if you want to 
 The demo app that is part of the repo presents some common use cases.  Below are sample screen captures.
 
 ### Faux Viewer Demo
-![image](https://github.com/escape-llc/pdf-component-vue/assets/3513926/528e064b-de59-42a3-a872-6b68d4edf744)
+![image](https://github.com/escape-llc/pdf-component-vue/assets/3513926/c9f87951-6921-411d-bac6-3a6fe3b69ffc)
 
 ### Tile Navigation Demo
-![image](https://github.com/escape-llc/pdf-component-vue/assets/3513926/281a397a-0cb9-4123-95c1-5d62e5268030)
+![image](https://github.com/escape-llc/pdf-component-vue/assets/3513926/96d5866b-a3c5-4a23-b77a-6dd48169e841)
 
 ### Page Management Demo
-![image](https://github.com/escape-llc/pdf-component-vue/assets/3513926/1eabe935-182b-4288-9e82-de53274dd1a2)
+![image](https://github.com/escape-llc/pdf-component-vue/assets/3513926/e31c9cb8-52f6-490d-a622-30112bd7be7a)
 
 ## WHY!?
 
