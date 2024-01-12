@@ -1,6 +1,6 @@
 import {
 	COLD, WARM, HOT,
-	WIDTH, HEIGHT,
+	WIDTH, HEIGHT, SCALE,
 } from "./PageContext";
 import { ROW, COLUMN, TileConfiguration } from "./Tiles";
 import { PageManagement, PageManagement_UpdateZones, PageManagement_UpdateRange, PageManagement_Scroll } from "./PageManagement";
@@ -20,7 +20,7 @@ export {
 	PdfjsVersion,
 	PdfComponent,
 	COLD, WARM, HOT,
-	WIDTH, HEIGHT,
+	WIDTH, HEIGHT, SCALE,
 	ROW, COLUMN, TileConfiguration,
 	ScrollConfiguration,
 	ResizeConfiguration, ResizeDynamicConfiguration,

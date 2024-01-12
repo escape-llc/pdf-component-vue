@@ -35,7 +35,7 @@ import { PDFLinkService } from "pdfjs-dist/web/pdf_viewer.js";
 import { normalizeClass } from "vue";
 import {
 	COLD, WARM, HOT,
-	WIDTH, HEIGHT,
+	WIDTH, HEIGHT, SCALE,
 	CANVAS, SVG,
 	materializePages,
 } from "./PageContext.js";
@@ -81,8 +81,8 @@ export default {
 			type: Number,
 			default: WIDTH,
 			validator(value) {
-				if (value !== WIDTH && value !== HEIGHT) {
-					throw new Error("sizeMode must be 0 (WIDTH) or 1 (HEIGHT)");
+				if (value !== WIDTH && value !== HEIGHT && value !== SCALE) {
+					throw new Error("sizeMode must be 0 (WIDTH) or 1 (HEIGHT) or 2 (SCALE)");
 				}
 				return true;
 			},
@@ -224,10 +224,36 @@ export default {
 			() => [
 				this.pageManagement,
 				this.tileConfiguration,
-				this.scale,
 				this.rotation,
 			], async (nvs, ovs) => {
 				await this.renderPages();
+			}
+		);
+		this.$watch(
+			() => this.sizeMode,
+			async (nv, ov) => {
+				console.log("sizeMode nv,ov", nv, ov);
+				this.pageContexts.forEach(pc => {
+					pc.sizeMode = nv;
+					pc.scaleFactor = nv === SCALE ? this.scale : undefined;
+				});
+				if(nv !== SCALE) {
+					await this.renderPages();
+				}
+			}
+		);
+		this.$watch(
+			() => this.scale,
+			async (nv, ov) => {
+				console.log("scale nv,ov", nv, ov);
+				if(this.sizeMode === SCALE) {
+					this.pageContexts.forEach(pc => {
+						pc.scaleFactor = nv;
+						if(pc.container) {
+							pc.container.style.setProperty("--scale-factor", pc.scaleFactor);
+						}
+					});
+				}
 			}
 		);
 		this.$watch(

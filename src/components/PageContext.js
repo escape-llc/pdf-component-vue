@@ -99,7 +99,7 @@ class PageContext {
 	 */
 	containerViewport(cache) {
 		const bcr = this.container.getBoundingClientRect();
-		const viewport = cache.viewport(this.pageNumber, this.sizeMode, bcr.width, bcr.height, this.rotation);
+		const viewport = cache.viewport(this.pageNumber, this.sizeMode, bcr.width, bcr.height, this.rotation, this.scaleFactor);
 		return viewport;
 	}
 	/**
@@ -301,7 +301,7 @@ class PageContext {
 	resizeSync(cache, width, height) {
 		if(!this.container) return;
 		if(!this.didRender) return;
-		const viewport = cache.viewport(this.pageNumber, this.sizeMode, width, height, this.rotation);
+		const viewport = cache.viewport(this.pageNumber, this.sizeMode, width, height, this.rotation, this.scaleFactor);
 		const vw = Math.floor(viewport.width);
 		const vh = Math.floor(viewport.height);
 		//console.log("resizeSync", this.pageNumber, viewport.scale, vw, vh);

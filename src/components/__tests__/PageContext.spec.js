@@ -213,14 +213,16 @@ describe('PageContext', () => {
 			called: false,
 			reset() { this.called = false; },
 			dimensions(pageNumber) {
-				return { width: 612, height:792 };
+				return { width: 612, height: 792 };
 			},
 			viewport(pageNumber, sizeMode, width, height, rotation, scale) {
 				expect(pageNumber).toBe(page.pageNumber);
 				if(sizeMode === page.sizeMode) {
+					expect([pc.WIDTH, pc.HEIGHT]).toContain(sizeMode);
 					expect(width).toBe(container.clientWidth);
 					expect(height).toBe(container.clientHeight);
-					expect(scale).toBe(undefined);
+					// gets passed but ignored
+					expect([undefined, 1]).toContain(scale);
 				}
 				else {
 					expect(sizeMode).toBe(pc.SCALE);
