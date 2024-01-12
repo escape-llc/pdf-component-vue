@@ -1,6 +1,16 @@
 <template>
 	<div style="margin-left:5rem;margin-right:5rem;">
 		<h1>Resize</h1>
+		<div class="badge-container">
+			<div class="badge"><span class="badge-name">size</span><span class="badge-value">WIDTH</span></div>
+			<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
+			<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">on</span></div>
+			<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">on</span></div>
+			<div class="badge"><span class="badge-name">page</span><span class="badge-value">off</span></div>
+			<div class="badge"><span class="badge-name">resize</span><span class="badge-value">dynamic</span></div>
+			<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
+			<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
+		</div>
 		<template v-if="renderComplete">
 			<div v-if="command === 'narrow'" id="demo5-complete-narrow" class="render-complete">Render Complete Narrow</div>
 			<div v-else-if="command === 'wide'" id="demo5-complete-wide" class="render-complete">Render Complete Wide</div>
@@ -45,7 +55,7 @@ import { PdfComponent } from "../../components";
 import { ResizeConfiguration, ResizeDynamicConfiguration } from "../../components";
 
 export default {
-	name: "Demo1View",
+	name: "Demo5View",
 	components: {PdfComponent},
 	methods: {
 		handleLoaded(doc) {

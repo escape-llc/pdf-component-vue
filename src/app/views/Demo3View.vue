@@ -1,5 +1,15 @@
 <template>
 	<h1>Page Management</h1>
+	<div class="badge-container">
+		<div class="badge"><span class="badge-name">size</span><span class="badge-value">HEIGHT</span></div>
+		<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
+		<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">off</span></div>
+			<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">page</span><span class="badge-value">on</span></div>
+		<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">tile</span><span class="badge-value">4x4</span></div>
+	</div>
 	<div class="render-complete" v-if="renderComplete">Render Complete</div>
 	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
 	<div style="margin-top:1rem">This demonstrates the Hot and Warm zones of page management. The Hot zone is set to 3, so 3 pages either side of the "currentPage" is rendered. The remaining pages are Warm and render as "placeholders".</div>

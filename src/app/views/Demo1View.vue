@@ -1,5 +1,15 @@
 <template>
 	<h1>Basic Usage</h1>
+	<div class="badge-container">
+		<div class="badge"><span class="badge-name">size</span><span class="badge-value">WIDTH</span></div>
+		<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
+		<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">on</span></div>
+			<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">on</span></div>
+		<div class="badge"><span class="badge-name">page</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
+	</div>
 	<div class="render-complete" v-if="renderComplete">Render Complete</div>
 	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
 	<PdfComponent

@@ -1,5 +1,18 @@
 <template>
 	<h1>SVG Render Mode</h1>
+	<div class="badge-container">
+		<div class="badge"><span class="badge-name">size</span><span class="badge-value">WIDTH</span></div>
+		<div class="badge"><span class="badge-name">render</span><span class="badge-value">SVG</span></div>
+		<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">on</span></div>
+			<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">on</span></div>
+		<div class="badge"><span class="badge-name">page</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
+		<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
+	</div>
+	<template v-if="renderComplete">
+		<div class="render-complete" id="demo5-complete-loaded">Render Complete Loaded</div>
+	</template>
 	<div>It is well-known the SVG renderer in <kbd>pdfjs</kbd> is <b>not reliable, unsupported</b> and labelled as "deprecated".  Use at your own risk!</div>
 	<div class="render-complete" v-if="renderComplete">Render Complete</div>
 	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
