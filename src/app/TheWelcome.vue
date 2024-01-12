@@ -78,6 +78,8 @@ const dev = !import.meta.env.PROD;
 			<li>Faux viewer using 2 instances of <code>pdf-component-vue</code> in HEIGHT mode, with a local PDF you select.  Thumbnails on the left; click to display the page.
  Document outline is presented on the right, courtesy of the <a href="https://github.com/N00ts/vue3-treeview"><code>vue3-treeview</code></a> component.</li>
 			<li>Resize Management demo.  Switch between two different sizes and watch the pages re-render in response.</li>
+			<li>SVG Render demo.  Demonstrates the quirky and deprecated SVG rendering of pdfjs.</li>
+			<li>Size Mode demo.  Demonstrates the new SCALE size mode, and switching between all 3 size modes.</li>
 		</ul>
 	</WelcomeItem>
 

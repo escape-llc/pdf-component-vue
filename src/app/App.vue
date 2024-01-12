@@ -15,6 +15,7 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 			<RouterLink to="/demo4">Faux Viewer</RouterLink>
 			<RouterLink to="/demo5">Resize</RouterLink>
 			<RouterLink to="/demosvg">SVG</RouterLink>
+			<RouterLink to="/demosize">Size Modes</RouterLink>
 			<!--
 			<RouterLink to="/democomposition">Composition</RouterLink>
 			-->
@@ -29,6 +30,28 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 		<RouterView />
 	</div>
 </template>
+<style>
+.badge-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+.badge {
+	font-size: smaller;
+	background-color: darkgreen;
+	padding: .25rem;
+	border-radius: .3rem;
+	margin-right: .2rem;
+}
+.badge-name {
+	color: white;
+	padding-right: .1rem;
+}
+.badge-value {
+	color: silver;
+	padding-left: .1rem;
+}
+</style>
 <style scoped>
 .badge {
 	display: inline-block;

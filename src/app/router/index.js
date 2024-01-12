@@ -48,6 +48,12 @@ const router = createRouter({
 			component: () => import('../views/DemoSvgView.vue')
 		},
 		{
+			path: '/demosize',
+			name: 'demosize',
+			// route level code-splitting
+			component: () => import('../views/DemoSizeMode.vue')
+		},
+		{
 			path: '/demo6',
 			name: 'demo6',
 			// route level code-splitting
