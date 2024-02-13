@@ -12,6 +12,7 @@
 			<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">on</span></div>
 			<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
 			<div class="badge"><span class="badge-name">commands</span><span class="badge-value">yes</span></div>
+			<div class="badge"><span class="badge-name">slot</span><span class="badge-value">pre-page</span></div>
 			<div class="badge badge-header" style="margin-left:1rem">Page</div>
 			<div class="badge"><span class="badge-name">size</span><span class="badge-value">HEIGHT</span></div>
 			<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
@@ -21,6 +22,7 @@
 			<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
 			<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
 			<div class="badge"><span class="badge-name">tile</span><span class="badge-value">1x1</span></div>
+			<div class="badge"><span class="badge-name">slot</span><span class="badge-value">post-page</span></div>
 		</div>
 		<input id="demo4-input" type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
 		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.  Page thumbnails on the left use Scroll Management to minimize pages rendered.</div>

@@ -10,6 +10,7 @@
 			<div class="badge"><span class="badge-name">resize</span><span class="badge-value">dynamic</span></div>
 			<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
 			<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
+			<div class="badge"><span class="badge-name">slot</span><span class="badge-value">pre-page</span></div>
 		</div>
 		<template v-if="renderComplete">
 			<div v-if="command === 'narrow'" id="demo5-complete-narrow" class="render-complete">Render Complete Narrow</div>
