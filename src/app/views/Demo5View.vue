@@ -52,8 +52,8 @@
 	</PdfComponent>
 </template>
 <script>
-import { PdfComponent } from "../../components";
-import { ResizeConfiguration, ResizeDynamicConfiguration } from "../../components";
+import { PdfComponent } from "../../lib";
+import { ResizeConfiguration, ResizeDynamicConfiguration } from "../../lib";
 
 export default {
 	name: "Demo5View",

@@ -40,8 +40,8 @@
 	</PdfComponent>
 </template>
 <script>
-import { PageManagement_Scroll, PageManagement_UpdateZones, PdfComponent } from "../../components"
-import { ROW, HEIGHT, TileConfiguration } from "../../components"
+import { PageManagement_Scroll, PageManagement_UpdateZones, PdfComponent } from "../../lib"
+import { ROW, HEIGHT, TileConfiguration } from "../../lib"
 
 export default {
 	name: "Demo2View",

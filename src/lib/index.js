@@ -7,17 +7,14 @@ import { PageManagement, PageManagement_UpdateZones, PageManagement_UpdateRange,
 import { ScrollConfiguration } from "./ScrollConfiguration";
 import { ResizeConfiguration, ResizeDynamicConfiguration } from "./ResizeConfiguration";
 import { Command, ScrollToPage, PrintDocument } from "./Commands";
+import { usePdfjs, pdfjsDistSymbol, pdfjsViewerSymbol } from "./Use";
 import { unwrapOutline, unwrapOutlineItem, lookupPage } from "./Utils";
 import PdfComponent from "./PdfComponent.vue";
-import { version } from "pdfjs-dist/build/pdf.min.js";
 
-import "../pdf-component-vue.css";
-
-// export the version of PDFJS we are built with
-const PdfjsVersion = version;
+import "./pdf-component-vue.css";
 
 export {
-	PdfjsVersion,
+	usePdfjs, pdfjsDistSymbol, pdfjsViewerSymbol,
 	PdfComponent,
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT, SCALE,

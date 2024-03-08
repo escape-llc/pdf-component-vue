@@ -39,7 +39,7 @@
 	</PdfComponent>
 </template>
 <script>
-import { PdfComponent } from "../../components"
+import { PdfComponent } from "../../lib"
 
 export default {
 	name: "DemoSvgView",

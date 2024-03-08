@@ -10,7 +10,7 @@ export default mergeConfig(
 			exclude: [...configDefaults.exclude, 'coverage', 'e2e/*'],
 			root: fileURLToPath(new URL('./', import.meta.url)),
 			coverage: {
-				exclude: ["e2e/*", "src/app/*", "src/main.js", "src/components/index.js", "*.js"],
+				exclude: ["e2e/*", "src/app/*", "src/main.js", "src/lib/index.js", "*.js"],
 				provider: "v8",
 				reporter: ['text', 'json', 'html'],
 			}

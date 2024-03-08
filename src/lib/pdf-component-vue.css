@@ -1,22 +1,27 @@
 @property --scale-factor {
 	syntax: "<number>";
 	inherits: true;
+	initial-value: 0;
 }
 @property --viewport-width {
 	syntax: "<number>";
 	inherits: true;
+	initial-value: 0;
 }
 @property --viewport-height {
 	syntax: "<number>";
 	inherits: true;
+	initial-value: 0;
 }
 @property --page-width {
 	syntax: "<number>";
 	inherits: true;
+	initial-value: 0;
 }
 @property --page-height {
 	syntax: "<number>";
 	inherits: true;
+	initial-value: 0;
 }
 /* Copyright 2014 Mozilla Foundation
  *

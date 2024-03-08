@@ -39,9 +39,9 @@
 	</PdfComponent>
 </template>
 <script>
-import { PdfComponent } from "../../components"
-import { HEIGHT } from '../../components';
-import { ROW, TileConfiguration, PageManagement_UpdateZones } from '../../components';
+import { PdfComponent } from "../../lib"
+import { HEIGHT } from '../../lib';
+import { ROW, TileConfiguration, PageManagement_UpdateZones } from '../../lib';
 
 export default {
 	name: "Demo3View",

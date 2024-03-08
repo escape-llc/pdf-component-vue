@@ -1,12 +1,15 @@
 <script setup>
+import { inject } from "vue"
 import { RouterLink, RouterView } from 'vue-router'
-import { PdfjsVersion } from "../components"
-const version = PdfjsVersion
+import { pdfjsDistSymbol } from "../lib";
+
+const pdfjs = inject(pdfjsDistSymbol)
+const version = pdfjs.version
 const pversion = __APP_VERSION__
 const dpi = (window.devicePixelRatio || 1).toFixed(2)
 </script>
 <template>
-	<header>
+	<header :data-pdfjs-version="version">
 		<nav>
 			<RouterLink to="/">Home</RouterLink>
 			<RouterLink to="/demo1">Basic</RouterLink>
@@ -14,16 +17,16 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 			<RouterLink to="/demo3">Page Management</RouterLink>
 			<RouterLink to="/demo4">Faux Viewer</RouterLink>
 			<RouterLink to="/demo5">Resize</RouterLink>
-			<RouterLink to="/demosvg">SVG</RouterLink>
+			<RouterLink v-if="version.startsWith('3.')" to="/demosvg">SVG</RouterLink>
 			<RouterLink to="/demosize">Size Modes</RouterLink>
 			<!--
 			<RouterLink to="/democomposition">Composition</RouterLink>
 			-->
 		</nav>
 		<div style="margin-left:1rem">
-			<div class="badge" style="margin-right:.25rem">dev {{ pversion }}</div>
-			<div class="badge" style="margin-right:.25rem">pdfjs {{ version }}</div>
-			<div class="badge">dpr {{ dpi }}</div>
+			<div class="badge" style="margin-right:.25rem"><span class="badge-name">dev</span><span class="badge-value">{{ pversion }}</span></div>
+			<div class="badge" style="margin-right:.25rem"><span class="badge-name">pdfjs</span><span class="badge-value">{{ version }}</span></div>
+			<div class="badge"><span class="badge-name">dpr</span><span class="badge-value">{{ dpi }}</span></div>
 		</div>
 	</header>
 	<div style="margin-top:2rem">

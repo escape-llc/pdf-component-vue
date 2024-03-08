@@ -1,12 +1,14 @@
 <script setup>
+import { inject } from "vue"
 import WelcomeItem from './WelcomeItem.vue'
 import DocumentationIcon from './icons/IconDocumentation.vue'
 import ToolingIcon from './icons/IconTooling.vue'
 import EcosystemIcon from './icons/IconEcosystem.vue'
 import CommunityIcon from './icons/IconCommunity.vue'
 import SupportIcon from './icons/IconSupport.vue'
-import { PdfjsVersion } from "../components";
-const pdfjs = PdfjsVersion
+import { pdfjsDistSymbol } from "../lib";
+const pdfjs = inject(pdfjsDistSymbol)
+const pversion = pdfjs.version
 const version = __APP_VERSION__
 const dev = !import.meta.env.PROD;
 </script>
@@ -53,7 +55,7 @@ const dev = !import.meta.env.PROD;
 		</template>
 		<template #heading>PDFJS</template>
 
-		Currently bundled with version <b>{{ pdfjs }}</b> of 
+		Currently bundled with version <b>{{ pversion }}</b> of 
 		<a href="https://mozilla.github.io/pdf.js/" target="_blank" rel="noopener">pdfjs-dist</a>.
 		<br/>
 		<a style="display:inline-block;margin-top:.5rem" href="https://badge.fury.io/js/pdfjs-dist">

@@ -96,9 +96,9 @@
 </template>
 <script>
 import Tree from "vue3-treeview";
-import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateRange } from "../../components"
-import { unwrapOutline } from "../../components";
-import { Command, PrintDocument, ScrollToPage } from "../../components";
+import { PdfComponent, ScrollConfiguration, PageManagement_Scroll, TileConfiguration, COLUMN, HEIGHT, PageManagement_UpdateRange } from "../../lib"
+import { unwrapOutline } from "../../lib";
+import { Command, PrintDocument, ScrollToPage } from "../../lib";
 import "vue3-treeview/dist/style.css";
 
 /**

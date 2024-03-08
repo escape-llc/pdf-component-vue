@@ -12,7 +12,7 @@ const packageName = packageJson.name
 export default defineConfig({
 	build: {
 		lib: {
-			entry: resolve('src', 'components/index.js'),
+			entry: resolve('src', 'lib/index.js'),
 			name: packageName,
 			formats: ['es'],
 			fileName: (format) => `${packageName}.${format}.js`,

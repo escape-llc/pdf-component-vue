@@ -78,7 +78,7 @@ class ResizePlugin extends Plugin {
 						for(let [key,value] of this.resizeTracker.active) {
 							if(this.resizeTrackerActive.has(key)) {
 								const delta = this.resizeTracker.delta(key);
-								if(delta !== null && Math.abs(delta.db) !== 0 || Math.abs(delta.di) !== 0) {
+								if(delta !== null && (Math.abs(delta.db) !== 0 || Math.abs(delta.di) !== 0)) {
 									key.resizeSync(cache, value.inlineSize, value.blockSize);
 								}
 							}

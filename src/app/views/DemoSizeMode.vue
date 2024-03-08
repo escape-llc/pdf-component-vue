@@ -55,9 +55,9 @@
 </div>
 </template>
 <script>
-import { PdfComponent } from "../../components";
-import { WIDTH, HEIGHT, SCALE } from "../../components";
-import { ResizeConfiguration, ResizeDynamicConfiguration } from "../../components";
+import { PdfComponent } from "../../lib";
+import { WIDTH, HEIGHT, SCALE } from "../../lib";
+import { ResizeConfiguration, ResizeDynamicConfiguration } from "../../lib";
 
 export default {
 	name: "DemoSizeMode",

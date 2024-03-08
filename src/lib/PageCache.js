@@ -1,4 +1,4 @@
-import { renderTextLayer, AnnotationLayer, SVGGraphics } from "pdfjs-dist/build/pdf.min.js";
+//import { renderTextLayer, AnnotationLayer, SVGGraphics } from "pdfjs-dist/build/pdf.min.js";
 import { WIDTH, HEIGHT, SCALE } from "./PageContext";
 
 /**
@@ -9,14 +9,17 @@ class PageCache {
 	_map = new Map()
 	_linkService
 	_imageResourcesPath
+	_pdfjs
 	/**
 	 * Ctor.
 	 * @param {pdf.PDFLinkService} linkService Required by annotation rendering.
 	 * @param {String} imageResourcesPath Path to annotation images.
 	 */
-	constructor(linkService, imageResourcesPath) {
+	constructor(linkService, imageResourcesPath, pdfjs) {
+		if(!pdfjs) throw new Error("PDFJS is null or undefined");
 		this._linkService = linkService;
 		this._imageResourcesPath = imageResourcesPath;
+		this._pdfjs = pdfjs;
 	}
 	/**
 	 * Instruct cache to retain this page and its statistics.
@@ -140,7 +143,7 @@ class PageCache {
 		const viewport = entry.page.getViewport({
 			scale: 1,
 		});
-		const svg = await new SVGGraphics(
+		const svg = await new this._pdfjs.SVGGraphics(
 			entry.page.commonObjs,
 			entry.page.objs
 		).getSVG(operatorList, viewport);
@@ -153,7 +156,7 @@ class PageCache {
 			includeMarkedContent: true,
 			disableNormalization: true,
 		});
-		await renderTextLayer({
+		await this._pdfjs.renderTextLayer({
 			container: el,
 			textContentSource: readableStream,
 			viewport,
@@ -173,7 +176,7 @@ class PageCache {
 			}),
 			imageResourcesPath: this._imageResourcesPath,
 		};
-		const anno = new AnnotationLayer(options);
+		const anno = new this._pdfjs.AnnotationLayer(options);
 		anno.render(options);
 	}
 }

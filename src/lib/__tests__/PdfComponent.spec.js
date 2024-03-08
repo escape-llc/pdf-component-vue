@@ -6,11 +6,20 @@ import * as pm from "../PageManagement"
 import * as cmd from "../Commands"
 import { HEIGHT } from '../PageContext'
 
+import { pdfjs, viewer } from "./PdfjsMock";
+import { pdfjsDistSymbol, pdfjsViewerSymbol } from '../Use'
+
 vi.useFakeTimers();
 
 function mountedPromise(options) {
 	return new Promise((resolve, reject) => {
 			const wrapper = mount(PdfComponent, {
+				global: {
+					provide: {
+						[pdfjsDistSymbol]: pdfjs,
+						[pdfjsViewerSymbol]: viewer
+					}
+				},
 				props: {
 					...options,
 					onLoaded: () => {
@@ -34,6 +43,12 @@ function mountedPromise(options) {
 function mountedPromiseLoadedError(options, ex) {
 	return new Promise((resolve, reject) => {
 			const wrapper = mount(PdfComponent, {
+				global: {
+					provide: {
+						[pdfjsDistSymbol]: pdfjs,
+						[pdfjsViewerSymbol]: viewer
+					}
+				},
 				props: {
 					...options,
 					onLoaded: () => {
@@ -71,43 +86,6 @@ global.OffscreenCanvas = vi.fn().mockImplementation((width, height) => {
 HTMLCanvasElement.prototype.getContext = (ct) => ({
 	drawImage: (canvas, left, top) => { }
 })
-vi.mock('pdfjs-dist/build/pdf.worker.min.js', () => vi.fn())
-vi.mock('pdfjs-dist/build/pdf.min.js', () => ({
-	GlobalWorkerOptions: {
-		workerSrc: undefined
-	},
-	AnnotationLayer: function AnnotationLayer(options) {
-		this.render = (options) => {};
-	},
-	renderTextLayer: (options) => ({ promise: Promise.resolve({}) }),
-	getDocument: () => ({
-		promise: Promise.resolve({
-			numPages: PAGE_COUNT,
-			destroy: () => {},
-			getPageLabels: () => Promise.resolve(["Cover","i","ii","1","2","3"]),
-			getPage: (pageNumber) => Promise.resolve({
-				view: [0,0,PAGE_WIDTH,PAGE_HEIGHT],
-				getViewport: () => ({
-					width: PAGE_WIDTH,
-					height: PAGE_HEIGHT,
-					scale: 1,
-					clone(options) {
-						return {
-							width: PAGE_WIDTH,
-							height: PAGE_HEIGHT,
-							scale: 1,
-						};
-					},
-				}),
-				streamTextContent: (options) => ({}),
-				getAnnotations: () => Promise.resolve([]),
-				render: () => ({
-					promise: Promise.resolve({})
-				}),
-			}),
-		}),
-	}),
-}))
 /**
  * NOTE: in order to pump out all the rAF callbacks and Promises, requires extra machinations:
  * await flushPromises(), vi.runAllTimers(), await flushPromises()
@@ -171,6 +149,12 @@ describe('PdfComponent', () => {
 		let error = undefined;
 		// can't use a Promise here; no source given
 		const wrapper = mount(PdfComponent, {
+			global: {
+				provide: {
+					[pdfjsDistSymbol]: pdfjs,
+					[pdfjsViewerSymbol]: viewer
+				}
+			},
 			props: {
 				id: "my-pdf",
 				class: "document-container",

@@ -4,6 +4,7 @@ import { flushPromises } from '@vue/test-utils'
 import * as pc from "../PageContext"
 import * as dh from "../DocumentHandler"
 import { PageCache } from "../PageCache"
+import { pdfjs } from "./PdfjsMock";
 
 vi.useFakeTimers();
 
@@ -315,7 +316,7 @@ describe("DocumentHandler", async () => {
 		expect(ddh.document).toBe(undefined);
 	})
 	it("DocumentHandler_pdfjs should throw if not load()", () => {
-		const ddh = new dh.DocumentHandler_pdfjs();
+		const ddh = new dh.DocumentHandler_pdfjs(null, pdfjs);
 		expect(ddh.document).toBe(null);
 		expect(async () => { const xxx = await ddh.load(undefined); }).rejects.toThrowError("load: source was null or undefined");
 		expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: load was not called");
@@ -326,7 +327,7 @@ describe("DocumentHandler", async () => {
 })
 describe("PageCache", () => {
 	it("evicted page should fail", () => {
-		const cache = new PageCache();
+		const cache = new PageCache(null, null, pdfjs);
 		expect(() => { const xxx = cache.viewport(99, undefined); }).toThrowError("viewport: page 99 not in cache");
 		expect(async () => { const xxx = await cache.renderCanvas(99, undefined); }).rejects.toThrowError("renderCanvas: page 99 not in cache");
 		expect(async () => { const xxx = await cache.renderTextLayer(99, undefined); }).rejects.toThrowError("renderTextLayer: page 99 not in cache");

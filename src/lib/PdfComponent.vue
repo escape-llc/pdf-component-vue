@@ -30,9 +30,7 @@
 	</div>
 </template>
 <script>
-import { GlobalWorkerOptions } from "pdfjs-dist/build/pdf.min.js";
-import { PDFLinkService } from "pdfjs-dist/web/pdf_viewer.js";
-import { normalizeClass } from "vue";
+import { normalizeClass, toRaw } from "vue";
 import {
 	COLD, WARM, HOT,
 	WIDTH, HEIGHT, SCALE,
@@ -48,9 +46,8 @@ import * as resize from "./ResizeConfiguration";
 import * as cmd from "./Commands";
 import { ResizePlugin } from "./ResizePlugin";
 import { ScrollPlugin } from "./ScrollPlugin";
-import "../pdf-component-vue.css";
-
-GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.js", import.meta.url);
+import { pdfjsDistSymbol, pdfjsViewerSymbol } from "./Use";
+import "./pdf-component-vue.css";
 
 export default {
 	name: "PdfComponent",
@@ -65,6 +62,16 @@ export default {
 		"internal-link-click"
 	],
 	expose: [],
+	inject: {
+		pdfjs: {
+			from: pdfjsDistSymbol,
+			default: undefined
+		},
+		viewer: {
+			from: pdfjsViewerSymbol,
+			default: undefined
+		}
+	},
 	props: {
 		id: String,
 		renderMode: {
@@ -195,7 +202,7 @@ export default {
 			if (!this.handler?.document || !this.annotationLayer) {
 				return null;
 			}
-			const service = new PDFLinkService();
+			const service = new this.viewer.PDFLinkService();
 			service.setDocument(this.handler.document);
 			service.setViewer({
 				scrollPageIntoView: (ev) => {
@@ -209,8 +216,9 @@ export default {
 		// cannot be wrapped!
 		this.pluginList = [new ScrollPlugin(), new ResizePlugin()];
 		this.pageContexts = [];
-		this.handler = new DocumentHandler_pdfjs(this.$emit);
 		this.cache = null;
+		this.validateInject();
+		this.handler = new DocumentHandler_pdfjs(this.$emit, this.pdfjs);
 		// end
 		this.$watch(
 			() => this.source,
@@ -268,7 +276,8 @@ export default {
 	},
 	mounted() {
 		if(this.handler === null) {
-			this.handler = new DocumentHandler_pdfjs(this.$emit);
+			this.validateInject();
+			this.handler = new DocumentHandler_pdfjs(this.$emit, this.pdfjs);
 		}
 		this.load(this.source)
 			.then(_ => { });
@@ -287,6 +296,9 @@ export default {
 			this.handler?.destroy();
 			this.handler = null;
 			this.cleanDocument("cleanup");
+		},
+		validateInject() {
+			if(this.pdfjs === undefined) throw new Error("FATAL: pdfjs was not injected! call 'usePdfjs()' in your App setup");
 		},
 		/**
 		 * Invoke the Plugin callbacks with error control so one Plugin cannot "crash" the dispatch loop.
@@ -339,9 +351,10 @@ export default {
 			}
 			this.rendering = true;
 			try {
+				this.validateInject();
 				this.cleanDocument("loaded");
 				const document = await this.handler.load(source);
-				this.cache = new PageCache(this.linkService, this.imageResourcesPath);
+				this.cache = new PageCache(this.linkService, this.imageResourcesPath, this.pdfjs);
 				if(document.numPages <= 0) {
 					throw new Error("load: document has no pages");
 				}
@@ -531,7 +544,9 @@ export default {
 		async domUpdate() {
 			this.domDisconnect(this.pageContexts.filter(px => px.container !== null));
 			// "during" $nextTick DOM elements are unmounted/mounted
+			console.log("MOUNT.nextTick.before");
 			await this.$nextTick();
+			console.log("MOUNT.nextTick.after");
 			this.domConnect(this.pageContexts.filter(px => px.container !== null));
 		},
 		/**
@@ -564,21 +579,53 @@ export default {
 			};
 			this.pluginInvoke("disconnect", pi => { pi.disconnect(pictx); });
 		},
+		/**
+		 * Container mounts AFTER all the interior elements.
+		 * Gets called even when the element is the same object.
+		 * @param {PageContext} page The page (reactive proxy).
+		 * @param {DOMElement|null} el The mounted element or NULL if unmounted.
+		 */
 		mountContainer(page, el) {
+			// For some reason, reactive proxy does not work with property getters
+			// E.g., page.state returns UNDEFINED and not the value, but xpage.state works
+			const xpage = toRaw(page);
+			const fidx = this.pageContexts.findIndex(pc=>pc == xpage);
+			console.log(`MOUNT.container ${xpage.pageNumber}:${xpage.state}  ${el === xpage.container} ${xpage.didRender}`, fidx, el);
 			page.mountContainer(el);
 		},
-		mountCanvas(page, el) {
+		/**
+		 * Mounts before container; it is a child element.
+		 * Gets called even when the element is the same object.
+		 * @param {PageContext} page The page (reactive proxy).
+		 * @param {DOMElement|null} el The mounted element or NULL if unmounted.
+		 */
+		 mountCanvas(page, el) {
+			console.log(`MOUNT.canvas ${page.pageNumber}  ${el === page.canvas} ${page.didRender}`, el);
 			page.mountCanvas(el);
 		},
-		mountTextLayer(page, el) {
+		/**
+		 * Mounts before container; it is a child element.
+		 * Gets called even when the element is the same object.
+		 * @param {PageContext} page The page (reactive proxy).
+		 * @param {DOMElement|null} el The mounted element or NULL if unmounted.
+		 */
+		 mountTextLayer(page, el) {
+			console.log(`MOUNT.text ${page.pageNumber}  ${el === page.divText} ${page.didRender}`, el);
 			page.mountTextLayer(el);
 		},
-		mountAnnotationLayer(page, el) {
+		/**
+		 * Mounts before container; it is a child element.
+		 * Gets called even when the element is the same object.
+		 * @param {PageContext} page The page (reactive proxy).
+		 * @param {DOMElement|null} el The mounted element or NULL if unmounted.
+		 */
+		 mountAnnotationLayer(page, el) {
+			console.log(`MOUNT.anno ${page.pageNumber}  ${el === page.divAnno} ${page.didRender}`, el);
 			page.mountAnnotationLayer(el);
 		},
 		/**
 		 * Determine whether and how to use the pageContainerClass.
-		 * @param {PageContext} page the page.  only used if pageContainerClass is a Function.
+		 * @param {PageContext} page The page (reactive proxy).  only used if pageContainerClass is a Function.
 		 */
 		calculatePageClass(page) {
 			if(!this.pageContainerClass) return undefined;

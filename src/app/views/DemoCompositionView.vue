@@ -43,9 +43,9 @@ import {
 	PdfComponent,
 	ScrollConfiguration,
 	unwrapOutline,
-} from "../../components"
+} from "../../lib"
 
-import {Command, ScrollToPage} from "../../components";
+import {Command, ScrollToPage} from "../../lib";
 
 import {inject} from "vue";
 
