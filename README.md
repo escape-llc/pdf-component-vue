@@ -15,11 +15,23 @@ npm install pdf-component-vue
 ![codeql](https://github.com/escape-llc/pdf-component-vue/actions/workflows/github-code-scanning/codeql/badge.svg)
 [![license](https://img.shields.io/npm/l/pdf-component-vue)](https://github.com/escape-llc/pdf-component-vue/blob/main/LICENSE)
 
+## Important Notice About Hosting `pdfjs`
+Starting in package `0.7.0` we are no longer bundling the `pdfjs` packages into our package; this is now your responsibility!
+
+Some benefits:
+* our package is now very tiny.
+* we now operate with version `4.x`, which had `import` issues due to top-level `await`.  Importing these modules from your application's scope provides an appropriate top-level context to `await` in.
+* we will still operate with version `3.x` for those still clinging to SVG rendering, which is removed from `4.x`.
+* you may now reference your `pdfjs` bundles from:
+  * your application bundle
+  * a CDN
+  * copy of `mjs` modules (e.g. via the `public` folder)
+
 ## Features
 
 A growing feature list to accommodate your use cases, especially if you want to control resources and DOM size.
 
-* Based on v3 `pdfjs-dist`.
+* No `pdfjs-dist` in `0.7.0` and up.
 * Tailored for `grid` treatment.
   * Control CSS classes for all major layout elements.
   * Control row and column numbering of page cells.
@@ -87,9 +99,9 @@ Uses the current build of `pdfjs` v3.
 
 [This link](https://pdfjs.express/blog/how-pdf-js-works) contains an excellent overview of the internals.
 
-### PDFJS 4
+### Unbundled PDFJS
 
-There were some changes to how `pdfjs` is packaged, so we are not currently able to package that version with the component.
+You may use this component with `3.11.174` or any `4.x` bundle of `pdfjs` because you are hosting it.
 
 ## Core Logic
 
@@ -98,6 +110,7 @@ Those familiar with `pdfjs` know there are multiple "layers" involved:
 * layer with page image
   * use `canvas` or `svg` render mode
   * `svg` rendering has known deficiencies; use at your own risk
+  * `svg` is available in v3 only
 * `text` layer containing "searchable" PDF text
 * `annotation` layer with the PDF annotations
 * `xfa` layer with XFA form layout (not currently supported)
@@ -129,6 +142,7 @@ Sizing has two modes:
 
 * `WIDTH` - conform the document to the width of the container element.  The height is dynamic.
 * `HEIGHT` - conform the document to the height of the container element.  The width is dynamic.
+* `SCALE` - scale the document to specific scale factor.  The container changes size to accommodate.
 
 In all cases, aspect ratio is preserved.
 

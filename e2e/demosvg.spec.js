@@ -1,9 +1,8 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
-import { delay } from "./util.js";
 
 test.describe.configure({mode:"serial"});
-test.describe("DemoSvg", () => {
+test.describe.skip("DemoSvg", () => {
 	test('page', async ({ browser }, { outputDir }) => {
 		const viewport = { width: 1280, height: 19132 };
 		const screen = { width:1280, height:21000 };
