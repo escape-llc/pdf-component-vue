@@ -1,7 +1,7 @@
 <template>
 	<div :id="id">
 		<template v-for="page in pages" :key="page.index">
-			<slot name="pre-page" v-bind="page.infoFor(undefined)"></slot>
+			<slot name="pre-page" v-bind="page.infoFor()"></slot>
 			<div
 				:ref="el => { mountContainer(page, el); }"
 				:id="page.id"
@@ -23,9 +23,9 @@
 					<div v-if="textLayer" :ref="el => { mountTextLayer(page, el); }" class="textLayer" :class="textLayerClass" />
 					<div v-if="annotationLayer" :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" :class="annotationLayerClass" />
 				</template>
-				<slot name="page-overlay" v-bind="page.infoFor(undefined)"></slot>
+				<slot name="page-overlay" v-bind="page.infoFor()"></slot>
 			</div>
-			<slot name="post-page" v-bind="page.infoFor(undefined)"></slot>
+			<slot name="post-page" v-bind="page.infoFor()"></slot>
 		</template>
 	</div>
 </template>
@@ -394,20 +394,18 @@ export default {
 					await this.transition(tiles);
 					const pages = this.updateState(tiles);
 					await this.domUpdate();
-					const errors = [];
+					const errors = new Map();
 					await Promise.all(pages.map(async px => {
 						try {
 							await px.render(this.cache);
 						}
 						catch(ee) {
-							errors.push({ page: px, ee });
+							errors.set(px, ee);
 						}
 					}));
-					//errors.length && console.error("load.render.errors", errors);
 					this.$emit("rendered", pages.map(px => {
-						const obx = px.infoFor(undefined);
-						const target = errors.find(ex => ex.page === px);
-						obx.error = target ? target.ee : undefined;
+						const obx = px.infoFor();
+						obx.error = errors.get(px);
 						return obx;
 					}));
 				}
@@ -514,20 +512,18 @@ export default {
 					const pages = this.updateState(tiles);
 					await this.domUpdate();
 				}
-				const errors = [];
+				const errors = new Map();
 				await Promise.all(tiles.map(async px => {
 					try {
 						await px.page.render(this.cache);
 					}
 					catch(ee) {
-						errors.push({ page: px.page, ee });
+						errors.set(px.page, ee);
 					}
 				}));
-				//errors.length && console.error("render.errors", errors);
 				this.$emit("rendered", tiles.map(px => {
-					const obx = px.page.infoFor(undefined);
-					const target = errors.find(ex => ex.page === px.page);
-					obx.error = target ? target.ee : undefined;
+					const obx = px.page.infoFor();
+					obx.error = errors.get(px.page);
 					return obx;
 				}));
 			}
@@ -544,9 +540,9 @@ export default {
 		async domUpdate() {
 			this.domDisconnect(this.pageContexts.filter(px => px.container !== null));
 			// "during" $nextTick DOM elements are unmounted/mounted
-			console.log("MOUNT.nextTick.before");
+			//console.log("MOUNT.nextTick.before");
 			await this.$nextTick();
-			console.log("MOUNT.nextTick.after");
+			//console.log("MOUNT.nextTick.after");
 			this.domConnect(this.pageContexts.filter(px => px.container !== null));
 		},
 		/**
@@ -589,9 +585,7 @@ export default {
 			// For some reason, reactive proxy does not work with property getters
 			// E.g., page.state returns UNDEFINED and not the value, but xpage.state works
 			const xpage = toRaw(page);
-			const fidx = this.pageContexts.findIndex(pc=>pc == xpage);
-			console.log(`MOUNT.container ${xpage.pageNumber}:${xpage.state}  ${el === xpage.container} ${xpage.didRender}`, fidx, el);
-			page.mountContainer(el);
+			xpage.mountContainer(el);
 		},
 		/**
 		 * Mounts before container; it is a child element.
@@ -600,8 +594,8 @@ export default {
 		 * @param {DOMElement|null} el The mounted element or NULL if unmounted.
 		 */
 		 mountCanvas(page, el) {
-			console.log(`MOUNT.canvas ${page.pageNumber}  ${el === page.canvas} ${page.didRender}`, el);
-			page.mountCanvas(el);
+			const xpage = toRaw(page);
+			xpage.mountCanvas(el);
 		},
 		/**
 		 * Mounts before container; it is a child element.
@@ -610,8 +604,8 @@ export default {
 		 * @param {DOMElement|null} el The mounted element or NULL if unmounted.
 		 */
 		 mountTextLayer(page, el) {
-			console.log(`MOUNT.text ${page.pageNumber}  ${el === page.divText} ${page.didRender}`, el);
-			page.mountTextLayer(el);
+			const xpage = toRaw(page);
+			xpage.mountTextLayer(el);
 		},
 		/**
 		 * Mounts before container; it is a child element.
@@ -620,8 +614,8 @@ export default {
 		 * @param {DOMElement|null} el The mounted element or NULL if unmounted.
 		 */
 		 mountAnnotationLayer(page, el) {
-			console.log(`MOUNT.anno ${page.pageNumber}  ${el === page.divAnno} ${page.didRender}`, el);
-			page.mountAnnotationLayer(el);
+			const xpage = toRaw(page);
+			xpage.mountAnnotationLayer(el);
 		},
 		/**
 		 * Determine whether and how to use the pageContainerClass.
@@ -630,7 +624,7 @@ export default {
 		calculatePageClass(page) {
 			if(!this.pageContainerClass) return undefined;
 			const pcv = this.pageContainerClass instanceof Function
-				? this.pageContainerClass(page.infoFor(undefined))
+				? this.pageContainerClass(page.infoFor())
 				: this.pageContainerClass;
 			const pcc2 = normalizeClass(pcv);
 			return pcc2;
@@ -641,7 +635,7 @@ export default {
 		 * @param {PageContext} page clicked page.
 		 */
 		handlePageClick(ev, page) {
-			this.$emit("page-click", page.infoFor(ev));
+			this.$emit("page-click", { originalEvent: ev, page: page.infoFor() });
 		},
 	},
 }

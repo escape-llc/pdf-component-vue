@@ -46,7 +46,7 @@ class CommandExecuteContext {
 	info(pageNumber) {
 		const page = this.#pages.find(px => px.pageNumber === pageNumber);
 		if(page) {
-			return page.infoFor(undefined);
+			return page.infoFor();
 		}
 		return undefined;
 	}

@@ -91,7 +91,7 @@ class ResizePlugin extends Plugin {
 					if(available.length) {
 						// prepare "safe" data for $emit
 						const data = available.map(rx => {
-							return { page: rx.target.infoFor(undefined), di: rx.di, db: rx.db, upsize: rx.upsize, redrawCanvas: rx.upsize };
+							return { page: rx.target.infoFor(), di: rx.di, db: rx.db, upsize: rx.upsize, redrawCanvas: rx.upsize };
 						});
 						// component owner has opportunity to alter the redrawCanvas flags
 						$emit("resize-pages", data);
@@ -104,7 +104,7 @@ class ResizePlugin extends Plugin {
 						const emit2 = available.map(rx => {
 							const match = data.find(ex => ex.page.id === rx.target.id);
 							return {
-								page: rx.target.infoFor(undefined),
+								page: rx.target.infoFor(),
 								di: rx.di, db: rx.db,
 								upsize: match ? match.upsize : rx.upsize,
 								redrawCanvas: match ? match.redrawCanvas : rx.redrawCanvas

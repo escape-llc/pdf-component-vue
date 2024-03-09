@@ -67,14 +67,14 @@ export default {
 		},
 		handlePageClick(ev) {
 			console.log("handle.pageClick", ev);
-			if(ev.pageNumber === this.selectedPage) {
+			if(ev.page.pageNumber === this.selectedPage) {
 				this.selectedPage = undefined;
 			}
 			else {
-				this.selectedPage = ev.pageNumber;
-				if(ev.pageNumber > 0) {
+				this.selectedPage = ev.page.pageNumber;
+				if(ev.page.pageNumber > 0) {
 					this.renderComplete = false;
-					this.cacheStartPage = ev.pageNumber;
+					this.cacheStartPage = ev.page.pageNumber;
 				}
 			}
 		},

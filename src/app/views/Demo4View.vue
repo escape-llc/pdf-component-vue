@@ -251,10 +251,10 @@ export default {
 		},
 		handlePageClick(ev) {
 			console.log("handle.pageClick", ev);
-			if(ev.pageNumber === this.selectedPage) {
+			if(ev.page.pageNumber === this.selectedPage) {
 			}
 			else {
-				this.updatePage(ev.pageNumber);
+				this.updatePage(ev.page.pageNumber);
 			}
 		},
 		handleOutlineClick(ev) {

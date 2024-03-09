@@ -206,7 +206,7 @@ export default {
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
 	contain: content;
-	transition: width 1.5s ease-in-out, height 1.5s ease-in-out, --scale-factor 1.5s ease-in-out;
+	transition: width 1s ease-in-out, height 1s ease-in-out, --scale-factor 1s ease-in-out;
 }
 :deep(.page-stack) {
 	grid-area: 1 / 1 / 1 / 1 !important;

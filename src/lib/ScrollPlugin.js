@@ -45,7 +45,7 @@ class ScrollPlugin extends Plugin {
 					// potential race due to setTimeout; SHOULD NOT filter any elements!
 					const available = isect.filter(ix => ix.container);
 					if(available.length) {
-						$emit("visible-pages", available.map(ix => ix.infoFor(undefined)));
+						$emit("visible-pages", available.map(ix => ix.infoFor()));
 					}
 				});
 			}, {

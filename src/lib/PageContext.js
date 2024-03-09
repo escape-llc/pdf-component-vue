@@ -3,7 +3,7 @@ const WIDTH = 0, HEIGHT = 1, SCALE = 2;
 const CANVAS = 0, SVG = 1;
 
 import { ref } from "vue";
-
+const MOUNT = false;
 /**
  * Feature-detect OffscreenCanvas and use it, else DOM element canvas.
  * @param {Number} width canvas width in px.
@@ -41,6 +41,7 @@ class PageContext {
 	divText = null
 	divAnno = null
 	didRender = false
+	version = 0
 	/**
 	 * Ctor.
 	 * @param {Number} rm render mode CANVAS,SVG.
@@ -77,20 +78,32 @@ class PageContext {
 	 * @param {HTMLDivElement|null} container page container element.
 	 */
 	mountContainer(container) {
+		if(this.container === container) return;
+		MOUNT && console.log(`MOUNT.container.${this.pageNumber}.v${this.version} s:${this.state} r:${this.didRender}`, container?.outerHTML);
 		this.container = container;
+		this.version++;
 		if(!container) {
 			this.didRender = false;
 			return;
 		}
 	}
 	mountCanvas(canvas) {
+		if(this.canvas === canvas) return;
+		MOUNT && console.log(`MOUNT.canvas.${this.pageNumber}.v${this.version} r:${this.didRender}`, canvas?.outerHTML);
 		this.canvas = canvas;
+		this.version++;
 	}
 	mountTextLayer(el) {
+		if(this.divText === el) return;
+		MOUNT && console.log(`MOUNT.text.${this.pageNumber}.v${this.version}  r:${this.didRender}`, el?.outerHTML);
 		this.divText = el;
+		this.version++;
 	}
 	mountAnnotationLayer(el) {
+		if(this.divAnno === el) return;
+		MOUNT && console.log(`MOUNT.anno.${this.pageNumber}.v${this.version}  r:${this.didRender}`, el?.outerHTML);
 		this.divAnno = el;
+		this.version++;
 	}
 	/**
 	 * Compute the viewport.
@@ -387,10 +400,9 @@ class PageContext {
 	}
 	/**
 	 * Create a disconnected wrapper object for the page that is "safe" for external callers.
-	 * @param {Event} ev original event, if any.
 	 * @returns {any} untyped info { id, index, state, pageNumber, gridRow, gridColumn, scale, originalEvent? }.
 	 */
-	infoFor(ev) {
+	infoFor() {
 		return {
 			id: this.id,
 			index: this.index,
@@ -401,7 +413,6 @@ class PageContext {
 			scale: this.scaleFactor,
 			rotation: this.rotation,
 			aspectRatio: this.aspectRatio,
-			originalEvent: ev
 		};
 	}
 }
