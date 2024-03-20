@@ -17,7 +17,7 @@ const dpi = (window.devicePixelRatio || 1).toFixed(2)
 			<RouterLink to="/demo3">Page Management</RouterLink>
 			<RouterLink to="/demo4">Faux Viewer</RouterLink>
 			<RouterLink to="/demo5">Resize</RouterLink>
-			<RouterLink v-if="version.startsWith('3.')" to="/demosvg">SVG</RouterLink>
+			<RouterLink to="/demosvg">SVG <span v-if="version.startsWith('4.')">Canvas Fallback</span></RouterLink>
 			<RouterLink to="/demosize">Size Modes</RouterLink>
 			<!--
 			<RouterLink to="/democomposition">Composition</RouterLink>
