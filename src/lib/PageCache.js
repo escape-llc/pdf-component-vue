@@ -12,7 +12,7 @@ class PageCache {
 	_pdfjs
 	/**
 	 * Ctor.
-	 * @param {pdf.PDFLinkService} linkService Required by annotation rendering.
+	 * @param {pdf.PDFLinkService|null} linkService Required by annotation rendering.
 	 * @param {String} imageResourcesPath Path to annotation images.
 	 */
 	constructor(linkService, imageResourcesPath, pdfjs) {
@@ -66,7 +66,7 @@ class PageCache {
 	 * @returns {Number} the scale factor for viewport.
 	 */
 	scaleFor(entry, mode, width, height, rotation, scale) {
-		const pageRotation = entry.rotation + rotation;
+		const pageRotation = (entry.rotation + rotation) % 360;
 		switch(mode) {
 			case WIDTH:
 				const pageWidth = (pageRotation / 90) % 2 ? entry.height : entry.width;
@@ -91,7 +91,7 @@ class PageCache {
 	dimensions(pageNumber, rotation) {
 		if(!this._map.has(pageNumber)) throw new Error(`viewport: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
-		const pageRotation = entry.rotation + rotation;
+		const pageRotation = (entry.rotation + rotation) % 360;
 		const width = (pageRotation / 90) % 2 ? entry.height : entry.width;
 		const height= (pageRotation / 90) % 2 ? entry.width : entry.height;
 		const aspectRatio = width / height;
@@ -133,11 +133,13 @@ class PageCache {
 	}
 	/**
 	 * Render page to SVG and return the created element.
+	 * Feature-checks for the SVGGraphics class only in V3.
 	 * @param {Number} pageNumber 1-relative page number.
 	 * @returns {SVGElement} composed page.
 	 */
 	async renderSvg(pageNumber) {
 		if(!this._map.has(pageNumber)) throw new Error(`renderSvg: page ${pageNumber} not in cache`);
+		if(!("SVGGraphics" in this._pdfjs)) throw new Error("renderSvg: SVGGraphics not available");
 		const entry = this._map.get(pageNumber);
 		const operatorList = await entry.page.getOperatorList();
 		const viewport = entry.page.getViewport({
@@ -149,6 +151,12 @@ class PageCache {
 		).getSVG(operatorList, viewport);
 		return svg;
 	}
+	/**
+	 * Render the Text layer DIV.
+	 * @param {Number} pageNumber page number to render.
+	 * @param {pdf.Viewport} viewport viewport dimensions.
+	 * @param {HTMLDivElement} el target element.
+	 */
 	async renderTextLayer(pageNumber, viewport, el) {
 		if(!this._map.has(pageNumber)) throw new Error(`renderTextLayer: page ${pageNumber} not in cache`);
 		const entry = this._map.get(pageNumber);
@@ -162,8 +170,16 @@ class PageCache {
 			viewport,
 		}).promise
 	}
+	/**
+	 * Render the Annotation layer DIV.
+	 * Feature-checks for the LinkService; requried to render annotations.
+	 * @param {Number} pageNumber page number to render.
+	 * @param {pdf.Viewport} viewport viewport dimensions.
+	 * @param {HTMLDivElement} el target element.
+	 */
 	async renderAnnotationLayer(pageNumber, viewport, el) {
 		if(!this._map.has(pageNumber)) throw new Error(`renderAnnotationLayer: page ${pageNumber} not in cache`);
+		if(!this._linkService) throw new Error("renderAnnotationLayer: pdfjs viewer module not imported");
 		const entry = this._map.get(pageNumber);
 		const options = {
 			annotations: await entry.page.getAnnotations(),
