@@ -304,6 +304,7 @@ describe('PdfComponent', () => {
 			canvasClass: "grid-stack",
 			annotationLayerClass: "grid-stack",
 			textLayerClass: "grid-stack",
+			placeholderClass: "grid-stack-placeholder",
 			pageManagement: new pm.PageManagement_UpdateRange(0, 1),
 			source: PDF
 		});
@@ -332,7 +333,7 @@ describe('PdfComponent', () => {
 				// placeholder div
 				const phd = div.get("div > :first-child");
 				expect(phd).not.toBe(undefined);
-				expect(phd.element.classList.contains("grid-stack")).toBe(true);
+				expect(phd.element.classList.contains("grid-stack-placeholder")).toBe(true);
 				expect(phd.element.classList.contains("textLayer")).toBe(false);
 				expect(phd.element.classList.contains("annotationLayer")).toBe(false);
 			}
