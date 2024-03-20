@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe.configure({mode:"serial"});
-test.describe.skip("DemoSvg", () => {
+test.describe("DemoSvg", () => {
 	test('page', async ({ browser }, { outputDir }) => {
 		const viewport = { width: 1280, height: 19132 };
 		const screen = { width:1280, height:21000 };
