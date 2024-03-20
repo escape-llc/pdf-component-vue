@@ -12,16 +12,16 @@
 				@click="handlePageClick($event, page)"
 			>
 				<template v-if="page.stateReactive === 2">
-					<canvas v-if="renderMode === 0" :ref="el => { mountCanvas(page, el); }" :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)" />
-					<svg v-else-if="renderMode === 1" :ref="el => { mountCanvas(page, el); }" :class="canvasClass" style="background-color: white; width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)"></svg>
-				</template>
-				<template v-else>
-					<div :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)">&#8203;</div>
-				</template>
-				<template v-if="page.stateReactive === 2">
+					<canvas v-if="page.renderMode === 0" :ref="el => { mountCanvas(page, el); }" :class="canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)" />
+					<svg v-else-if="page.renderMode === 1" :ref="el => { mountCanvas(page, el); }" :class="canvasClass" style="background-color: white; width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)"></svg>
 					<!-- style attribute is managed with PDFJS -->
 					<div v-if="textLayer" :ref="el => { mountTextLayer(page, el); }" class="textLayer" :class="textLayerClass" />
-					<div v-if="annotationLayer" :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" :class="annotationLayerClass" />
+					<div v-if="annotationsEnabled" :ref="el => { mountAnnotationLayer(page, el); }"  class="annotationLayer" :class="annotationLayerClass" />
+				</template>
+				<template v-else>
+					<div :class="placeholderClass ?? canvasClass" style="width: calc(var(--scale-factor) * var(--page-width) * 1px); height: calc(var(--scale-factor) * var(--page-height) * 1px)">
+						<slot name="placeholder" v-bind="page.infoFor()">&#8203;</slot>
+					</div>
 				</template>
 				<slot name="page-overlay" v-bind="page.infoFor()"></slot>
 			</div>
@@ -164,6 +164,7 @@ export default {
 		textLayer: Boolean,
 		/**
 		 * Whether to render the annotation layer.
+		 * Also requires the VIEWER module to be imported to activate.
 		 */
 		annotationLayer: Boolean,
 		/**
@@ -189,6 +190,13 @@ export default {
 		 * CSS for the layer to make it "stack" on the other layers.
 		 */
 		annotationLayerClass: String,
+		/**
+		 * CSS for the layer to make it "stack" on the other layers.
+		 * Similar to other "stack" CSS but separate to accomodate whatever is in the
+		 * placeholder slot.
+		 * If missing falls back to canvasClass.
+		 */
+		 placeholderClass: String,
 	},
 	data() {
 		return {
@@ -198,8 +206,14 @@ export default {
 		}
 	},
 	computed: {
+		annotationsEnabled() {
+			return this.annotationLayer && this.viewer !== undefined;
+		},
+		svgAvailable() {
+			return this.pdfjs && "SVGGraphics" in this.pdfjs;
+		},
 		linkService() {
-			if (!this.handler?.document || !this.annotationLayer) {
+			if (!this.handler?.document || !this.annotationsEnabled) {
 				return null;
 			}
 			const service = new this.viewer.PDFLinkService();
@@ -340,6 +354,17 @@ export default {
 			}
 		},
 		/**
+		 * Determine the render mode; fall back to CANVAS if necessary.
+		 * @param {Number} rm the render mode.
+		 * @returns {Number} the RM or CANVAS for fall back.
+		 */
+		evaluateRenderMode(rm) {
+			if(rm === SVG) {
+				return this.svgAvailable ? SVG : CANVAS;
+			}
+			return rm;
+		},
+		/**
 		 * Load and initial render of PDF source.
 		 *
 		 * @param {any} source Source document; see the props for possible data types accepted.
@@ -360,7 +385,8 @@ export default {
 				}
 				this.pageCount = document.numPages;
 				this.pageContexts = [];
-				materializePages(this.renderMode, this.sizeMode, this.id, this.pageCount, this.pageContexts);
+				const rm = this.evaluateRenderMode(this.renderMode);
+				materializePages(rm, this.sizeMode, this.id, this.pageCount, this.pageContexts);
 				if(this.usePageLabels && this.handler) {
 					const labels = await this.handler.pageLabels();
 					if(labels) {
@@ -394,20 +420,7 @@ export default {
 					await this.transition(tiles);
 					const pages = this.updateState(tiles);
 					await this.domUpdate();
-					const errors = new Map();
-					await Promise.all(pages.map(async px => {
-						try {
-							await px.render(this.cache);
-						}
-						catch(ee) {
-							errors.set(px, ee);
-						}
-					}));
-					this.$emit("rendered", pages.map(px => {
-						const obx = px.infoFor();
-						obx.error = errors.get(px);
-						return obx;
-					}));
+					await this.renderCore(pages);
 				}
 				catch(ee) {
 					this.$emit("render-failed", ee);
@@ -431,6 +444,27 @@ export default {
 			finally {
 				this.rendering = false;
 			}
+		},
+		/**
+		 * Core rendering.
+		 * Draw pages, handle error control, emit "rendered".
+		 * @param {PageContext[]} pages the pages to render.
+		 */
+		async renderCore(pages) {
+			const errors = new Map();
+			await Promise.all(pages.map(async px => {
+				try {
+					await px.render(this.cache);
+				}
+				catch(ee) {
+					errors.set(px, ee);
+				}
+			}));
+			this.$emit("rendered", pages.map(px => {
+				const obx = px.infoFor();
+				obx.error = errors.get(px);
+				return obx;
+			}));
 		},
 		/**
 		 * Assign grid coordinates to each tile according to tileConfiguration.
@@ -512,20 +546,7 @@ export default {
 					const pages = this.updateState(tiles);
 					await this.domUpdate();
 				}
-				const errors = new Map();
-				await Promise.all(tiles.map(async px => {
-					try {
-						await px.page.render(this.cache);
-					}
-					catch(ee) {
-						errors.set(px.page, ee);
-					}
-				}));
-				this.$emit("rendered", tiles.map(px => {
-					const obx = px.page.infoFor();
-					obx.error = errors.get(px.page);
-					return obx;
-				}));
+				await this.renderCore(tiles.map(tx => tx.page));
 			}
 			catch (ee) {
 				this.$emit("render-failed", ee);
