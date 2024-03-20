@@ -1,23 +1,20 @@
 <template>
 	<h1>SVG Render Mode</h1>
 	<div class="badge-container">
-		<div class="badge"><span class="badge-name">size</span><span class="badge-value">WIDTH</span></div>
-		<div class="badge"><span class="badge-name">render</span><span class="badge-value">SVG</span></div>
-		<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">on</span></div>
-		<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">on</span></div>
-		<div class="badge"><span class="badge-name">page</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">slot</span><span class="badge-value">pre-page</span></div>
+		<div v-for="bg in badges" class="badge"><span class="badge-name">{{bg.name}}</span><span class="badge-value">{{bg.value}}</span></div>
 	</div>
 	<template v-if="renderComplete">
 		<div class="render-complete" id="demo5-complete-loaded">Render Complete Loaded</div>
 	</template>
-	<div>It is well-known the SVG renderer in <kbd>pdfjs</kbd> is <b>not reliable, unsupported</b> and labelled as "deprecated".  Use at your own risk!</div>
+	<template v-if="version.startsWith('3.')">
+		<div>It is well-known the SVG renderer in <kbd>pdfjs</kbd> is <b>not reliable, unsupported</b> and labelled as "deprecated".  Use at your own risk!</div>
+		<div>It is so buggy, the <kbd>tracemonkey</kbd> "reference" document has rendering errors (pages 2,11,13)!</div>
+	</template>
+	<template v-else>
+		<div>The SVG renderer is not supported in <kbd>pdfjs</kbd> V4.  The component falls back to CANVAS rendering in this case.</div>
+	</template>
 	<div class="render-complete" v-if="renderComplete">Render Complete</div>
 	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
-	<div>It is so buggy, the <kbd>tracemonkey</kbd> "reference" document has rendering errors (pages 2,11,13)!</div>
 	<PdfComponent
 		id="my-pdf"
 		:renderMode="1"
@@ -40,10 +37,17 @@
 </template>
 <script>
 import { PdfComponent } from "../../lib"
+import { pdfjsDistSymbol } from "../../lib";
 
 export default {
 	name: "DemoSvgView",
 	components: {PdfComponent},
+	inject: {
+		pdfjs: {
+			from: pdfjsDistSymbol,
+			default: undefined
+		},
+	},
 	methods: {
 		handleLoaded(doc) {
 			console.log("handle.loaded", doc);
@@ -67,6 +71,18 @@ export default {
 			url: "/tracemonkey.pdf",
 			errorMessage: null,
 			renderComplete: false,
+			version: this.pdfjs.version,
+			badges: [
+				{ name: "size", value:"WIDTH" },
+				{ name: "render", value: this.pdfjs.version.startsWith('3.') ? "SVG" : "CANVAS fallback" },
+				{ name: "text-layer", value:"on" },
+				{ name: "anno-layer", value:"on" },
+				{ name: "page", value:"off" },
+				{ name: "resize", value:"off" },
+				{ name: "scroll", value:"off" },
+				{ name: "tile", value:"off" },
+				{ name: "slot", value:"pre-page" },
+			],
 		};
 	}
 }

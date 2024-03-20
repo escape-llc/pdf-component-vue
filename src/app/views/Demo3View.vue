@@ -1,15 +1,7 @@
 <template>
 	<h1>Page Management</h1>
 	<div class="badge-container">
-		<div class="badge"><span class="badge-name">size</span><span class="badge-value">HEIGHT</span></div>
-		<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
-		<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">page</span><span class="badge-value">on</span></div>
-		<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">tile</span><span class="badge-value">4x4</span></div>
-		<div class="badge"><span class="badge-name">slot</span><span class="badge-value">pre-page</span></div>
+		<div v-for="bg in badges" class="badge"><span class="badge-name">{{bg.name}}</span><span class="badge-value">{{bg.value}}</span></div>
 	</div>
 	<div class="render-complete" v-if="renderComplete">Render Complete</div>
 	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
@@ -27,6 +19,7 @@
 		canvasClass="page-stack"
 		annotationLayerClass="page-stack"
 		textLayerClass="page-stack"
+		placeholderClass="page-placeholder-stack"
 		@page-click="handlePageClick"
 		@loaded="handleLoaded"
 		@load-failed="handleError"
@@ -35,6 +28,9 @@
 		:source="url">
 		<template #pre-page="slotProps">
 			<div :style="{'grid-row': slotProps.gridRow,'grid-column': slotProps.gridColumn}">Page {{slotProps.pageNumber}}</div>
+		</template>
+		<template #placeholder="slotProps">
+			<div style="align-self: center;text-align: center;">warm page {{ slotProps.pageNumber }}</div>
 		</template>
 	</PdfComponent>
 </template>
@@ -103,6 +99,18 @@ export default {
 			// MUST be initialized BEFORE loaded event
 			cacheStartPage: 1,
 			renderComplete: false,
+			badges: [
+				{ name: "size", value:"HEIGHT" },
+				{ name: "render", value: "CANVAS" },
+				{ name: "text-layer", value:"off" },
+				{ name: "anno-layer", value:"off" },
+				{ name: "page", value:"on" },
+				{ name: "resize", value:"off" },
+				{ name: "scroll", value:"off" },
+				{ name: "tile", value:"4x4" },
+				{ name: "slot", value:"pre-page" },
+				{ name: "slot", value:"placeholder" },
+			],
 		};
 	}
 }
@@ -143,6 +151,14 @@ export default {
 	contain: content;
 }
 :deep(.page-stack) {
+	grid-area: 1 / 1 / 1 / 1 !important;
+	box-sizing: content-box;
+	background: transparent;
+	width:100%;
+}
+/* placeholder needs GRID so we can center the slot contents */
+:deep(.page-placeholder-stack) {
+	display: grid;
 	grid-area: 1 / 1 / 1 / 1 !important;
 	box-sizing: content-box;
 	background: transparent;

@@ -1,15 +1,7 @@
 <template>
 	<h1>Basic Usage</h1>
 	<div class="badge-container">
-		<div class="badge"><span class="badge-name">size</span><span class="badge-value">WIDTH</span></div>
-		<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
-		<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">on</span></div>
-		<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">on</span></div>
-		<div class="badge"><span class="badge-name">page</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
-		<div class="badge"><span class="badge-name">slot</span><span class="badge-value">pre-page</span></div>
+		<div v-for="bg in badges" class="badge"><span class="badge-name">{{bg.name}}</span><span class="badge-value">{{bg.value}}</span></div>
 	</div>
 	<div class="render-complete" v-if="renderComplete">Render Complete</div>
 	<div class="error" v-if="errorMessage">{{errorMessage}}</div>
@@ -61,6 +53,17 @@ export default {
 			url: "/tracemonkey.pdf",
 			errorMessage: null,
 			renderComplete: false,
+			badges: [
+				{ name: "size", value:"WIDTH" },
+				{ name: "render", value: "CANVAS" },
+				{ name: "text-layer", value:"on" },
+				{ name: "anno-layer", value:"on" },
+				{ name: "page", value:"off" },
+				{ name: "resize", value:"off" },
+				{ name: "scroll", value:"off" },
+				{ name: "tile", value:"off" },
+				{ name: "slot", value:"pre-page" },
+			],
 		};
 	}
 }

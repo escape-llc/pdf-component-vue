@@ -3,26 +3,9 @@
 		<h1>Faux Viewer</h1>
 		<div class="badge-container">
 			<div class="badge badge-header">Sidebar</div>
-			<div class="badge"><span class="badge-name">size</span><span class="badge-value">WIDTH</span></div>
-			<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
-			<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">page</span><span class="badge-value">on</span></div>
-			<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">on</span></div>
-			<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">commands</span><span class="badge-value">yes</span></div>
-			<div class="badge"><span class="badge-name">slot</span><span class="badge-value">pre-page</span></div>
+			<div v-for="bg in badges" class="badge"><span class="badge-name">{{bg.name}}</span><span class="badge-value">{{bg.value}}</span></div>
 			<div class="badge badge-header" style="margin-left:1rem">Page</div>
-			<div class="badge"><span class="badge-name">size</span><span class="badge-value">HEIGHT</span></div>
-			<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
-			<div class="badge"><span class="badge-name">text-layer</span><span class="badge-value">on</span></div>
-			<div class="badge"><span class="badge-name">anno-layer</span><span class="badge-value">on</span></div>
-			<div class="badge"><span class="badge-name">page</span><span class="badge-value">on</span></div>
-			<div class="badge"><span class="badge-name">resize</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">tile</span><span class="badge-value">1x1</span></div>
-			<div class="badge"><span class="badge-name">slot</span><span class="badge-value">post-page</span></div>
+			<div v-for="bg in badges2" class="badge"><span class="badge-name">{{bg.name}}</span><span class="badge-value">{{bg.value}}</span></div>
 		</div>
 		<input id="demo4-input" type="file" ref="file" style="margin-top:.25rem;margin-bottom:.25rem" @change="handleInput"/>
 		<div style="margin-top:1rem;margin-bottom:1rem">Try your luck with PDFs from your local machine.  Page thumbnails on the left use Scroll Management to minimize pages rendered.</div>
@@ -312,6 +295,29 @@ export default {
 			scroll: undefined,
 			scrollStart: 0,
 			scrollStop: 4,
+			badges: [
+				{ name: "size", value:"WIDTH" },
+				{ name: "render", value: "CANVAS" },
+				{ name: "text-layer", value:"off" },
+				{ name: "anno-layer", value:"off" },
+				{ name: "page", value:"on" },
+				{ name: "resize", value:"off" },
+				{ name: "scroll", value:"off" },
+				{ name: "tile", value:"off" },
+				{ name: "commands", value:"yes" },
+				{ name: "slot", value:"pre-page" },
+			],
+			badges2: [
+				{ name: "size", value:"HEIGHT" },
+				{ name: "render", value: "CANVAS" },
+				{ name: "text-layer", value:"on" },
+				{ name: "anno-layer", value:"on" },
+				{ name: "page", value:"on" },
+				{ name: "resize", value:"off" },
+				{ name: "scroll", value:"off" },
+				{ name: "tile", value:"1x1" },
+				{ name: "slot", value:"post-page" },
+			],
 		};
 	}
 }

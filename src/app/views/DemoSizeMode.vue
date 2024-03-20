@@ -3,15 +3,7 @@
 	<div style="width:90vw; margin:auto">
 		<h1>Size Modes</h1>
 		<div class="badge-container">
-			<div class="badge"><span class="badge-name">size</span><span class="badge-value">WIDTH</span></div>
-			<div class="badge"><span class="badge-name">size</span><span class="badge-value">HEIGHT</span></div>
-			<div class="badge"><span class="badge-name">size</span><span class="badge-value">SCALE</span></div>
-			<div class="badge"><span class="badge-name">render</span><span class="badge-value">CANVAS</span></div>
-			<div class="badge"><span class="badge-name">page</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">resize</span><span class="badge-value">on</span></div>
-			<div class="badge"><span class="badge-name">scroll</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">tile</span><span class="badge-value">off</span></div>
-			<div class="badge"><span class="badge-name">slot</span><span class="badge-value">pre-page</span></div>
+			<div v-for="bg in badges" class="badge"><span class="badge-name">{{bg.name}}</span><span class="badge-value">{{bg.value}}</span></div>
 		</div>
 		<template v-if="renderComplete">
 			<div v-if="command === 'narrow'" id="demo5-complete-narrow" class="render-complete">Render Complete Narrow</div>
@@ -157,6 +149,19 @@ export default {
 			resize: ResizeConfiguration.defaultConfiguration(),
 			renderComplete: false,
 			command: "width",
+			badges: [
+				{ name: "size", value:"WIDTH" },
+				{ name: "size", value:"HEIGHT" },
+				{ name: "size", value:"SCALE" },
+				{ name: "render", value: "CANVAS" },
+				{ name: "text-layer", value:"on" },
+				{ name: "anno-layer", value:"on" },
+				{ name: "page", value:"off" },
+				{ name: "resize", value:"on" },
+				{ name: "scroll", value:"off" },
+				{ name: "tile", value:"off" },
+				{ name: "slot", value:"pre-page" },
+			],
 		};
 	}
 }
