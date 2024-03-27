@@ -21,7 +21,7 @@ Starting in package `0.7.0` we are no longer bundling the `pdfjs` packages into 
 Some benefits:
 * our package is now very tiny.
 * we now operate with version `4.x`, which had `import` issues due to top-level `await`.  Importing these modules from your application's scope provides an appropriate top-level context to `await` in.
-* we will still operate with version `3.x` for those still clinging to SVG rendering, which is removed from `4.x`.
+* we will still operate with version `3.x` for those clinging to SVG rendering, which is removed from `4.x`.
 * you may now reference your `pdfjs` bundles from:
   * your application bundle
   * a CDN
@@ -88,14 +88,13 @@ we found this short list of reasons for proceeding:
 * Built for Vue 2
 * Do not leverage Vue's DOM management via reactivity and the component's `template`
 * Lack layout control
+* Lack resource management (render only one/all pages)
 
 ## PDFJS
 
 This assumes you may know a little about how `pdfjs` works; there is lots of glossing over.
 
 You don't require any knowledge of `pdfjs` to use this control.
-
-Uses the current build of `pdfjs` v3.
 
 [This link](https://pdfjs.express/blog/how-pdf-js-works) contains an excellent overview of the internals.
 
@@ -138,7 +137,7 @@ Some components require you to set (one of the) dimensions (usually in pixels no
 
 Rather than telling the component what size to use, the component uses the DOM elements to compute the size desired.  This allows you to set the size of the grid cells via CSS.
 
-Sizing has two modes:
+Sizing has these modes:
 
 * `WIDTH` - conform the document to the width of the container element.  The height is dynamic.
 * `HEIGHT` - conform the document to the height of the container element.  The width is dynamic.

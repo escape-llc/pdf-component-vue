@@ -55,8 +55,8 @@ const dev = !import.meta.env.PROD;
 		</template>
 		<template #heading>PDFJS</template>
 
-		Currently bundled with version <b>{{ pversion }}</b> of 
-		<a href="https://mozilla.github.io/pdf.js/" target="_blank" rel="noopener">pdfjs-dist</a>.
+		This package is no longer bundled with <a href="https://mozilla.github.io/pdf.js/" target="_blank" rel="noopener">pdfjs-dist</a>.
+		You are free to bundle any 3.x or 4.x build in your package, via various methods.
 		<br/>
 		<a style="display:inline-block;margin-top:.5rem" href="https://badge.fury.io/js/pdfjs-dist">
 			<img v-if="!dev" src="https://badge.fury.io/js/pdfjs-dist.svg" alt="npm version" height="24">
@@ -80,7 +80,7 @@ const dev = !import.meta.env.PROD;
 			<li>Faux viewer using 2 instances of <code>pdf-component-vue</code> in HEIGHT mode, with a local PDF you select.  Thumbnails on the left; click to display the page.
  Document outline is presented on the right, courtesy of the <a href="https://github.com/N00ts/vue3-treeview"><code>vue3-treeview</code></a> component.</li>
 			<li>Resize Management demo.  Switch between two different sizes and watch the pages re-render in response.</li>
-			<li>SVG Render demo.  Demonstrates the quirky and deprecated SVG rendering of pdfjs.</li>
+			<li>SVG Render demo.  Demonstrates the quirky and deprecated SVG rendering of pdfjs v3. Since v4 removed SVG mode, the component falls back to CANVAS rendering.</li>
 			<li>Size Mode demo.  Demonstrates the new SCALE size mode, and switching between all 3 size modes.</li>
 		</ul>
 	</WelcomeItem>
