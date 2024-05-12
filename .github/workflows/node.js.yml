@@ -30,7 +30,7 @@ jobs:
     - run: npm run build --if-present
     - run: npm run test:unit
     - run: npm run coverage:unit
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: coverage-report
