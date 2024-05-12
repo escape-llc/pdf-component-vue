@@ -38,6 +38,16 @@
  * limitations under the License.
  */
 
+ #hiddenCopyElement,
+.hiddenCanvasElement{
+  position:absolute;
+  top:0;
+  left:0;
+  width:0;
+  height:0;
+  display:none;
+}
+
 .textLayer {
 	position: absolute;
 	text-align: initial;
@@ -53,6 +63,7 @@
 	text-size-adjust: none;
 	forced-color-adjust: none;
 	transform-origin: 0 0;
+  caret-color:CanvasText;
 	z-index: 2;
 }
 

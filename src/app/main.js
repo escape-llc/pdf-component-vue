@@ -18,14 +18,18 @@ const bundle_v3 = {
 }
 */
 
+const worker_url = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url);
 // PDFJS v4 must configure like this
 // import modules from the local bundle
 const bundle_v4 = {
 	pdfjs: await import(/* @vite-ignore */new URL("pdfjs-dist/build/pdf.min.mjs", import.meta.url)),
 	viewer: await import(/* @vite-ignore */new URL("pdfjs-dist/web/pdf_viewer.mjs", import.meta.url)),
-	//workerSrc: new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url)
+	//workerSrc: worker_url
 }
-bundle_v4.pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url);
+// PDFJS 4.0.x allows a URL as the workerSrc
+//bundle_v4.pdfjs.GlobalWorkerOptions.workerSrc = worker_url;
+// PDFJS 4.2.x now enforces a STRING as the workerSrc
+bundle_v4.pdfjs.GlobalWorkerOptions.workerSrc = worker_url.toString();
 /*
 // import v4 modules from a CDN
 const unpkg_v4 = {
