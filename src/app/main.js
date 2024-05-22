@@ -40,7 +40,7 @@ const unpkg_v4 = {
 */
 
 // provide PDFJS modules to the Application
-usePdfjs(app, bundle_v4)
+app.use(usePdfjs, bundle_v4)
 
 app.use(router)
 app.mount('#app')
