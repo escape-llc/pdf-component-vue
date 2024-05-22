@@ -1,0 +1,111 @@
+.annotationEditorLayer {
+	background: transparent;
+	position: absolute;
+	top: 0;
+	left: 0;
+	font-size: calc(100px * var(--scale-factor));
+	transform-origin: 0 0;
+	cursor: auto;
+	z-index: 4;
+}
+
+.annotationEditorLayer.freeTextEditing {
+	cursor: var(--editorFreeText-editing-cursor);
+}
+
+.annotationEditorLayer.inkEditing {
+	cursor: var(--editorInk-editing-cursor);
+}
+
+.annotationEditorLayer .selectedEditor {
+	outline: var(--focus-outline);
+	resize: none;
+}
+
+.annotationEditorLayer .freeTextEditor {
+	position: absolute;
+	background: transparent;
+	border-radius: 3px;
+	padding: calc(var(--freetext-padding) * var(--scale-factor));
+	resize: none;
+	width: auto;
+	height: auto;
+	z-index: 1;
+	transform-origin: 0 0;
+	touch-action: none;
+	cursor: auto;
+}
+
+.annotationEditorLayer .freeTextEditor .internal {
+	background: transparent;
+	border: none;
+	top: 0;
+	left: 0;
+	overflow: visible;
+	white-space: nowrap;
+	resize: none;
+	font: 10px sans-serif;
+	line-height: var(--freetext-line-height);
+}
+
+.annotationEditorLayer .freeTextEditor .overlay {
+	position: absolute;
+	display: none;
+	background: transparent;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.annotationEditorLayer .freeTextEditor .overlay.enabled {
+	display: block;
+}
+
+.annotationEditorLayer .freeTextEditor .internal:empty::before {
+	content: attr(default-content);
+	color: gray;
+}
+
+.annotationEditorLayer .freeTextEditor .internal:focus {
+	outline: none;
+}
+
+.annotationEditorLayer .inkEditor.disabled {
+	resize: none;
+}
+
+.annotationEditorLayer .inkEditor.disabled.selectedEditor {
+	resize: horizontal;
+}
+
+.annotationEditorLayer .freeTextEditor:hover:not(.selectedEditor),
+.annotationEditorLayer .inkEditor:hover:not(.selectedEditor) {
+	outline: var(--hover-outline);
+}
+
+.annotationEditorLayer .inkEditor {
+	position: absolute;
+	background: transparent;
+	border-radius: 3px;
+	overflow: auto;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+	transform-origin: 0 0;
+	cursor: auto;
+}
+
+.annotationEditorLayer .inkEditor.editing {
+	resize: none;
+	cursor: inherit;
+}
+
+.annotationEditorLayer .inkEditor .inkEditorCanvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	touch-action: none;
+}
