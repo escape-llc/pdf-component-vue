@@ -346,6 +346,8 @@ export default {
 .sidebar {
 	width: 15rem;
 	overflow-y: scroll;
+	scroll-snap-type: y proximity;
+	scroll-padding: 1.8rem;
 	padding-left:1rem;
 	padding-right:1rem;
 	background: gray;
@@ -376,6 +378,7 @@ export default {
 	box-sizing: border-box;
 	width: 100%;
 	height: auto;
+	overflow-y: visible;
 }
 .document-container2 {
 	display: grid;
@@ -400,7 +403,7 @@ export default {
 	overflow: hidden;
 	width:100%;
 	transition: box-shadow .5s ease-in;
-	scroll-snap-stop: start;
+	scroll-snap-align: start;
 	contain: content;
 }
 :deep(.page-container2) {
