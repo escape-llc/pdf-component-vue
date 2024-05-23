@@ -1,6 +1,6 @@
 {
 	"name": "pdf-component-vue",
-	"version": "0.7.1",
+	"version": "0.7.2",
 	"private": false,
 	"license": "Apache-2.0",
 	"description": "PDF Rendering component for Vue 3 applications",
