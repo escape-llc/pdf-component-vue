@@ -34,6 +34,8 @@ class ResizePlugin extends Plugin {
 	}
 	stop(options) {
 		//console.log("resize.stop", this.resizer, this.resizeTracker, this.resizeTrackerActive);
+		this.resizeIntersect?.disconnect();
+		this.resizeIntersect = null;
 		this.resizer?.disconnect();
 		this.resizer = null;
 		this.resizeTracker?.reset();
