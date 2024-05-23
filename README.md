@@ -13,6 +13,7 @@ npm install pdf-component-vue
 ![workflow](https://github.com/escape-llc/pdf-component-vue/actions/workflows/node.js.yml//badge.svg)
 ![e2e](https://github.com/escape-llc/pdf-component-vue/actions/workflows/playwright.yml//badge.svg)
 ![codeql](https://github.com/escape-llc/pdf-component-vue/actions/workflows/github-code-scanning/codeql/badge.svg)
+[![codecov](https://codecov.io/gh/escape-llc/pdf-component-vue/graph/badge.svg?token=G1D6GRWM0K)](https://codecov.io/gh/escape-llc/pdf-component-vue)
 [![license](https://img.shields.io/npm/l/pdf-component-vue)](https://github.com/escape-llc/pdf-component-vue/blob/main/LICENSE)
 
 ## Important Notice About Hosting `pdfjs`
