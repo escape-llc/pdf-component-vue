@@ -1,53 +1,16 @@
 import { vi, describe, it, expect } from 'vitest';
 import { ScrollPlugin } from "../ScrollPlugin";
 import { ScrollConfiguration } from '../ScrollConfiguration';
-import { materializePages, PageContext } from '../PageContext';
+import { materializePages } from '../PageContext';
+import { MockObserver, pluginContext } from './PluginMock';
 
 vi.useFakeTimers();
 
-class MockedObserver {
-	cb;
-	options;
-	elements = [];
-
-	constructor(cb, options) {
-		this.cb = cb;
-		this.options = options;
-		this.elements = [];
-	}
-
-	unobserve(elem) {
-		this.elements = this.elements.filter((en) => en !== elem);
-	}
-
-	observe(elem) {
-		this.elements = [...new Set(this.elements.concat(elem))];
-	}
-
-	disconnect() {
-		this.elements = [];
-	}
-
-	fire(arr) {
-		this.cb(arr, this);
-	}
-}
 Object.defineProperty(global, "IntersectionObserver", {
 	writable: true,
-	value: MockedObserver,
+	value: MockObserver,
 });
 
-const pluginContext = (event, sc, pcs, pages) => {
-	const pictx = {
-		event,
-		pageContexts: pcs ?? [],
-		pages: pages ?? [],
-		$emit: (name,obj) => console.log("$emit", name, obj),
-		scrollConfiguration: sc,
-		resizeConfiguration: undefined,
-	};
-	return pictx;
-}
 describe("ScrollPlugin", () => {
 	it("lifecycle start/stop", () => {
 		const pi = new ScrollPlugin();
@@ -66,7 +29,8 @@ describe("ScrollPlugin", () => {
 		const pageContexts = [];
 		materializePages(0, 0, "pdf-document", 3, pageContexts);
 		const pages = pageContexts;
-		pi.connect(pluginContext("connect", config, pageContexts, pages));
+		const connect_ctx = pluginContext("connect", config, undefined, pageContexts, pages);
+		pi.connect(connect_ctx);
 		expect(pi.intersect).is.not.null;
 		pageContexts[0].mountContainer(target);
 		const entries = [
@@ -74,7 +38,12 @@ describe("ScrollPlugin", () => {
 		];
 		pi.intersect.fire(entries);
 		vi.runAllTimers();
-		pi.disconnect(pluginContext("disconnect", config, pageContexts, pages));
+		expect(connect_ctx.emitted.length).equals(1);
+		const visible = connect_ctx.emitted[0];
+		expect(visible.event).equals("visible-pages");
+		expect(visible.data.length).equals(1);
+		expect(visible.data[0].id).equals("pdf-document-page-1");
+		pi.disconnect(pluginContext("disconnect", config, undefined, pageContexts, pages));
 		expect(pi.intersect).is.not.null;
 		pi.stop(pluginContext("stop", config));
 		expect(pi.intersect).is.null;
