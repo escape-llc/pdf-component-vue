@@ -6,9 +6,12 @@
 			<div v-for="bg in badges" class="badge"><span class="badge-name">{{bg.name}}</span><span class="badge-value">{{bg.value}}</span></div>
 		</div>
 		<template v-if="renderComplete">
-			<div v-if="command === 'narrow'" id="demo5-complete-narrow" class="render-complete">Render Complete Narrow</div>
-			<div v-else-if="command === 'wide'" id="demo5-complete-wide" class="render-complete">Render Complete Wide</div>
-			<div v-else class="render-complete" id="demo5-complete-loaded">Render Complete Loaded</div>
+			<div v-if="command === 'width'" id="demo-complete-width" class="render-complete">Render Complete Width</div>
+			<div v-else-if="command === 'height'" id="demo-complete-height" class="render-complete">Render Complete Height</div>
+			<div v-else-if="command === 'scale50'" id="demo-complete-scale50" class="render-complete">Render Complete 50%</div>
+			<div v-else-if="command === 'scale100'" id="demo-complete-scale100" class="render-complete">Render Complete 100%</div>
+			<div v-else-if="command === 'scale150'" id="demo-complete-scale150" class="render-complete">Render Complete 150%</div>
+			<div class="render-complete" id="demo-complete-loaded">Render Complete Loaded</div>
 		</template>
 		<div>Use the buttons to change the size mode.  You must use Resize Configuration for proper rendering.</div>
 		<div class="button-container">
@@ -211,7 +214,7 @@ export default {
 	box-shadow: 0 1px 4px 2px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
 	contain: content;
-	transition: width 1s ease-in-out, height 1s ease-in-out, --scale-factor 1s ease-in-out;
+	transition: width .5s ease-in-out, height .5s ease-in-out, --scale-factor .5s ease-in-out;
 }
 :deep(.page-stack) {
 	grid-area: 1 / 1 / 1 / 1 !important;
