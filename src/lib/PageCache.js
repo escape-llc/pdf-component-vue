@@ -164,11 +164,18 @@ class PageCache {
 			includeMarkedContent: true,
 			disableNormalization: true,
 		});
-		await this._pdfjs.renderTextLayer({
+		const options = {
 			container: el,
 			textContentSource: readableStream,
 			viewport,
-		}).promise
+		};
+		if("TextLayer" in this._pdfjs) {
+			const text = new this._pdfjs.TextLayer(options);
+			await text.render();
+		}
+		else {
+			await this._pdfjs.renderTextLayer(options).promise
+		}
 	}
 	/**
 	 * Render the Annotation layer DIV.
