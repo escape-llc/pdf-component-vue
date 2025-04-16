@@ -305,33 +305,33 @@ describe('PageContext', () => {
 	});
 })
 describe("DocumentHandler", async () => {
-	it("DocumentHandler should throw for everything", () => {
+	it("DocumentHandler should throw for everything", async () => {
 		const ddh = new dh.DocumentHandler();
 		expect(ddh.document).toBe(undefined);
-		expect(async () => { const xxx = await ddh.load("source"); }).rejects.toThrowError("load: not implemented");
-		expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: not implemented");
-		expect(async () => { const xxx = await ddh.pageLabels(); }).rejects.toThrowError("pageLabels: not implemented");
+		await expect(async () => { const xxx = await ddh.load("source"); }).rejects.toThrowError("load: not implemented");
+		await expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: not implemented");
+		await expect(async () => { const xxx = await ddh.pageLabels(); }).rejects.toThrowError("pageLabels: not implemented");
 		ddh.destroy();
 		// does nothing so it should still be undefined
 		expect(ddh.document).toBe(undefined);
 	})
-	it("DocumentHandler_pdfjs should throw if not load()", () => {
+	it("DocumentHandler_pdfjs should throw if not load()", async () => {
 		const ddh = new dh.DocumentHandler_pdfjs(null, pdfjs);
 		expect(ddh.document).toBe(null);
-		expect(async () => { const xxx = await ddh.load(undefined); }).rejects.toThrowError("load: source was null or undefined");
-		expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: load was not called");
-		expect(async () => { const xxx = await ddh.pageLabels(); }).rejects.toThrowError("pageLabels: load was not called");
+		await expect(async () => { const xxx = await ddh.load(undefined); }).rejects.toThrowError("load: source was null or undefined");
+		await expect(async () => { const xxx = await ddh.page(1); }).rejects.toThrowError("page: load was not called");
+		await expect(async () => { const xxx = await ddh.pageLabels(); }).rejects.toThrowError("pageLabels: load was not called");
 		ddh.destroy();
 		expect(ddh.document).toBe(null);
 	})
 })
 describe("PageCache", () => {
-	it("evicted page should fail", () => {
+	it("evicted page should fail", async () => {
 		const cache = new PageCache(null, null, pdfjs);
 		expect(() => { const xxx = cache.viewport(99, undefined); }).toThrowError("viewport: page 99 not in cache");
-		expect(async () => { const xxx = await cache.renderCanvas(99, undefined); }).rejects.toThrowError("renderCanvas: page 99 not in cache");
-		expect(async () => { const xxx = await cache.renderTextLayer(99, undefined); }).rejects.toThrowError("renderTextLayer: page 99 not in cache");
-		expect(async () => { const xxx = await cache.renderAnnotationLayer(99, undefined); }).rejects.toThrowError("renderAnnotationLayer: page 99 not in cache");
+		await expect(async () => { const xxx = await cache.renderCanvas(99, undefined); }).rejects.toThrowError("renderCanvas: page 99 not in cache");
+		await expect(async () => { const xxx = await cache.renderTextLayer(99, undefined); }).rejects.toThrowError("renderTextLayer: page 99 not in cache");
+		await expect(async () => { const xxx = await cache.renderAnnotationLayer(99, undefined); }).rejects.toThrowError("renderAnnotationLayer: page 99 not in cache");
 		cache.retain(99, {
 			rotation: 0,
 			view: [0,0,680,790],

@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import * as cmd from '../Commands'
 
 describe("Commands", () => {
-	it("Command", () => {
+	it("Command", async () => {
 		const command = new cmd.Command();
-		expect(async () => {
+		await expect(async () => {
 			const result = await command.execute(undefined);
 		})
 		.rejects
