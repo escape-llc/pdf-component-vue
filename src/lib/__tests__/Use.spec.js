@@ -16,13 +16,13 @@ const make_app = () => {
 }
 
 describe("Use", () => {
-	it("app.use fails undefined options", () => {
+	it("app.use fails undefined options", async () => {
 		const app = make_app();
 		const options = undefined;
 		expect(
 			() => { app.use(usePdfjs, options); }
 		)
-		.toThrow(new Error("Cannot destructure property 'pdfjs' of 'undefined' as it is undefined."));
+		.toThrow(new TypeError("Cannot destructure property 'pdfjs' of 'undefined' as it is undefined."));
 	})
 	it("app.use fails empty options", () => {
 		const app = make_app();
