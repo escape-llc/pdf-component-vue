@@ -1,4 +1,7 @@
 name: codecov
+permissions:
+  contents: read
+  statuses: write
 on:
   push:
     branches: [ "main" ]
