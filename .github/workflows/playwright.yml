@@ -1,4 +1,7 @@
 name: e2e
+permissions:
+  contents: read
+  actions: read
 on:
   push:
     branches: [ "main" ]
